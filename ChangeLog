@@ -1,0 +1,10 @@
+2005-10-03  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* added SPP class ID again
+	* version 0.1.2.
+
+2005-10-03  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* added SDP registration and deregistration
+	* version 0.1.1.
+
