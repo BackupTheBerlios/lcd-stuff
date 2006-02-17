@@ -141,7 +141,7 @@ static void free_emails(LinkedList *emails)
     LL_Rewind(s_email);
     do
     {
-        mail = (struct email *)LL_Get(s_email);
+        mail = (struct email *)LL_DeleteNode(s_email);
         free(mail);
     } while (LL_Next(s_email) == 0);
 }
