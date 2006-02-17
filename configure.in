@@ -7,7 +7,7 @@ dnl | initialize autotools |---------------------------------------------------
 dnl  ----------------------
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(lcd-stuff, 0.1.2)
+AM_INIT_AUTOMAKE(lcd-stuff, 0.1.0)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -125,8 +125,8 @@ AM_CONDITIONAL(SYLPHEED_LIBETPAN, test "x$libetpan_result" = "xyes")
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 
-LIBS="$LIBS $PACKAGE_LIBS"
-CFLAGS="$CFLAGS $PACKAGE_CFLAGS"
+LIBS="$LIBS $PACKAGE_LIBS $LIBETPAN_LIBS"
+CFLAGS="$CFLAGS $PACKAGE_CFLAGS $LIBETPAN_FLAGS"
 
 
 dnl  --------

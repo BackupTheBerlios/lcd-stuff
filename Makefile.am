@@ -4,5 +4,5 @@ MAINTAINERCLEANFILES    = Makefile.in configure
 SUBDIRS                 = shared src 
 
 EXTRA_DIST              =                           \
-	autogen.sh
+	autogen.sh lcd-stuff.conf
 
