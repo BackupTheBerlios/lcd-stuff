@@ -1,10 +1,7 @@
-2005-10-03  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-18  Bernhard Walle <bernhard.walle@gmx.de>
 
-	* added SPP class ID again
-	* version 0.1.2.
-
-2005-10-03  Bernhard Walle <bernhard.walle@gmx.de>
-
-	* added SDP registration and deregistration
-	* version 0.1.1.
+	* mail: switch mails if screen is not shown so that it re-appears
+	  with a different mail
+	* mail: decoding also with subject
+	* mail: restructuring, added lcdlib
 

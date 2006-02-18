@@ -31,12 +31,12 @@
 #include "constants.h"
 #include "maillib.h"
 #include "global.h"
+#include "lcdlib.h"
 
 #define MODULE_NAME           "mail"
 #define SCREEN_ID             PRG_NAME "-" MODULE_NAME "-screen"
 
-static int  s_sock;
-static char s_buf[BUFSIZ];
+lcdlib_t    s_lcd;
 static int  s_interval;
 
 struct mailbox 
@@ -67,20 +67,17 @@ static void update_screen(const char *line1, const char *line2, const char *line
 {
     if (line1)
     {
-        snprintf(s_buf, BUFSIZ, "widget_set %s line1 1 2 {%s}\n", SCREEN_ID, line1);
-        sock_send_string(s_sock, s_buf);
+        lcd_send_command_succ(&s_lcd, "widget_set %s line1 1 2 {%s}\n", SCREEN_ID, line1);
     }
 
     if (line2)
     {
-        snprintf(s_buf, BUFSIZ, "widget_set %s line2 1 3 {%s}\n", SCREEN_ID, line2);
-        sock_send_string(s_sock, s_buf);
+        lcd_send_command_succ(&s_lcd, "widget_set %s line2 1 3 {%s}\n", SCREEN_ID, line2);
     }
 
     if (line3)
     {
-        snprintf(s_buf, BUFSIZ, "widget_set %s line3 1 4 {%s}\n", SCREEN_ID, line3);
-        sock_send_string(s_sock, s_buf);
+        lcd_send_command_succ(&s_lcd, "widget_set %s line3 1 4 {%s}\n", SCREEN_ID, line3);
     }
 }
 
@@ -277,47 +274,45 @@ end_loop:
 }
 
 /* --------------------------------------------------------------------------------------------- */
-static void mail_process_response(char *str)
+static void mail_key_handler(const char *str)
 {
-	char *argv[10];
-	int argc;
-
-	report(RPT_DEBUG, "Server said: \"%s\"", str);
-
-	/* Check what the server just said to us... */
-	argc = get_args(argv, str, 10);
-
-    if (strcmp(argv[0], "key") == 0)
+    if (strcmp(str, "Up") == 0)
     {
-        if (strcmp(argv[1], "Up") == 0)
-        {
-            s_current_screen++;
-        }
-        else
-        {
-            s_current_screen--;
-        }
-        show_screen();
+        s_current_screen++;
     }
+    else
+    {
+        s_current_screen--;
+    }
+    show_screen();
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
+static void mail_ignore_handler(void)
+{
+    s_current_screen++;
+    show_screen();
+}
 
 /* --------------------------------------------------------------------------------------------- */
 static bool mail_init(void)
 {
     int i;
     int number_of_mailboxes;
-    int ret = true;
+    int socket;
+    char buffer[BUFSIZ];
+
+    lcd_init(&s_lcd, 0);
 
     /* connect to the lcdproc server */
-    s_sock = sock_connect(g_lcdproc_server, g_lcdproc_port);
-    if (s_sock <= 0)
+    socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
+    if (socket <= 0)
     {
         report(RPT_ERR, MODULE_NAME ": Could not create socket");
         return false;
     }
+    lcd_init(&s_lcd, socket);
+    lcd_register_callback(&s_lcd, mail_key_handler, NULL, mail_ignore_handler, NULL);
 
     /* create the linked list of mailboxes */
     s_mailboxes = LL_new();
@@ -335,33 +330,30 @@ static bool mail_init(void)
         return false;
     }
 
-    pthread_mutex_lock(&g_mutex);
-
     /* handshake */
-    sock_send_string(s_sock, "hello\n");
-    snprintf(s_buf, BUFSIZ, "client_set -name %s-%s\n", PRG_NAME, MODULE_NAME);
-    sock_send_string(s_sock, s_buf);
+    lcd_send_command_rec_resp(&s_lcd, buffer, BUFSIZ, "hello\n");
+
+    /* client */
+    lcd_send_command_succ(&s_lcd, "client_set -name %s-%s\n", PRG_NAME, MODULE_NAME);
 
     /* add a screen */
-    sock_send_string(s_sock, "screen_add " SCREEN_ID "\n");
-    snprintf(s_buf, BUFSIZ, "screen_set %s -name %s\n", 
-             SCREEN_ID, config_get_string(MODULE_NAME, "name", 0, "Mail"));
-    sock_send_string(s_sock, s_buf);
+    lcd_send_command_succ(&s_lcd, "screen_add " SCREEN_ID "\n");
+    lcd_send_command_succ(&s_lcd, "screen_set %s -name %s\n", SCREEN_ID,
+                          config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add the title */
-    sock_send_string(s_sock, "widget_add " SCREEN_ID " title title\n");
-    snprintf(s_buf, BUFSIZ, "widget_set %s title %s\n", 
-             SCREEN_ID, config_get_string(MODULE_NAME, "name", 0, "Mail"));
-    sock_send_string(s_sock, s_buf);
+    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " title title\n");
+    lcd_send_command_succ(&s_lcd, "widget_set %s title %s\n", 
+                          SCREEN_ID, config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add three lines */
-    sock_send_string(s_sock, "widget_add " SCREEN_ID " line1 string\n");
-    sock_send_string(s_sock, "widget_add " SCREEN_ID " line2 string\n");
-    sock_send_string(s_sock, "widget_add " SCREEN_ID " line3 string\n");
+    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line1 string\n");
+    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line2 string\n");
+    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line3 string\n");
 
     /* register keys */
-    sock_send_string(s_sock, "client_add_key Up\n");
-    sock_send_string(s_sock, "client_add_key Down\n");
+    lcd_send_command_succ(&s_lcd, "client_add_key Up\n");
+    lcd_send_command_succ(&s_lcd, "client_add_key Down\n");
 
     /* get config items */
     s_interval = config_get_int(MODULE_NAME, "interval", 0, 300);
@@ -370,8 +362,7 @@ static bool mail_init(void)
     if (number_of_mailboxes == 0)
     {
         report(RPT_ERR, MODULE_NAME ": No mailboxes specified");
-        ret = false;
-        goto out;
+        return false;
     }
 
     /* process the mailboxes */
@@ -381,43 +372,39 @@ static bool mail_init(void)
         if (!cur)
         {
             report(RPT_ERR, MODULE_NAME ": Out of memory");
-            ret = false;
-            goto out;
+            return false;
         }
 
-        snprintf(s_buf, BUFSIZ, "server%d", i);
-        strncpy(cur->server, config_get_string(MODULE_NAME, s_buf, 0, ""), BUFSIZ);
+        snprintf(buffer, BUFSIZ, "server%d", i);
+        strncpy(cur->server, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
         cur->server[BUFSIZ-1] = 0;
 
-        snprintf(s_buf, BUFSIZ, "user%d", i);
-        strncpy(cur->username, config_get_string(MODULE_NAME, s_buf, 0, ""), BUFSIZ);
+        snprintf(buffer, BUFSIZ, "user%d", i);
+        strncpy(cur->username, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
         cur->username[BUFSIZ-1] = 0;
 
-        snprintf(s_buf, BUFSIZ, "password%d", i);
-        strncpy(cur->password, config_get_string(MODULE_NAME, s_buf, 0, ""), BUFSIZ);
+        snprintf(buffer, BUFSIZ, "password%d", i);
+        strncpy(cur->password, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
         cur->password[BUFSIZ-1] = 0;
 
-        snprintf(s_buf, BUFSIZ, "name%d", i);
-        strncpy(cur->name, config_get_string(MODULE_NAME, s_buf, 0, cur->server), BUFSIZ);
+        snprintf(buffer, BUFSIZ, "name%d", i);
+        strncpy(cur->name, config_get_string(MODULE_NAME, buffer, 0, cur->server), BUFSIZ);
         cur->name[BUFSIZ-1] = 0;
 
         LL_AddNode(s_mailboxes, (void *)cur);
     }
 
-out:
-    pthread_mutex_unlock(&g_mutex);
-    return ret;
+    return true;
 }
 
 /* --------------------------------------------------------------------------------------------- */
 void *mail_run(void *cookie)
 {
-    time_t next_check;
-    int result;
+    time_t  next_check;
+    int     result;
+    int     count = 0;
 
-    pthread_mutex_lock(&g_mutex);
     result = config_has_section(MODULE_NAME);
-    pthread_mutex_unlock(&g_mutex);
     if (!result)
     {
         report(RPT_INFO, "mail disabled");
@@ -435,50 +422,38 @@ void *mail_run(void *cookie)
     /* dispatcher */
     while (!g_exit)
     {
-        int num_bytes;
-        int w = 0;
-
-        /* check if we have input */
-        while(( num_bytes = sock_recv_string(s_sock, s_buf, BUFSIZ - 1)) >= 0) 
+        if (lcd_check_for_input(&s_lcd) != 0)
         {
-            if( num_bytes == 0 ) 
-            {
-                if (g_exit)
-                {
-                    break;
-                }
+            report(RPT_ERR, "Error while checking for imput, maybe server died");
+            break;
+        }
 
-                usleep(100000);
+        usleep(100000);
 
-                /* Send an empty line every 3 seconds to make sure the server still +exists */
-                if( w++ >= 30 ) 
-                {
-                    w = 0;
-                    if (sock_send_string(s_sock, "\n" ) < 0) 
-                    {
-                        break; /* Out of while loop */
-                    }
-                }
-            }
-            else 
+        if (count++ == 30)
+        {
+            /* still alive? */
+            if (lcd_send_command_succ(&s_lcd, "noop\n") < 0)
             {
-                mail_process_response(s_buf);
+                report(RPT_ERR, "Server died");
+                break;
             }
+            count = 0;
+        }
 
-            /* check emails? */
-            if (time(NULL) > next_check)
-            {
-                mail_check();
-                show_screen();
-                next_check = time(NULL) + s_interval;
-            }
+        /* check emails? */
+        if (time(NULL) > next_check)
+        {
+            mail_check();
+            show_screen();
+            next_check = time(NULL) + s_interval;
         }
     }
 
     free_emails(s_email);
     LL_Destroy(s_email);
     LL_Destroy(s_mailboxes);
-    close(s_sock);
+    lcd_finish(&s_lcd);
 
     return NULL;
 }

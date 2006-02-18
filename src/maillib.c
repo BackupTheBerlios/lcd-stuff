@@ -14,6 +14,7 @@
  */
 #include <libetpan/libetpan.h>
 #include <string.h>
+
 #include <stdlib.h>
 
 #include "maillib.h"
@@ -154,8 +155,7 @@ void display_from(struct mailimf_from * from, char *string, int size)
 
         mb = clist_content(cur);
 
-        snprintf(string, size, "%s", mb->mb_display_name);
-        string[size-1] = 0;
+        mail_decode(mb->mb_display_name, string, size);
     }
 }
 

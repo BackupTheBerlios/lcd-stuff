@@ -13,7 +13,10 @@ lcd_stuff_SOURCES       =                               \
     maillib.c						\
     maillib.h						\
     constants.h						\
-    global.h
+    global.h						\
+    lcdlib.c						\
+    lcdlib.h
+
 
 lcd_stuff_LDADD = ../shared/libLCDstuff.a
 
