@@ -231,11 +231,8 @@ int main(int argc, char *argv[])
     /* check availability of threads */
     if (!g_thread_supported())
     {
-        fprintf(stderr, "Threads are not supported but required. Recompile your glib.\n");
+        g_thread_init(NULL);
     }
-
-    /* initialize threads */
-    g_thread_init(NULL);
 
     /* parse command line */
     err = parse_command_line(argc, argv);
