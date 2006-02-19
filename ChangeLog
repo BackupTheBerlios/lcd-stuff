@@ -3,6 +3,7 @@
 	* rss: implemented
 	* completely restructured: use one service thread for handling the
 	  lcdproc stuff, use different threads for the clients
+	* weather: implemented
 
 2006-02-18  Bernhard Walle <bernhard.walle@gmx.de>
 

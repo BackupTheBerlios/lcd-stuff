@@ -30,6 +30,7 @@
 #include "rss.h"
 #include "constants.h"
 #include "mail.h"
+#include "weather.h"
 #include "helpfunctions.h"
 #include "servicethread.h"
 
@@ -60,10 +61,11 @@ static char g_help_text[] =
      "  -h\t\tShow this help\n";
 
 /* ========================= thread functions =================================================== */
-#define THREAD_NUMBER 2
+#define THREAD_NUMBER 3
 static GThreadFunc s_thread_funcs[] = {
     rss_run,
-    mail_run
+    mail_run,
+    weather_run
 };
 
 

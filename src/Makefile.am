@@ -16,7 +16,11 @@ lcd_stuff_SOURCES       =                               \
     constants.h						\
     global.h						\
     rss.h						\
-    rss.c
+    rss.c						\
+    weather.c						\
+    weather.h						\
+    weatherlib.c					\
+    weatherlib.h
 
 lcd_stuff_LDADD = ../shared/libLCDstuff.a
 
