@@ -21,6 +21,8 @@
 extern char g_lcdproc_server[1024];
 extern int  g_lcdproc_port;
 extern bool g_exit;
+extern int  g_socket;
+extern int  g_display_width;
 
 #endif /* MAIN_H */
 

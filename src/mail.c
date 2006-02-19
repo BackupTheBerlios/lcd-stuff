@@ -31,15 +31,17 @@
 #include "constants.h"
 #include "maillib.h"
 #include "global.h"
-#include "lcdlib.h"
 #include "helpfunctions.h"
+#include "servicethread.h"
 
+/* ---------------------- forward declarations ------------------------------------------------- */
+static void mail_ignore_handler(void);
+static void mail_key_handler(const char *str);
+
+/* ---------------------- constants ------------------------------------------------------------ */
 #define MODULE_NAME           "mail"
-#define SCREEN_ID             PRG_NAME "-" MODULE_NAME "-screen"
 
-lcdlib_t    s_lcd;
-static int  s_interval;
-
+/* ---------------------- types ---------------------------------------------------------------- */
 struct mailbox 
 {
     char server[BUFSIZ];
@@ -50,35 +52,43 @@ struct mailbox
     unsigned int  messages_unseen;
     unsigned int  messages_total;
 };
-LinkedList  *s_mailboxes;
 
 struct email
 {
     char subject[MAX_LINE_LEN];
     char from[MAX_LINE_LEN];
 };
-LinkedList  *s_email;
 
-/*  0: 1st mail ... */
-static int s_current_screen = 0;
-static int s_total_messages = 0;
+/* ------------------------variables ----------------------------------------------------------- */
+static int          s_interval;
+static LinkedList   *s_mailboxes;
+static LinkedList   *s_email;
+static int          s_current_screen = 0;
+static int          s_total_messages = 0;
+struct client       mail_client = 
+                    {
+                        .name            = MODULE_NAME,
+                        .key_callback    = mail_key_handler,
+                        .listen_callback = NULL,
+                        .ignore_callback = mail_ignore_handler
+                    }; 
 
 /* --------------------------------------------------------------------------------------------- */
 static void update_screen(const char *line1, const char *line2, const char *line3)
 {
     if (line1)
     {
-        lcd_send_command_succ(&s_lcd, "widget_set %s line1 1 2 {%s}\n", SCREEN_ID, line1);
+        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
     }
 
     if (line2)
     {
-        lcd_send_command_succ(&s_lcd, "widget_set %s line2 1 3 {%s}\n", SCREEN_ID, line2);
+        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
     }
 
     if (line3)
     {
-        lcd_send_command_succ(&s_lcd, "widget_set %s line3 1 4 {%s}\n", SCREEN_ID, line3);
+        service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
     }
 }
 
@@ -302,21 +312,10 @@ static bool mail_init(void)
 {
     int i;
     int number_of_mailboxes;
-    int socket;
     char buffer[BUFSIZ];
 
-    lcd_init(&s_lcd, 0);
-
-    /* connect to the lcdproc server */
-    socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
-    printf("socket=%d\n", socket);
-    if (socket <= 0)
-    {
-        report(RPT_ERR, MODULE_NAME ": Could not create socket");
-        return false;
-    }
-    lcd_init(&s_lcd, socket);
-    lcd_register_callback(&s_lcd, mail_key_handler, NULL, mail_ignore_handler, NULL);
+    /* register client */
+    service_thread_register_client(&mail_client);
 
     /* create the linked list of mailboxes */
     s_mailboxes = LL_new();
@@ -334,30 +333,24 @@ static bool mail_init(void)
         return false;
     }
 
-    /* handshake */
-    lcd_send_command_rec_resp(&s_lcd, buffer, BUFSIZ, "hello\n");
-
-    /* client */
-    lcd_send_command_succ(&s_lcd, "client_set -name %s-%s\n", PRG_NAME, MODULE_NAME);
-
     /* add a screen */
-    lcd_send_command_succ(&s_lcd, "screen_add " SCREEN_ID "\n");
-    lcd_send_command_succ(&s_lcd, "screen_set %s -name %s\n", SCREEN_ID,
+    service_thread_command("screen_add " MODULE_NAME "\n");
+    service_thread_command("screen_set %s -name %s\n", MODULE_NAME,
                           config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add the title */
-    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " title title\n");
-    lcd_send_command_succ(&s_lcd, "widget_set %s title %s\n", 
-                          SCREEN_ID, config_get_string(MODULE_NAME, "name", 0, "Mail"));
+    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command("widget_set %s title %s\n", 
+                          MODULE_NAME, config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add three lines */
-    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line1 string\n");
-    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line2 string\n");
-    lcd_send_command_succ(&s_lcd, "widget_add " SCREEN_ID " line3 string\n");
+    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
+    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
+    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
-    lcd_send_command_succ(&s_lcd, "client_add_key Up\n");
-    lcd_send_command_succ(&s_lcd, "client_add_key Down\n");
+    service_thread_command("client_add_key Up\n");
+    service_thread_command("client_add_key Down\n");
 
     /* get config items */
     s_interval = config_get_int(MODULE_NAME, "interval", 0, 300);
@@ -410,7 +403,6 @@ void *mail_run(void *cookie)
 {
     time_t  next_check;
     int     result;
-    int     count = 0;
 
     result = config_has_section(MODULE_NAME);
     if (!result)
@@ -430,24 +422,7 @@ void *mail_run(void *cookie)
     /* dispatcher */
     while (!g_exit)
     {
-        if (lcd_check_for_input(&s_lcd) != 0)
-        {
-            report(RPT_ERR, "Error while checking for imput, maybe server died");
-            break;
-        }
-
-        usleep(100000);
-
-        if (count++ == 30)
-        {
-            /* still alive? */
-            if (lcd_send_command_succ(&s_lcd, "noop\n") < 0)
-            {
-                report(RPT_ERR, "Server died");
-                break;
-            }
-            count = 0;
-        }
+        g_usleep(100000);
 
         /* check emails? */
         if (time(NULL) > next_check)
@@ -458,19 +433,13 @@ void *mail_run(void *cookie)
         }
     }
 
+    service_thread_unregister_client(MODULE_NAME);
     free_del_LL_contents(s_email);
     LL_Destroy(s_email);
     free_del_LL_contents(s_mailboxes);
     LL_Destroy(s_mailboxes);
-    lcd_finish(&s_lcd);
 
     return NULL;
-}
-
-/* --------------------------------------------------------------------------------------------- */
-int main(int argc, char *argv[])
-{
-    return main_fun(argc, argv, mail_run);
 }
 
 /* vim: set ts=4 sw=4 et: */

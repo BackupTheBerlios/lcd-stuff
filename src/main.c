@@ -19,26 +19,33 @@
 #include <string.h>
 #include <signal.h>
 #include <stdlib.h>
-#include <pthread.h>
 #include <errno.h>
+#include <glib.h>
 
 #include <shared/report.h>
+#include <shared/str.h>
+#include <shared/sockets.h>
 #include <shared/configfile.h>
 
 #include "rss.h"
 #include "constants.h"
 #include "mail.h"
+#include "helpfunctions.h"
+#include "servicethread.h"
 
 /* ========================= global variables =================================================== */
-char            g_lcdproc_server[1024]         = DEFAULT_SERVER;
-int             g_lcdproc_port                 = DEFAULT_PORT;
-bool            g_exit                         = false;
+char  *g_lcdproc_server       = DEFAULT_SERVER;
+int   g_lcdproc_port          = DEFAULT_PORT;
+bool  g_exit                  = false;
+int   g_socket                = 0;
+int   g_display_width         = 0;
 
+/* ========================= static variables =================================================== */
 static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
 static int s_report_level           = RPT_ERR;
 static int s_report_dest            = RPT_DEST_STDERR;
 static int s_foreground_mode        = -1;
-char g_help_text[] =
+static char g_help_text[] =
      "lcd-stuff - Mail, RSS on a display\n"
      "Copyright (c) 2006 Bernhard Walle\n"
      "This file is released under the GNU General Public License. Refer to the\n"
@@ -54,12 +61,10 @@ char g_help_text[] =
 
 /* ========================= thread functions =================================================== */
 #define THREAD_NUMBER 2
-typedef void * (*start_routine)(void *);
-static start_routine s_thread_funcs[] = {
+static GThreadFunc s_thread_funcs[] = {
     rss_run,
     mail_run
 };
-static pthread_t   s_threads[THREAD_NUMBER];
 
 
 /* --------------------------------------------------------------------------------------------- */
@@ -87,7 +92,7 @@ int parse_command_line(int argc, char *argv[])
                 strncpy(s_config_file, optarg, PATH_MAX);
                 break;
             case 'a':
-                strncpy(g_lcdproc_server, optarg, 1024);
+                g_lcdproc_server = g_strdup(optarg);
                 break;
             case 'p':
                 temp_int = strtol(optarg, &p, 0 );
@@ -153,21 +158,94 @@ int parse_command_line(int argc, char *argv[])
 }
 
 /* --------------------------------------------------------------------------------------------- */
-int main_fun(int argc, char *argv[], start_routine start)
+static int send_command(char *result, int size, char *command)
 {
-    int err;
-    int i;
+    char        buffer[BUFSIZ];
+    int         err;
+    int         num_bytes        = 0;
+    
+    err = sock_send_string(g_socket, command);
+    if (err < 0)
+    {
+        report(RPT_ERR, "Could not send '%s': %d", buffer, err);
+        return err;
+    }
+    
+    if (result)
+    {
+        while (num_bytes == 0)
+        {
+            num_bytes = sock_recv_string(g_socket, result, size - 1);
+            if (num_bytes < 0)
+            {
+                report(RPT_ERR, "Could not receive string: %s", strerror(errno));
+                return err;
+            }
+        }
+    }
+
+    return num_bytes;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+static bool communication_init(void)
+{
+	char     *argv[10];
+	int      argc;
+    char     buffer[BUFSIZ];
+
+    /* create the connection that will be used in the service thread */
+    g_socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
+    if (g_socket <= 0)
+    {
+        report(RPT_ERR, "Could not create socket: %s", strerror(errno));
+        return false;
+    }
+    
+    /* handshake */
+    send_command(buffer, BUFSIZ, "hello\n");
+    
+    argc = get_args(argv, buffer, 10);
+    if (argc < 8)
+    {
+        report(RPT_ERR, "rss: Error received: %s", buffer);
+        return false;
+    }
+    g_display_width = min(atoi(argv[7]), MAX_LINE_LEN-1);
+
+    /* client */
+    send_command(NULL, 0, "client_set -name " PRG_NAME "\n");
+
+    return true;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+int main(int argc, char *argv[])
+{
+    int     err;
+    int     i;
+    GThread *threads[THREAD_NUMBER];
 
 	set_reporting(PRG_NAME, RPT_ERR, RPT_DEST_STDERR);
 
+    /* check availability of threads */
+    if (!g_thread_supported())
+    {
+        fprintf(stderr, "Threads are not supported but required. Recompile your glib.\n");
+    }
+
+    /* initialize threads */
+    g_thread_init(NULL);
+
+    /* parse command line */
     err = parse_command_line(argc, argv);
     if (err != 0)
     {
         return -1;
     }
-
 	set_reporting(PRG_NAME, s_report_level, s_report_dest);
 
+    /* register signal handlers */
     if (signal(SIGTERM, sig_handler) == SIG_ERR)
     {
         report(RPT_ERR, "Registering signal handler failed");
@@ -179,6 +257,7 @@ int main_fun(int argc, char *argv[], start_routine start)
         return 1;
     }
 
+    /* read configuration file */
     err = config_read_file(s_config_file);
     switch (err)
     {
@@ -192,16 +271,47 @@ int main_fun(int argc, char *argv[], start_routine start)
             report(RPT_ERR, "Memory allocation error");
             return 1;
     }
+
+    /* open socket */
+    if (!communication_init())
+    {
+        report(RPT_ERR, "Error: communication init");
+        return 1;
+    }
         
+    /* daemonize */
     if (!s_foreground_mode)
     {
         if (daemon(1, 1) != 0)
         {
-            report(RPT_ERR, "Error: daemonize failed\n");
+            report(RPT_ERR, "Error: daemonize failed");
+            return 1;
         }
     }
 
-    start(NULL);
+    /* create the threads */
+    for (i = 0; i < THREAD_NUMBER; i++)
+    {
+        threads[i] = g_thread_create(s_thread_funcs[i], NULL, true, NULL);
+        if (!threads[i])
+        {
+            report(RPT_ERR, "Thread creation (%d) failed", i);
+        }
+    }
+
+    service_thread_run(NULL);
+
+    /* join the threads */
+    for (i = 0; i < THREAD_NUMBER; i++)
+    {
+        if (threads[i])
+        {
+            g_thread_join(threads[i]);
+        }
+    }
+
+    sock_close(g_socket);
+    config_clear();
 
     return 0;
 }
