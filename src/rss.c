@@ -313,7 +313,6 @@ void *rss_run(void *cookie)
 {
     time_t  next_check;
     int     result;
-    int     count = 0;
 
     result = config_has_section(MODULE_NAME);
     if (!result)
