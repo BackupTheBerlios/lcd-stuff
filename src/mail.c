@@ -32,6 +32,7 @@
 #include "maillib.h"
 #include "global.h"
 #include "lcdlib.h"
+#include "helpfunctions.h"
 
 #define MODULE_NAME           "mail"
 #define SCREEN_ID             PRG_NAME "-" MODULE_NAME "-screen"
@@ -42,9 +43,9 @@ static int  s_interval;
 struct mailbox 
 {
     char server[BUFSIZ];
-    char username[BUFSIZ];
-    char password[BUFSIZ];
-    char name[BUFSIZ];
+    char username[MAX_USERNAME_LEN];
+    char password[MAX_PASSWORD_LEN];
+    char name[MAX_NAME_LEN];
     unsigned int  messages_seen;
     unsigned int  messages_unseen;
     unsigned int  messages_total;
@@ -53,8 +54,8 @@ LinkedList  *s_mailboxes;
 
 struct email
 {
-    char subject[BUFSIZ];
-    char from[BUFSIZ];
+    char subject[MAX_LINE_LEN];
+    char from[MAX_LINE_LEN];
 };
 LinkedList  *s_email;
 
@@ -84,7 +85,7 @@ static void update_screen(const char *line1, const char *line2, const char *line
 /* --------------------------------------------------------------------------------------------- */
 static void show_screen(void)
 {
-    char    line1[BUFSIZ]   = "";
+    char    line1[MAX_LINE_LEN] = "";
     char    *line2          = NULL;
     char    *line3          = NULL;
     char    buffer[BUFSIZ];
@@ -95,8 +96,13 @@ static void show_screen(void)
     do
     {
         struct mailbox *box = (struct mailbox *)LL_Get(s_mailboxes);
+        if (!box)
+        {
+            break;
+        }
+
         snprintf(buffer, BUFSIZ, "%s:%d ", box->name, box->messages_total);
-        strncat(line1, buffer, BUFSIZ);
+        strncat(line1, buffer, MAX_LINE_LEN);
     } while (LL_Next(s_mailboxes) == 0);
 
     if (s_current_screen < 0)
@@ -116,6 +122,11 @@ static void show_screen(void)
         do
         {
             struct email *mail = (struct email *)LL_Get(s_email);
+            if (!mail)
+            {
+                break;
+            }
+
             if (i++ == s_current_screen)
             {
                 line2 = mail->from;
@@ -130,21 +141,6 @@ static void show_screen(void)
 
 
 /* --------------------------------------------------------------------------------------------- */
-static void free_emails(LinkedList *emails)
-{
-    struct email *mail;
-
-    /* free old mail */
-    LL_Rewind(s_email);
-    do
-    {
-        mail = (struct email *)LL_DeleteNode(s_email);
-        free(mail);
-    } while (LL_Next(s_email) == 0);
-}
-
-
-/* --------------------------------------------------------------------------------------------- */
 static void mail_check(void)
 {
     LL_Rewind(s_mailboxes);
@@ -153,7 +149,7 @@ static void mail_check(void)
     s_current_screen = 0;
 
     /* free old mail */
-    free_emails(s_email);
+    free_del_LL_contents(s_email);
 
     LL_Rewind(s_email);
     do 
@@ -164,6 +160,11 @@ static void mail_check(void)
         struct mailmessage       *message   = NULL;
         struct mailstorage       *storage   = NULL;
         int                      r, i;
+
+        if (!box)
+        {
+            break;
+        }
 
         update_screen("Receiving", box->name, "");
 
@@ -250,11 +251,13 @@ static void mail_check(void)
                 switch (field->fld_type) 
                 {
                       case MAILIMF_FIELD_FROM:
-                          display_from(field->fld_data.fld_from, mail->from, BUFSIZ);
+                          display_from(field->fld_data.fld_from, mail->from, 
+                                       MAX_LINE_LEN);
                           break;
 
                       case MAILIMF_FIELD_SUBJECT:
-                          display_subject(field->fld_data.fld_subject, mail->subject, BUFSIZ);
+                          display_subject(field->fld_data.fld_subject, mail->subject, 
+                                          MAX_LINE_LEN);
                           break;
                 }
             }
@@ -306,6 +309,7 @@ static bool mail_init(void)
 
     /* connect to the lcdproc server */
     socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
+    printf("socket=%d\n", socket);
     if (socket <= 0)
     {
         report(RPT_ERR, MODULE_NAME ": Could not create socket");
@@ -376,19 +380,23 @@ static bool mail_init(void)
         }
 
         snprintf(buffer, BUFSIZ, "server%d", i);
-        strncpy(cur->server, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
+        strncpy(cur->server, config_get_string(MODULE_NAME, buffer, 0, ""), 
+                BUFSIZ);
         cur->server[BUFSIZ-1] = 0;
 
         snprintf(buffer, BUFSIZ, "user%d", i);
-        strncpy(cur->username, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
+        strncpy(cur->username, config_get_string(MODULE_NAME, buffer, 0, ""), 
+                MAX_USERNAME_LEN);
         cur->username[BUFSIZ-1] = 0;
 
         snprintf(buffer, BUFSIZ, "password%d", i);
-        strncpy(cur->password, config_get_string(MODULE_NAME, buffer, 0, ""), BUFSIZ);
+        strncpy(cur->password, config_get_string(MODULE_NAME, buffer, 0, ""),
+                MAX_PASSWORD_LEN);
         cur->password[BUFSIZ-1] = 0;
 
         snprintf(buffer, BUFSIZ, "name%d", i);
-        strncpy(cur->name, config_get_string(MODULE_NAME, buffer, 0, cur->server), BUFSIZ);
+        strncpy(cur->name, config_get_string(MODULE_NAME, buffer, 0, cur->server), 
+                MAX_NAME_LEN);
         cur->name[BUFSIZ-1] = 0;
 
         LL_AddNode(s_mailboxes, (void *)cur);
@@ -450,12 +458,19 @@ void *mail_run(void *cookie)
         }
     }
 
-    free_emails(s_email);
+    free_del_LL_contents(s_email);
     LL_Destroy(s_email);
+    free_del_LL_contents(s_mailboxes);
     LL_Destroy(s_mailboxes);
     lcd_finish(&s_lcd);
 
     return NULL;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+int main(int argc, char *argv[])
+{
+    return main_fun(argc, argv, mail_run);
 }
 
 /* vim: set ts=4 sw=4 et: */

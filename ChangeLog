@@ -1,3 +1,7 @@
+2006-02-19  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* rss: implemented
+
 2006-02-18  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mail: switch mails if screen is not shown so that it re-appears

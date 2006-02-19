@@ -21,5 +21,18 @@
 
 #define PRG_NAME            "lcd-stuff"
 
+#define MAX_LINE_LEN        80
+#define MAX_USERNAME_LEN    128
+#define MAX_PASSWORD_LEN    128
+#define MAX_NAME_LEN        16
+
+#define MAX_URL_LEN         1024
+
+#define MAX_CHARSET_LEN     32
+#define MAX_URL_LEN         1024
+
+/* this is really a CONSTANT */
+#define LINES               4
+
 #endif /* CONSTANTS_H */
 

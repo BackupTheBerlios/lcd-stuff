@@ -119,9 +119,9 @@ else
 fi
 AM_CONDITIONAL(SYLPHEED_LIBETPAN, test "x$libetpan_result" = "xyes")
 
-
-
-
+PKG_CHECK_MODULES(PACKAGE, [
+        mrss
+        ])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 

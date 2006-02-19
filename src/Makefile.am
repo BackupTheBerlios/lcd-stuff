@@ -1,11 +1,8 @@
-#
-# src/Makefile.am for tfbtf-shell
-#
 
 MAINTAINERCLEANFILES    = Makefile.in
-bin_PROGRAMS            = lcd-stuff
+bin_PROGRAMS            = lcd-stuff-mail lcd-stuff-rss
 
-lcd_stuff_SOURCES       =                               \
+lcd_stuff_mail_SOURCES       =                               \
     main.c                                              \
     main.h                                              \
     mail.c						\
@@ -15,8 +12,24 @@ lcd_stuff_SOURCES       =                               \
     constants.h						\
     global.h						\
     lcdlib.c						\
-    lcdlib.h
+    lcdlib.h						\
+    helpfunctions.h					\
+    helpfunctions.c
+
+lcd_stuff_rss_SOURCES       =                               \
+    main.c                                              \
+    main.h                                              \
+    constants.h						\
+    global.h						\
+    lcdlib.c						\
+    lcdlib.h						\
+    rss.h						\
+    rss.c						\
+    helpfunctions.h					\
+    helpfunctions.c
 
 
-lcd_stuff_LDADD = ../shared/libLCDstuff.a
+lcd_stuff_rss_LDADD = ../shared/libLCDstuff.a
+lcd_stuff_mail_LDADD = ../shared/libLCDstuff.a
 
+# vim: set sw=8 ts=8 noet:

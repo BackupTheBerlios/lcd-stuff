@@ -12,15 +12,30 @@
  *
  * ------------------------------------------------------------------------------------------------- 
  */
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef HELPFUNCTIONS_H
+#define HELPFUNCTIONS_H
 
-#include <stdbool.h>
-#include <pthread.h>
+#include <shared/LL.h>
 
-extern char g_lcdproc_server[1024];
-extern int  g_lcdproc_port;
-extern bool g_exit;
+#define max(a, b) (((a) < (b)) ? (b) : (a))
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 
-#endif /* MAIN_H */
+/**
+ * Converts text to Latin1 as required by lcdproc
+ *
+ * @param encoding the source encoding
+ * @param string the source string
+ * @param result the output result
+ * @param size the size of result
+ */
+void to_latin1(char *encoding, char *string, char *result, int size);
 
+/**
+ * Frees the contents in the list and deletes them from the list.
+ * Doesn't free the list itself.
+ *
+ * @param list the list
+ */
+void free_del_LL_contents(LinkedList *list);
+
+#endif /* HELPFUNCTIONS_H */

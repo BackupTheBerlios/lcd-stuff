@@ -25,6 +25,7 @@
 #include <shared/report.h>
 #include <shared/configfile.h>
 
+#include "rss.h"
 #include "constants.h"
 #include "mail.h"
 
@@ -32,7 +33,6 @@
 char            g_lcdproc_server[1024]         = DEFAULT_SERVER;
 int             g_lcdproc_port                 = DEFAULT_PORT;
 bool            g_exit                         = false;
-pthread_mutex_t g_mutex                        = PTHREAD_MUTEX_INITIALIZER;
 
 static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
 static int s_report_level           = RPT_ERR;
@@ -53,9 +53,10 @@ char g_help_text[] =
      "  -h\t\tShow this help\n";
 
 /* ========================= thread functions =================================================== */
-#define THREAD_NUMBER 1
+#define THREAD_NUMBER 2
 typedef void * (*start_routine)(void *);
 static start_routine s_thread_funcs[] = {
+    rss_run,
     mail_run
 };
 static pthread_t   s_threads[THREAD_NUMBER];
@@ -152,7 +153,7 @@ int parse_command_line(int argc, char *argv[])
 }
 
 /* --------------------------------------------------------------------------------------------- */
-int main(int argc, char *argv[])
+int main_fun(int argc, char *argv[], start_routine start)
 {
     int err;
     int i;
@@ -200,21 +201,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    /* start all threads */
-    for (i = 0; i < THREAD_NUMBER; i++)
-    {
-        if (pthread_create(&s_threads[i], NULL, s_thread_funcs[i], NULL) != 0)
-        {
-            report(RPT_ERR, "Error: Creating thread failed, errno = %d\n", errno);
-            return 1;
-        }
-    }
-
-    /* wait until the threads have been exited */
-    for (i = 0; i < THREAD_NUMBER; i++)
-    {
-        pthread_join(s_threads[i], NULL);
-    }
+    start(NULL);
 
     return 0;
 }

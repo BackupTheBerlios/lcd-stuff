@@ -12,15 +12,16 @@
  *
  * ------------------------------------------------------------------------------------------------- 
  */
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef RSS_H
+#define RSS_H
 
-#include <stdbool.h>
-#include <pthread.h>
+#include "mail.h"
 
-extern char g_lcdproc_server[1024];
-extern int  g_lcdproc_port;
-extern bool g_exit;
+/**
+ * Run function of the mail daemon.
+ */
+void *rss_run(void *cookie);
 
-#endif /* MAIN_H */
+#endif /* RSS_H */
 
+/* vim: set ts=4 sw=4 et: */
