@@ -22,7 +22,6 @@
 #include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
-#include <shared/LL.h>
 
 #include <libetpan/libetpan.h>
 
@@ -30,7 +29,6 @@
 #include "main.h"
 #include "constants.h"
 #include "global.h"
-#include "helpfunctions.h"
 #include "servicethread.h"
 #include "weatherlib.h" 
 
@@ -76,9 +74,9 @@ static void weather_update(void)
     if (retrieve_weather_data(s_city, &data) == 0)
     {
         line1 = g_strdup_printf("%s", data.weather);
-        line2 = g_strdup_printf("%d (%d) °C  %d hPa", 
-                                data.temp_c, data.temp_fl_c, (int)(data.pressure_hPa + 0.5));
-        line3 = g_strdup_printf("%d %%  %d km/h %s", 
+        line2 = g_strdup_printf("%dC (%dC)  %.1fhPa", 
+                                data.temp_c, data.temp_fl_c, data.pressure_hPa);
+        line3 = g_strdup_printf("%d%%  %dkm/h %s", 
                                 data.humid, data.wind_speed, data.wind_dir);
         update_screen(line1, line2, line3);
         g_free(line1);
@@ -133,6 +131,7 @@ void *weather_run(void *cookie)
     {
         return NULL;
     }
+    conf_dec_count();
 
     /* check mails instantly */
     next_check = time(NULL);

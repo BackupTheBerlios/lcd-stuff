@@ -40,8 +40,6 @@ void service_thread_register_client(struct client *client)
         return;
     }
 
-    while (!s_clients);
-    
     g_static_mutex_lock(&s_mutex);
     g_hash_table_insert(s_clients, client->name, client);
     g_static_mutex_unlock(&s_mutex);
@@ -55,8 +53,6 @@ void service_thread_unregister_client(const char *name)
         return;
     }
         
-    while (!s_clients);
-
     g_static_mutex_lock(&s_mutex);
     g_hash_table_remove(s_clients, name);
     g_static_mutex_unlock(&s_mutex);
@@ -114,9 +110,6 @@ void service_thread_command(const char *string, ...)
     va_start(ap, string);
     result = g_strdup_vprintf(string, ap);
     va_end(ap);
-
-    /* wait until async queue is created */
-    while (!s_command_queue);
 
     g_async_queue_push(s_command_queue, result);
 }
@@ -254,12 +247,16 @@ static int check_for_input(void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+void service_thread_init(void)
+{
+    s_command_queue = g_async_queue_new();
+    s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 gpointer service_thread_run(gpointer data)
 {
     int count = 0;
-
-    s_command_queue = g_async_queue_new();
-    s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
 
     while (!g_exit)
     {

@@ -63,6 +63,11 @@ void service_thread_unregister_client(const char *name);
  */
 void service_thread_command(const char *string, ...);
 
+/**
+ * Initialzies the service thread.
+ */
+void service_thread_init(void);
+
 
 #endif /* SERVICETHREAD_H */
 

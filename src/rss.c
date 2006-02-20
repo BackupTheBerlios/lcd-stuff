@@ -25,14 +25,12 @@
 #include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
-#include <shared/LL.h>
 
 #include <mrss.h>
 
 #include "rss.h"
 #include "main.h"
 #include "constants.h"
-#include "helpfunctions.h"
 #include "global.h"
 #include "servicethread.h"
 
@@ -42,28 +40,26 @@ static void rss_key_handler(const char *str);
 
 /* ---------------------- constants ------------------------------------------------------------ */
 #define MODULE_NAME           "rss"
-#define HEADLINE_LEN          128
 
 /* ---------------------- types ---------------------------------------------------------------- */
 struct rss_feed 
 {
-    char url[MAX_URL_LEN];
-    char name[MAX_NAME_LEN];
+    char *url;
+    char *name;
     int  items;
 };
 
 struct newsitem
 {
     char *site;
-    char headline[HEADLINE_LEN];
+    char *headline;
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
 static int         s_interval;
-static LinkedList  *s_feeds;
-static LinkedList  *s_news;
+static GPtrArray   *s_feeds;
+static GList       *s_news          = NULL;
 static int         s_current_screen = 0;
-static int         s_total_news = 0;
 struct client      rss_client = 
                    {
                        .name            = MODULE_NAME,
@@ -94,24 +90,26 @@ static void update_screen(const char *line1, const char *line2, const char *line
 /* --------------------------------------------------------------------------------------------- */
 static void update_screen_news(void)
 {
-    int i;
+    int     i;
+    int     tot             = g_list_length(s_news);
 
     if (s_current_screen < 0)
     {
-        s_current_screen = s_total_news - 1;
+        s_current_screen = tot - 1;
     }
-    else if (s_current_screen >= s_total_news)
+    else if (s_current_screen >= tot)
     {
         s_current_screen = 0;
     }
 
-    if (s_total_news != 0)
+    if (tot != 0)
     {
+        GList *cur = g_list_first(s_news);
         i = 0;
-        LL_Rewind(s_news);
-        do
+
+        while (cur)
         {
-            struct newsitem *item = (struct newsitem *)LL_Get(s_news);
+            struct newsitem *item = (struct newsitem *)cur->data;
             if (!item)
             {
                 break;
@@ -137,25 +135,41 @@ static void update_screen_news(void)
                 }
                 break;
             }
-        } while (LL_Next(s_news) == 0);
+
+            cur = cur->next;
+        }
     }
 }
 
 /* --------------------------------------------------------------------------------------------- */
+void free_news(void)
+{
+    GList *cur = g_list_first(s_news);
+    while (cur)
+    {
+        struct newsitem *item = (struct newsitem *)cur->data;
+        free(item->headline);
+        free(cur->data);
+        cur = cur->next;
+    }
+    g_list_free(s_news);
+    s_news = NULL;
+}
+
+
+/* --------------------------------------------------------------------------------------------- */
 static void rss_check(void)
 {
-    LL_Rewind(s_feeds);
+    int nf;
 
-    s_total_news = 0;
     s_current_screen = 0;
 
     /* free old mail */
-    free_del_LL_contents(s_news);
+    free_news();
 
-    LL_Rewind(s_news);
-    do 
+    for (nf = 0; nf < s_feeds->len; nf++)
     {
-        struct rss_feed           *feed       = (struct rss_feed *)LL_Get(s_feeds);
+        struct rss_feed           *feed       = g_ptr_array_index(s_feeds, nf);
         mrss_error_t              err_read;
         mrss_t                    *data_cur = NULL;
         mrss_item_t               *item_cur = NULL;
@@ -178,6 +192,8 @@ static void rss_check(void)
         item_cur = data_cur->item;
         while(item_cur && i++ < feed->items)
         {
+            gsize written;
+
             /* create a new newsitem */
             struct newsitem *newsitem = (struct newsitem *)malloc(sizeof(struct newsitem));
             if (!newsitem)
@@ -186,23 +202,22 @@ static void rss_check(void)
                 goto end_loop;
             }
 
-            to_latin1(data_cur->encoding, item_cur->title, 
-                      newsitem->headline, HEADLINE_LEN);
+            newsitem->headline = g_convert(item_cur->title, -1, "ISO-8859-1",
+                                           data_cur->encoding, NULL, &written, NULL);
+            if (!newsitem->headline)
+            {
+                newsitem->headline = g_strdup("");
+            }
             
             newsitem->site = feed->name;
-                    
 
+            s_news = g_list_append(s_news, newsitem);
             item_cur = item_cur->next;
-
-            LL_InsertNode(s_news, newsitem);
-            s_total_news ++;
         }
 
 end_loop:
         CALL_IF_VALID(data_cur, mrss_free);
     }
-    while (LL_Next(s_feeds) == 0);
-
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -231,26 +246,10 @@ static bool rss_init(void)
 {
     int      i;
     int      number_of_feeds;
-    char     buffer[BUFSIZ];
+    char     *tmp;
 
     /* register client */
     service_thread_register_client(&rss_client);
-
-    /* create the linked list of mailboxes */
-    s_news = LL_new();
-    if (!s_news)
-    {
-        report(RPT_ERR, MODULE_NAME ": Could not create s_news: Of ouf memory");
-        return false;
-    }
-
-    /* and of emails */
-    s_feeds = LL_new();
-    if (!s_feeds)
-    {
-        report(RPT_ERR, MODULE_NAME ": Could not create s_feeds: Of ouf memory");
-        return false;
-    }
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -281,6 +280,9 @@ static bool rss_init(void)
         return false;
     }
 
+    /* create the linked list of mailboxes */
+    s_feeds = g_ptr_array_sized_new(number_of_feeds);
+
     /* process the mailboxes */
     for (i = 1; i <= number_of_feeds; i++)
     {
@@ -291,18 +293,19 @@ static bool rss_init(void)
             return false;
         }
 
-        snprintf(buffer, BUFSIZ, "url%d", i);
-        strncpy(cur->url, config_get_string(MODULE_NAME, buffer, 0, ""), MAX_URL_LEN);
-        cur->url[MAX_URL_LEN-1] = 0;
+        tmp = g_strdup_printf("url%d", i);
+        cur->url = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
 
-        snprintf(buffer, BUFSIZ, "name%d", i);
-        strncpy(cur->name, config_get_string(MODULE_NAME, buffer, 0, ""), MAX_NAME_LEN);
-        cur->name[MAX_NAME_LEN-1] = 0;
+        tmp = g_strdup_printf("name%d", i);
+        cur->name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
 
-        snprintf(buffer, BUFSIZ, "items%d", i);
-        cur->items = config_get_int(MODULE_NAME, buffer, 0, 0);
+        tmp = g_strdup_printf("items%d", i);
+        cur->items = config_get_int(MODULE_NAME, tmp, 0, 0);
+        g_free(tmp);
 
-        LL_AddNode(s_feeds, (void *)cur);
+        g_ptr_array_add(s_feeds, cur);
     }
 
     return true;
@@ -311,6 +314,7 @@ static bool rss_init(void)
 /* --------------------------------------------------------------------------------------------- */
 void *rss_run(void *cookie)
 {
+    int     i;
     time_t  next_check;
     int     result;
 
@@ -325,6 +329,7 @@ void *rss_run(void *cookie)
     {
         return NULL;
     }
+    conf_dec_count();
 
     /* check mails instantly */
     next_check = time(NULL);
@@ -344,10 +349,17 @@ void *rss_run(void *cookie)
     }
 
     service_thread_unregister_client(MODULE_NAME);
-    free_del_LL_contents(s_feeds);
-    LL_Destroy(s_feeds);
-    free_del_LL_contents(s_news);
-    LL_Destroy(s_news);
+
+    for (i = 0; i < s_feeds->len; i++)
+    {
+        struct rss_feed *cur = (struct rss_feed *)g_ptr_array_index(s_feeds, i);
+        g_free(cur->url);
+        g_free(cur->name);
+        free(cur);
+    }
+    g_ptr_array_free(s_feeds, true);
+    
+    free_news();
 
     return NULL;
 }

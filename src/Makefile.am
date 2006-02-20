@@ -3,8 +3,6 @@ MAINTAINERCLEANFILES    = Makefile.in
 bin_PROGRAMS            = lcd-stuff 
 
 lcd_stuff_SOURCES       =                               \
-    helpfunctions.h					\
-    helpfunctions.c					\
     servicethread.c					\
     servicethread.h					\
     main.c                                              \

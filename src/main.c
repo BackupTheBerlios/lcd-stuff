@@ -31,21 +31,30 @@
 #include "constants.h"
 #include "mail.h"
 #include "weather.h"
-#include "helpfunctions.h"
 #include "servicethread.h"
+#include "global.h"
 
 /* ========================= global variables =================================================== */
-char  *g_lcdproc_server       = DEFAULT_SERVER;
-int   g_lcdproc_port          = DEFAULT_PORT;
-bool  g_exit                  = false;
-int   g_socket                = 0;
-int   g_display_width         = 0;
+char           *g_lcdproc_server       = DEFAULT_SERVER;
+int            g_lcdproc_port          = DEFAULT_PORT;
+volatile bool  g_exit                  = false;
+int            g_socket                = 0;
+int            g_display_width         = 0;
+
+/* ========================= thread functions =================================================== */
+#define THREAD_NUMBER 3
+static GThreadFunc s_thread_funcs[] = {
+    rss_run,
+    mail_run,
+    weather_run
+};
 
 /* ========================= static variables =================================================== */
 static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
 static int s_report_level           = RPT_ERR;
 static int s_report_dest            = RPT_DEST_STDERR;
 static int s_foreground_mode        = -1;
+static int s_refcount_conf          = THREAD_NUMBER;
 static char g_help_text[] =
      "lcd-stuff - Mail, RSS on a display\n"
      "Copyright (c) 2006 Bernhard Walle\n"
@@ -60,13 +69,6 @@ static char g_help_text[] =
      "  -s <0|1>\tReport to syslog (1) or stderr (0, default)\n"
      "  -h\t\tShow this help\n";
 
-/* ========================= thread functions =================================================== */
-#define THREAD_NUMBER 3
-static GThreadFunc s_thread_funcs[] = {
-    rss_run,
-    mail_run,
-    weather_run
-};
 
 
 /* --------------------------------------------------------------------------------------------- */
@@ -157,6 +159,15 @@ int parse_command_line(int argc, char *argv[])
         }
     }
     return error;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+void conf_dec_count(void)
+{
+    if (g_atomic_int_dec_and_test(&s_refcount_conf))
+    {
+        config_clear();
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -288,10 +299,12 @@ int main(int argc, char *argv[])
         }
     }
 
+    service_thread_init();
+
     /* create the threads */
     for (i = 0; i < THREAD_NUMBER; i++)
     {
-        threads[i] = g_thread_create(s_thread_funcs[i], NULL, true, NULL);
+        threads[i] = g_thread_create(s_thread_funcs[i], NULL, false, NULL);
         if (!threads[i])
         {
             report(RPT_ERR, "Thread creation (%d) failed", i);
@@ -300,17 +313,7 @@ int main(int argc, char *argv[])
 
     service_thread_run(NULL);
 
-    /* join the threads */
-    for (i = 0; i < THREAD_NUMBER; i++)
-    {
-        if (threads[i])
-        {
-            g_thread_join(threads[i]);
-        }
-    }
-
     sock_close(g_socket);
-    config_clear();
 
     return 0;
 }

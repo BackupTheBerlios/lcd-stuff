@@ -22,7 +22,6 @@
 #include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
-#include <shared/LL.h>
 
 #include <libetpan/libetpan.h>
 
@@ -31,7 +30,6 @@
 #include "constants.h"
 #include "maillib.h"
 #include "global.h"
-#include "helpfunctions.h"
 #include "servicethread.h"
 
 /* ---------------------- forward declarations ------------------------------------------------- */
@@ -44,13 +42,13 @@ static void mail_key_handler(const char *str);
 /* ---------------------- types ---------------------------------------------------------------- */
 struct mailbox 
 {
-    char server[BUFSIZ];
-    char username[MAX_USERNAME_LEN];
-    char password[MAX_PASSWORD_LEN];
-    char name[MAX_NAME_LEN];
-    unsigned int  messages_seen;
-    unsigned int  messages_unseen;
-    unsigned int  messages_total;
+    char            *server;
+    char            *username;
+    char            *password;
+    char            *name;
+    unsigned int    messages_seen;
+    unsigned int    messages_unseen;
+    unsigned int    messages_total;
 };
 
 struct email
@@ -60,18 +58,17 @@ struct email
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
-static int          s_interval;
-static LinkedList   *s_mailboxes;
-static LinkedList   *s_email;
-static int          s_current_screen = 0;
-static int          s_total_messages = 0;
-struct client       mail_client = 
-                    {
-                        .name            = MODULE_NAME,
-                        .key_callback    = mail_key_handler,
-                        .listen_callback = NULL,
-                        .ignore_callback = mail_ignore_handler
-                    }; 
+static int              s_interval;
+static GPtrArray        *s_mailboxes;
+static GList            *s_email         = NULL;
+static int              s_current_screen = 0;
+struct client           mail_client = 
+                        {
+                            .name            = MODULE_NAME,
+                            .key_callback    = mail_key_handler,
+                            .listen_callback = NULL,
+                            .ignore_callback = mail_ignore_handler
+                        }; 
 
 /* --------------------------------------------------------------------------------------------- */
 static void update_screen(const char *line1, const char *line2, const char *line3)
@@ -95,43 +92,45 @@ static void update_screen(const char *line1, const char *line2, const char *line
 /* --------------------------------------------------------------------------------------------- */
 static void show_screen(void)
 {
-    char    line1[MAX_LINE_LEN] = "";
+    int     tot             = g_list_length(s_email);
+    char    *line1          = NULL;
+    char    *line1_old      = NULL;
     char    *line2          = NULL;
     char    *line3          = NULL;
-    char    buffer[BUFSIZ];
     int     i;
 
     /* build the first line */
-    LL_Rewind(s_mailboxes);
-    do
+    for (i = 0; i < s_mailboxes->len; i++)
     {
-        struct mailbox *box = (struct mailbox *)LL_Get(s_mailboxes);
-        if (!box)
-        {
-            break;
-        }
+        struct mailbox *box = g_ptr_array_index(s_mailboxes, i);
 
-        snprintf(buffer, BUFSIZ, "%s:%d ", box->name, box->messages_total);
-        strncat(line1, buffer, MAX_LINE_LEN);
-    } while (LL_Next(s_mailboxes) == 0);
+        line1_old = line1 ? line1 : "";
+        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, box->messages_total);
+
+        if (i != 0)
+        {
+            g_free(line1_old);
+        }
+    }
 
     if (s_current_screen < 0)
     {
-        s_current_screen = s_total_messages - 1;
+        s_current_screen = tot - 1;
     }
-    else if (s_current_screen >= s_total_messages)
+    else if (s_current_screen >= tot)
     {
         s_current_screen = 0;
     }
 
-    if (s_total_messages != 0)
+    if (tot != 0)
     {
+        GList *cur = g_list_first(s_email);
+
         /* build the second line */
         i = 0;
-        LL_Rewind(s_email);
-        do
+        while (cur)
         {
-            struct email *mail = (struct email *)LL_Get(s_email);
+            struct email *mail = (struct email *)cur->data;
             if (!mail)
             {
                 break;
@@ -143,28 +142,41 @@ static void show_screen(void)
                 line3 = mail->subject;
                 break;
             }
-        } while (LL_Next(s_email) == 0);
+            cur = cur->next;
+        }
     }
 
     update_screen(line1, line2 ? line2 : "", line3 ? line3 : "");
+    g_free(line1);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+void free_emails(void)
+{
+    GList *cur = g_list_first(s_email);
+    while (cur)
+    {
+        free(cur->data);
+        cur = cur->next;
+    }
+    g_list_free(s_email);
+    s_email = NULL;
 }
 
 
 /* --------------------------------------------------------------------------------------------- */
 static void mail_check(void)
 {
-    LL_Rewind(s_mailboxes);
+    int mb;
 
-    s_total_messages = 0;
     s_current_screen = 0;
 
     /* free old mail */
-    free_del_LL_contents(s_email);
+    free_emails();
 
-    LL_Rewind(s_email);
-    do 
+    for (mb = 0; mb < s_mailboxes->len; mb++)
     {
-        struct mailbox           *box       = (struct mailbox *)LL_Get(s_mailboxes);
+        struct mailbox           *box       = g_ptr_array_index(s_mailboxes, mb);
         struct mailfolder        *folder    = NULL;
         struct mailmessage_list  *messages  = NULL;
         struct mailmessage       *message   = NULL;
@@ -261,19 +273,16 @@ static void mail_check(void)
                 switch (field->fld_type) 
                 {
                       case MAILIMF_FIELD_FROM:
-                          display_from(field->fld_data.fld_from, mail->from, 
-                                       MAX_LINE_LEN);
+                          display_from(field->fld_data.fld_from, mail->from, MAX_LINE_LEN);
                           break;
 
                       case MAILIMF_FIELD_SUBJECT:
-                          display_subject(field->fld_data.fld_subject, mail->subject, 
-                                          MAX_LINE_LEN);
+                          display_subject(field->fld_data.fld_subject, mail->subject, MAX_LINE_LEN);
                           break;
                 }
             }
 
-            s_total_messages++;
-            LL_InsertNode(s_email, mail);
+            s_email = g_list_append(s_email, mail);
             CALL_IF_VALID(hdr, mailimf_fields_free);
         }
 
@@ -283,7 +292,6 @@ end_loop:
         CALL_IF_VALID(folder, mailfolder_free);
         CALL_IF_VALID(storage, mailstorage_free);
     }
-    while (LL_Next(s_mailboxes) == 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -310,28 +318,12 @@ static void mail_ignore_handler(void)
 /* --------------------------------------------------------------------------------------------- */
 static bool mail_init(void)
 {
-    int i;
-    int number_of_mailboxes;
-    char buffer[BUFSIZ];
+    int        i;
+    int        number_of_mailboxes;
+    char       *tmp;
 
     /* register client */
     service_thread_register_client(&mail_client);
-
-    /* create the linked list of mailboxes */
-    s_mailboxes = LL_new();
-    if (!s_mailboxes)
-    {
-        report(RPT_ERR, MODULE_NAME ": Could not create mailbox: Of ouf memory");
-        return false;
-    }
-
-    /* and of emails */
-    s_email = LL_new();
-    if (!s_email)
-    {
-        report(RPT_ERR, MODULE_NAME ": Could not create email: Of ouf memory");
-        return false;
-    }
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -362,37 +354,36 @@ static bool mail_init(void)
         return false;
     }
 
+    /* create the linked list of mailboxes */
+    s_mailboxes = g_ptr_array_sized_new(number_of_mailboxes);
+
     /* process the mailboxes */
     for (i = 1; i <= number_of_mailboxes; i++)
     {
-        struct mailbox *cur = malloc(sizeof(struct mailbox));
+        struct mailbox *cur = (struct mailbox *)malloc(sizeof(struct mailbox));
         if (!cur)
         {
-            report(RPT_ERR, MODULE_NAME ": Out of memory");
+            report(RPT_ERR, MODULE_NAME ": Could not create mailbox: Of ouf memory");
             return false;
         }
 
-        snprintf(buffer, BUFSIZ, "server%d", i);
-        strncpy(cur->server, config_get_string(MODULE_NAME, buffer, 0, ""), 
-                BUFSIZ);
-        cur->server[BUFSIZ-1] = 0;
+        tmp = g_strdup_printf("server%d", i);
+        cur->server = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
 
-        snprintf(buffer, BUFSIZ, "user%d", i);
-        strncpy(cur->username, config_get_string(MODULE_NAME, buffer, 0, ""), 
-                MAX_USERNAME_LEN);
-        cur->username[BUFSIZ-1] = 0;
+        tmp = g_strdup_printf("user%d", i);
+        cur->username = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
 
-        snprintf(buffer, BUFSIZ, "password%d", i);
-        strncpy(cur->password, config_get_string(MODULE_NAME, buffer, 0, ""),
-                MAX_PASSWORD_LEN);
-        cur->password[BUFSIZ-1] = 0;
+        tmp = g_strdup_printf("password%d", i);
+        cur->password = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
 
-        snprintf(buffer, BUFSIZ, "name%d", i);
-        strncpy(cur->name, config_get_string(MODULE_NAME, buffer, 0, cur->server), 
-                MAX_NAME_LEN);
-        cur->name[BUFSIZ-1] = 0;
+        tmp = g_strdup_printf("name%d", i);
+        cur->name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, cur->server));
+        g_free(tmp);
 
-        LL_AddNode(s_mailboxes, (void *)cur);
+        g_ptr_array_add(s_mailboxes, cur);
     }
 
     return true;
@@ -401,6 +392,7 @@ static bool mail_init(void)
 /* --------------------------------------------------------------------------------------------- */
 void *mail_run(void *cookie)
 {
+    int     i;
     time_t  next_check;
     int     result;
 
@@ -415,6 +407,7 @@ void *mail_run(void *cookie)
     {
         return NULL;
     }
+    conf_dec_count();
 
     /* check mails instantly */
     next_check = time(NULL);
@@ -434,10 +427,18 @@ void *mail_run(void *cookie)
     }
 
     service_thread_unregister_client(MODULE_NAME);
-    free_del_LL_contents(s_email);
-    LL_Destroy(s_email);
-    free_del_LL_contents(s_mailboxes);
-    LL_Destroy(s_mailboxes);
+    free_emails();
+
+    for (i = 0; i < s_mailboxes->len; i++)
+    {
+        struct mailbox *cur = (struct mailbox *)g_ptr_array_index(s_mailboxes, i);
+        g_free(cur->server);
+        g_free(cur->username);
+        g_free(cur->password);
+        g_free(cur->name);
+        free(cur);
+    }
+    g_ptr_array_free(s_mailboxes, true);
 
     return NULL;
 }

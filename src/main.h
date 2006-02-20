@@ -18,11 +18,14 @@
 #include <stdbool.h>
 #include <pthread.h>
 
-extern char g_lcdproc_server[1024];
-extern int  g_lcdproc_port;
-extern bool g_exit;
-extern int  g_socket;
-extern int  g_display_width;
+extern char          g_lcdproc_server[1024];
+extern int           g_lcdproc_port;
+extern volatile bool g_exit;
+extern int           g_socket;
+extern int           g_display_width;
+
+
+void conf_dec_count(void);
 
 #endif /* MAIN_H */
 
