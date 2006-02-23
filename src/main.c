@@ -33,6 +33,7 @@
 #include "weather.h"
 #include "servicethread.h"
 #include "global.h"
+#include "mpd.h" 
 
 /* ========================= global variables =================================================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
@@ -42,11 +43,12 @@ int            g_socket                = 0;
 int            g_display_width         = 0;
 
 /* ========================= thread functions =================================================== */
-#define THREAD_NUMBER 3
+#define THREAD_NUMBER 4
 static GThreadFunc s_thread_funcs[] = {
     rss_run,
     mail_run,
-    weather_run
+    weather_run,
+    mpd_run
 };
 
 /* ========================= static variables =================================================== */

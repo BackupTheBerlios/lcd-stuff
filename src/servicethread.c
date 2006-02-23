@@ -31,6 +31,7 @@ static GAsyncQueue   *s_command_queue = NULL;
 static GHashTable    *s_clients       = NULL;
 static struct client *s_current       = NULL;
 static GStaticMutex  s_mutex          = G_STATIC_MUTEX_INIT;
+static int           s_client_number  = 0;
 
 /* --------------------------------------------------------------------------------------------- */
 void service_thread_register_client(struct client *client)
@@ -43,6 +44,8 @@ void service_thread_register_client(struct client *client)
     g_static_mutex_lock(&s_mutex);
     g_hash_table_insert(s_clients, client->name, client);
     g_static_mutex_unlock(&s_mutex);
+
+    g_atomic_int_inc(&s_client_number);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -56,6 +59,11 @@ void service_thread_unregister_client(const char *name)
     g_static_mutex_lock(&s_mutex);
     g_hash_table_remove(s_clients, name);
     g_static_mutex_unlock(&s_mutex);
+
+    if (g_atomic_int_dec_and_test(&s_client_number))
+    {
+        g_exit = true;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

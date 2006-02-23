@@ -53,8 +53,10 @@ struct mailbox
 
 struct email
 {
-    char subject[MAX_LINE_LEN];
-    char from[MAX_LINE_LEN];
+    struct mailbox  *box;
+    int             message_number_in_box;
+    char            subject[MAX_LINE_LEN];
+    char            from[MAX_LINE_LEN];
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
@@ -62,6 +64,7 @@ static int              s_interval;
 static GPtrArray        *s_mailboxes;
 static GList            *s_email         = NULL;
 static int              s_current_screen = 0;
+static char             *s_title_prefix  = NULL;
 struct client           mail_client = 
                         {
                             .name            = MODULE_NAME,
@@ -71,8 +74,17 @@ struct client           mail_client =
                         }; 
 
 /* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *line1, const char *line2, const char *line3)
+static void update_screen(const char *title, 
+                          const char *line1, 
+                          const char *line2, 
+                          const char *line3)
 {
+    if (title)
+    {
+        service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME, 
+                s_title_prefix, title);
+    }
+
     if (line1)
     {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
@@ -97,6 +109,7 @@ static void show_screen(void)
     char    *line1_old      = NULL;
     char    *line2          = NULL;
     char    *line3          = NULL;
+    char    *title          = NULL;
     int     i;
 
     /* build the first line */
@@ -140,13 +153,16 @@ static void show_screen(void)
             {
                 line2 = mail->from;
                 line3 = mail->subject;
+                title = g_strdup_printf("%s %d", mail->box->name,
+                                        mail->message_number_in_box);
                 break;
             }
             cur = cur->next;
         }
     }
 
-    update_screen(line1, line2 ? line2 : "", line3 ? line3 : "");
+    update_screen(title, line1, line2 ? line2 : "", line3 ? line3 : "");
+    g_free(title);
     g_free(line1);
 }
 
@@ -188,7 +204,7 @@ static void mail_check(void)
             break;
         }
 
-        update_screen("Receiving", box->name, "");
+        update_screen(box->name, "", "  Receiving ...", "");
 
         storage = mailstorage_new(NULL);
         if (!storage) 
@@ -282,6 +298,8 @@ static void mail_check(void)
                 }
             }
 
+            mail->message_number_in_box = i + 1;
+            mail->box = box;
             s_email = g_list_append(s_email, mail);
             CALL_IF_VALID(hdr, mailimf_fields_free);
         }
@@ -332,8 +350,7 @@ static bool mail_init(void)
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    service_thread_command("widget_set %s title %s\n", 
-                          MODULE_NAME, config_get_string(MODULE_NAME, "name", 0, "Mail"));
+    s_title_prefix = g_strdup(config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");
@@ -439,6 +456,7 @@ void *mail_run(void *cookie)
         free(cur);
     }
     g_ptr_array_free(s_mailboxes, true);
+    g_free(s_title_prefix);
 
     return NULL;
 }

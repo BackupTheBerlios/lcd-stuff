@@ -69,8 +69,16 @@ struct client      rss_client =
                    }; 
 
 /* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *line1, const char *line2, const char *line3)
+static void update_screen(const char *title, 
+                          const char *line1, 
+                          const char *line2, 
+                          const char *line3)
 {
+    if (title)
+    {
+        service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
+    }
+
     if (line1)
     {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
@@ -122,9 +130,11 @@ static void update_screen_news(void)
                 char text[MAX_LINE_LEN * LINES];
 
                 memset(text, 0, MAX_LINE_LEN);
-                snprintf(text, MAX_LINE_LEN * LINES, "%s: %s", 
-                         item->site, item->headline);
+                snprintf(text, MAX_LINE_LEN * LINES, "%s", item->headline);
                 text[MAX_LINE_LEN * LINES - 1] = 0;
+
+                service_thread_command("widget_set %s title {%s}\n", 
+                        MODULE_NAME,  item->site);
 
                 for (cur_line = 0; cur_line < (LINES-1); cur_line++)
                 {
@@ -180,7 +190,7 @@ static void rss_check(void)
             break;
         }
 
-        update_screen("Receiving", feed->name, "");
+        update_screen(feed->name, "", "  Receiving ...", "");
         
         err_read = mrss_parse_url(feed->url, &data_cur);
 		if (err_read != MRSS_OK)
@@ -253,13 +263,9 @@ static bool rss_init(void)
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
-    service_thread_command("screen_set %s -name %s\n", MODULE_NAME,
-                                   config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    service_thread_command("widget_set %s title %s\n", 
-                                   MODULE_NAME, config_get_string(MODULE_NAME, "name", 0, "Mail"));
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");
@@ -337,7 +343,7 @@ void *rss_run(void *cookie)
     /* dispatcher */
     while (!g_exit)
     {
-        g_usleep(100000);
+        g_usleep(1000000);
 
         /* check emails? */
         if (time(NULL) > next_check)

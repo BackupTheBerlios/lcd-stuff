@@ -18,7 +18,9 @@ lcd_stuff_SOURCES       =                               \
     weather.c						\
     weather.h						\
     weatherlib.c					\
-    weatherlib.h
+    weatherlib.h					\
+    mpd.c						\
+    mpd.h
 
 lcd_stuff_LDADD = ../shared/libLCDstuff.a
 

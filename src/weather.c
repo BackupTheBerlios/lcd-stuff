@@ -123,7 +123,7 @@ void *weather_run(void *cookie)
     result = config_has_section(MODULE_NAME);
     if (!result)
     {
-        report(RPT_INFO, "mail disabled");
+        report(RPT_INFO, "weather disabled");
         return NULL;
     }
 

@@ -123,6 +123,7 @@ PKG_CHECK_MODULES(PACKAGE, [
         mrss
         glib-2.0
         gthread-2.0
+        libmpd-0.01
         ])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
