@@ -81,8 +81,16 @@ static void update_screen(const char *title,
 {
     if (title)
     {
-        service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME, 
-                s_title_prefix, title);
+        if (strlen(title) > 0)
+        {
+            service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME, 
+                    s_title_prefix, title);
+        }
+        else
+        {
+            service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
+                    s_title_prefix);
+        }
     }
 
     if (line1)
@@ -159,6 +167,11 @@ static void show_screen(void)
             }
             cur = cur->next;
         }
+    }
+
+    if (!title)
+    {
+        title = g_strdup("");
     }
 
     update_screen(title, line1, line2 ? line2 : "", line3 ? line3 : "");

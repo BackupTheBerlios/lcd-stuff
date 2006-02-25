@@ -1,3 +1,7 @@
+2006-02-25  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mail: correct title if both mailboxes are empty
+
 2006-02-23  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: implemented
