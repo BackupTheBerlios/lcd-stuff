@@ -36,6 +36,7 @@
 
 /* ---------------------- forward declarations ------------------------------------------------- */
 static void mpd_key_handler(const char *str);
+static void mpd_menu_handler(const char *event, const char *id, const char *arg);
 
 /* ---------------------- constants ------------------------------------------------------------ */
 #define MODULE_NAME           "mpd"
@@ -46,13 +47,115 @@ static void mpd_key_handler(const char *str);
 static MpdObj      *s_mpd;
 static int         s_error          = 0;
 static int         s_current_state  = 0;
+static GPtrArray   *s_current_list  = NULL;
 struct client      mpd_client = 
                    {
                        .name            = MODULE_NAME,
                        .key_callback    = mpd_key_handler,
                        .listen_callback = NULL,
-                       .ignore_callback = NULL
+                       .ignore_callback = NULL,
+                       .menu_callback   = mpd_menu_handler
                    };
+
+/* --------------------------------------------------------------------------------------------- */
+void mpd_free_playlist(GPtrArray *playlist)
+{
+    int i;
+
+    for (i = 0; i < playlist->len; i++)
+    {
+        g_free(playlist->pdata[i]);
+    }
+
+    g_ptr_array_free(playlist, true);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+GPtrArray *mpd_get_playlists(void)
+{
+    MpdData     *data;
+    GPtrArray   *array;
+
+    array = g_ptr_array_new();
+
+    data = mpd_ob_playlist_get_directory(s_mpd, "/");
+
+    while (data)
+    {
+        if (data->type == MPD_DATA_TYPE_PLAYLIST)
+        {
+            g_ptr_array_add(array, g_path_get_basename(data->value.playlist));
+        }
+        
+        data = mpd_ob_data_get_next(data);
+    }
+
+    mpd_ob_free_data_ob(data);
+
+    return array;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
+{
+    int i;
+
+    if (a->len != b->len)
+    {
+        return false;
+    }
+
+    for (i = 0; i < a->len; i++)
+    {
+        if (strcmp((char *)a->pdata[i], (char *)b->pdata[i]) != 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+void mpd_update_playlist_menu(void)
+{
+    bool add = false;
+    int i;
+
+    GPtrArray *old, *new;
+    
+    old = s_current_list;
+    new = mpd_get_playlists();
+
+    /* if no old playlist, simply add the whole playlist */
+    if (!old)
+    {
+        add = true;
+    }
+    else if (!mpd_playlists_equals(old, new))
+    {
+        service_thread_command("menu_del_item \"\" mpd_pl\n");
+        add = true;
+    }
+
+    if (add)
+    {
+        service_thread_command("menu_add_item \"\" mpd_pl menu {Playlists}\n");
+        service_thread_command("menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
+                "== Clear ==");
+
+        for (i = 0; i < new->len; i++)
+        {
+            service_thread_command("menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
+                    i + 1, (char *)new->pdata[i]);
+        }
+    }
+
+    s_current_list = new;
+    CALL_IF_VALID(old, mpd_free_playlist);
+}
+
+
 
 /* --------------------------------------------------------------------------------------------- */
 static void mpd_key_handler(const char *str)
@@ -66,7 +169,6 @@ static void mpd_key_handler(const char *str)
         }
         else
         {
-            printf("stop\n");
             mpd_ob_player_stop(s_mpd);
         }
     }
@@ -84,9 +186,48 @@ static void mpd_key_handler(const char *str)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+static void mpd_menu_handler(const char *event, const char *id, const char *arg)
+{
+    char **ids;
+
+    if (strlen(id) == 0)
+    {
+        return;
+    }
+
+    ids = g_strsplit(id, "_", 2);
+
+    if ((strcmp(ids[0], "pl") == 0) && (ids[1] != NULL))
+    {
+        int no = atoi(ids[1]) - 1;
+
+        if (no == -1)
+        {
+            mpd_ob_playlist_clear(s_mpd);
+            mpd_ob_playlist_queue_commit(s_mpd);
+        }
+        else if (s_current_list && (no < s_current_list->len))
+        {
+            char *list;
+            list = g_strconcat( s_current_list->pdata[no], NULL);
+            mpd_ob_playlist_queue_load(s_mpd, list);
+            mpd_ob_playlist_queue_commit(s_mpd);
+
+            if (s_current_state != MPD_OB_PLAYER_PLAY)
+            {
+                mpd_ob_player_play(s_mpd);
+            }
+            
+            g_free(list);
+        }
+    }
+
+    g_strfreev(ids);
+}
+
+/* --------------------------------------------------------------------------------------------- */
 static void *mpd_error_handler(MpdObj *mpd, int id, char *msg, void *ptr)
 {
-    s_error = true;
     report(RPT_ERR, "MPD Error: %s", msg);
 
     return NULL;
@@ -175,6 +316,9 @@ static void *mpd_state_changed_handler(MpdObj *mi, int old, int new, void *point
         case MPD_OB_PLAYER_PLAY:
             mpd_song_changed_handler(mi, 0, 0, NULL);
             return NULL;
+        default:
+            str = "";
+            break;
     }
 
     service_thread_command("widget_set %s line1 1 2 {}\n", MODULE_NAME);
@@ -295,10 +439,19 @@ void *mpd_run(void *cookie)
         mpd_ob_status_queue_update(s_mpd);
         mpd_ob_status_check(s_mpd);
         mpd_update_status_time();
+
+        /* check playlists ? */
+        if (time(NULL) > next_check)
+        {
+            mpd_update_playlist_menu();
+            next_check = time(NULL) + 60;
+        }
+        
     }
 
 out:
     CALL_IF_VALID(s_mpd, mpd_ob_free);
+    CALL_IF_VALID(s_current_list, mpd_free_playlist);
     service_thread_unregister_client(MODULE_NAME);
     
     return NULL;

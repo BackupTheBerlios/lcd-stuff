@@ -20,6 +20,7 @@
 typedef void (*key_callback_fun) (const char *);
 typedef void (*listen_callback_fun) (void);
 typedef void (*ignore_callback_fun) (void);
+typedef void (*menu_callback_fun) (const char *, const char *, const char *);
 
 
 /**
@@ -35,6 +36,7 @@ struct client
                                                          display */
     ignore_callback_fun         ignore_callback;    /**< the callback function if the
                                                          client gets hidden on the display */
+    menu_callback_fun           menu_callback;      /**< the callback function for menu events */
 };
 
 /**

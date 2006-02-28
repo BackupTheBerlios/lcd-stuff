@@ -174,6 +174,30 @@ static ProcessResponse lcd_process_response(char *string)
         report(RPT_ERR, "Error: %s\n", argv[1]);
         return PR_FAILURE;
     }
+    else if (strcmp(argv[0], "menuevent") == 0)
+    {
+        char **id;
+        struct client *client;
+        gpointer param;
+        bool found = false;
+
+        id = g_strsplit(argv[2], "_", 2);
+
+        g_static_mutex_lock(&s_mutex);
+        found = g_hash_table_lookup_extended(s_clients, id[0], NULL, &param);
+        g_static_mutex_unlock(&s_mutex);
+        client = (struct client *)param;
+
+        if (found)
+        {
+            if (client->menu_callback)
+            {
+                client->menu_callback(argv[1], id[1], argc == 4 ? argv[3] : "");
+            }
+        }
+
+        g_strfreev(id);
+    }
     else
     {
         report(RPT_ERR, "Invalid response: %s\n", string);
