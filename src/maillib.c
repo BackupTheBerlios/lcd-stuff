@@ -15,6 +15,7 @@
 #include <libetpan/libetpan.h>
 #include <string.h>
 
+#include <glib.h>
 #include <stdlib.h>
 
 #include "maillib.h"
@@ -128,24 +129,26 @@ err:
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void mail_decode(const char *string, char *dest, int len)
+char *mail_decode(const char *string)
 {
     size_t cur_token;
     char *decoded_subject;
+
+    if (!string)
+    {
+        return g_strdup("");
+    }
 
     cur_token = 0;
     mailmime_encoded_phrase_parse("iso-8859-1",
             string, strlen(string),
             &cur_token, "iso-8859-1", &decoded_subject);
 
-    strncpy(dest, decoded_subject, len);
-    dest[len-1] = 0;
-
-    free(decoded_subject);
+    return decoded_subject;
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void display_from(struct mailimf_from * from, char *string, int size)
+char *display_from(struct mailimf_from * from)
 {
     clistiter * cur;
 
@@ -155,14 +158,15 @@ void display_from(struct mailimf_from * from, char *string, int size)
 
         mb = clist_content(cur);
 
-        mail_decode(mb->mb_display_name, string, size);
-    }
+        return mail_decode(mb->mb_display_name);
+    } 
+    return g_strdup("");
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void display_subject(struct mailimf_subject * subject, char *string, int size)
+char *display_subject(struct mailimf_subject * subject)
 {
-    mail_decode(subject->sbj_value, string, size);
+    return mail_decode(subject->sbj_value);
 }
 
 

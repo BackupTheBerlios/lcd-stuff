@@ -306,7 +306,7 @@ int main(int argc, char *argv[])
     /* create the threads */
     for (i = 0; i < THREAD_NUMBER; i++)
     {
-        threads[i] = g_thread_create(s_thread_funcs[i], NULL, false, NULL);
+        threads[i] = g_thread_create(s_thread_funcs[i], NULL, true, NULL);
         if (!threads[i])
         {
             report(RPT_ERR, "Thread creation (%d) failed", i);
@@ -314,6 +314,11 @@ int main(int argc, char *argv[])
     }
 
     service_thread_run(NULL);
+
+    for (i = 0; i < THREAD_NUMBER; i++)
+    {
+        g_thread_join(threads[i]);
+    }
 
     sock_close(g_socket);
 

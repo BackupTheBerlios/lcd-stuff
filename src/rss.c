@@ -328,11 +328,13 @@ void *rss_run(void *cookie)
     if (!result)
     {
         report(RPT_INFO, "rss disabled");
+        conf_dec_count();
         return NULL;
     }
 
     if (!rss_init())
     {
+        report(RPT_ERR, "rss_init failed");
         return NULL;
     }
     conf_dec_count();

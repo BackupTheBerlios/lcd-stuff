@@ -55,8 +55,8 @@ struct email
 {
     struct mailbox  *box;
     int             message_number_in_box;
-    char            subject[MAX_LINE_LEN];
-    char            from[MAX_LINE_LEN];
+    char            *subject;
+    char            *from;
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
@@ -185,6 +185,8 @@ void free_emails(void)
     GList *cur = g_list_first(s_email);
     while (cur)
     {
+        g_free(((struct email *)cur->data)->from);
+        g_free(((struct email *)cur->data)->subject);
         free(cur->data);
         cur = cur->next;
     }
@@ -295,6 +297,8 @@ static void mail_check(void)
                 goto end_loop;
             }
 
+            mail->from = NULL;
+            mail->subject = NULL;
             for (cur = clist_begin(hdr->fld_list) ; cur != NULL; cur = clist_next(cur)) 
             {
                 struct mailimf_field *field = (struct mailimf_field *)clist_content(cur);
@@ -302,13 +306,21 @@ static void mail_check(void)
                 switch (field->fld_type) 
                 {
                       case MAILIMF_FIELD_FROM:
-                          display_from(field->fld_data.fld_from, mail->from, MAX_LINE_LEN);
+                          mail->from = display_from(field->fld_data.fld_from);
                           break;
 
                       case MAILIMF_FIELD_SUBJECT:
-                          display_subject(field->fld_data.fld_subject, mail->subject, MAX_LINE_LEN);
+                          mail->subject = display_subject(field->fld_data.fld_subject);
                           break;
                 }
+            }
+            if (!mail->from)
+            {
+                mail->from = g_strdup("");
+            }
+            if (!mail->subject)
+            {
+                mail->subject = g_strdup("");
             }
 
             mail->message_number_in_box = i + 1;

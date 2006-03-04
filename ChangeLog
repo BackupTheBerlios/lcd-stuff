@@ -1,3 +1,10 @@
+2006-03-04  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: use polling for songs
+	* email: fix SIGSEGV
+	* fix memleaks (using valgrind)
+	* core: join threads
+
 2006-02-27  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: added playlist menu

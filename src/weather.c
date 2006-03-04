@@ -124,6 +124,7 @@ void *weather_run(void *cookie)
     if (!result)
     {
         report(RPT_INFO, "weather disabled");
+        conf_dec_count();
         return NULL;
     }
 

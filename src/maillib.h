@@ -34,9 +34,9 @@ int init_storage(struct mailstorage * storage,
     int connection_type, char * user, char * password, int auth_type,
     char * path, char * cache_directory, char * flags_directory);
 
-void mail_decode(const char *string, char *dest, int len);
-void display_subject(struct mailimf_subject * subject, char *string, int size);
-void display_from(struct mailimf_from * from, char *string, int size);
+char *mail_decode(const char *string);
+char *display_from(struct mailimf_from * from);
+char *display_subject(struct mailimf_subject *subject);
 
 #endif /* MAILLIB_H */
 
