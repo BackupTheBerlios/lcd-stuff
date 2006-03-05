@@ -1,0 +1,53 @@
+#! /bin/sh -e
+#### BEGIN INIT INFO
+# Provides:          lcd-stuff
+# Required-Start:    $syslog $time $local_fs $remote_fs LCDd
+# Required-Stop:     $syslog $time $local_fs $remote_fs LCDd
+# Default-Start:     2 3 4 5
+# Default-Stop:      S 0 1 6
+# Short-Description: LCDd client for various things
+# Description:       lcd-stuff
+### END INIT INFO
+#
+# Author:	Bernhard Walle <bernhard.walle@gmx.de>
+#
+set -e
+
+prefix=/usr/local
+exec_prefix=${prefix}
+bindir=${exec_prefix}/bin
+sbindir=${exec_prefix}/sbin
+etc=${prefix}/etc
+
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=${bindir}/lcd-stuff
+DAEMON_OPTS="-r 2 -f 0 -s 1 -c ${sysconfdir}/lcd-stuff.conf"
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+    start)
+	log_daemon_msg "Starting LCDd client" "lcd-stuff"
+	start-stop-daemon  --start --quiet --exec $DAEMON -- $DAEMON_OPTS
+	log_end_msg $?
+    ;;
+  stop)
+	log_daemon_msg "Stopping LCDd client" "lcd-stuff"
+        start-stop-daemon --stop --quiet --exec $DAEMON --oknodo 
+	killproc $DAEMON
+	log_end_msg $?
+    ;;
+  force-reload|restart)
+    $0 stop
+    $0 start
+    ;;
+  *)
+    echo "Usage: /etc/init.d/lcd-stuff {start|stop|restart|force-reload}"
+    exit 1
+    ;;
+esac
+
+exit 0
