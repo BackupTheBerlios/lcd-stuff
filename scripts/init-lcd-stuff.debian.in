@@ -13,11 +13,11 @@
 #
 set -e
 
-prefix=/usr/local
-exec_prefix=${prefix}
-bindir=${exec_prefix}/bin
-sbindir=${exec_prefix}/sbin
-etc=${prefix}/etc
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+sbindir=@sbindir@
+etc=@sysconfdir@
 
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
