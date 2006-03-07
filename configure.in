@@ -140,8 +140,8 @@ AC_OUTPUT([
   Makefile
   src/Makefile
   shared/Makefile
-  scripts/Makefile
   scripts/init-lcd-stuff.debian
+  scripts/Makefile
 ])
 
 

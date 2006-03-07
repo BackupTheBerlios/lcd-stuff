@@ -54,6 +54,7 @@ static int         s_error          = 0;
 static int         s_current_state  = 0;
 static bool        s_song_displayed = false;
 static struct song s_current_song;
+static guint       s_stop_time      = UINT_MAX;
 static GPtrArray   *s_current_list  = NULL;
 struct client      mpd_client = 
                    {
@@ -114,7 +115,7 @@ bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 
     for (i = 0; i < a->len; i++)
     {
-        if (strcmp((char *)a->pdata[i], (char *)b->pdata[i]) != 0)
+        if (g_ascii_strcasecmp((char *)a->pdata[i], (char *)b->pdata[i]) != 0)
         {
             return false;
         }
@@ -165,7 +166,8 @@ void mpd_update_playlist_menu(void)
 /* --------------------------------------------------------------------------------------------- */
 bool mpd_song_compare(const struct song *a, const struct song *b)
 {
-    return (strcmp(a->title, b->title) == 0) && (strcmp(a->artist, b->artist) == 0);
+    return (g_ascii_strcasecmp(a->title, b->title) == 0) &&
+           (g_ascii_strcasecmp(a->artist, b->artist) == 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -198,8 +200,8 @@ struct song mpd_get_current_song(void)
         }
         else
         {
-            ret.artist = g_strdup(current->artist);
-            ret.title = g_strdup(current->title);
+            ret.artist = g_strdup(current->artist ? current->artist : "");
+            ret.title = g_strdup(current->title ? current->title : "");
         }
         g_strfreev(strings);
     }
@@ -210,7 +212,7 @@ struct song mpd_get_current_song(void)
 /* --------------------------------------------------------------------------------------------- */
 static void mpd_key_handler(const char *str)
 {
-    if (strcmp(str, "Up") == 0)
+    if (g_ascii_strcasecmp(str, "Up") == 0)
     {
         /* if playing, next song */
         if (s_current_state == MPD_OB_PLAYER_PLAY)
@@ -247,7 +249,7 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 
     ids = g_strsplit(id, "_", 2);
 
-    if ((strcmp(ids[0], "pl") == 0) && (ids[1] != NULL))
+    if ((g_ascii_strcasecmp(ids[0], "pl") == 0) && (ids[1] != NULL))
     {
         int no = atoi(ids[1]) - 1;
 
@@ -269,6 +271,18 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
             }
             
             g_free(list);
+        }
+    }
+    else if ((g_ascii_strcasecmp(ids[0], "standby") == 0))
+    {
+        int min = atoi(arg) * 15;
+        if (min == 0)
+        {
+            s_stop_time = INT_MAX;
+        }
+        else
+        {
+            s_stop_time = time(NULL) + 60 * min;
         }
     }
 
@@ -436,6 +450,10 @@ static bool mpd_init(void)
     service_thread_command("client_add_key Up\n");
     service_thread_command("client_add_key Down\n");
 
+    /* add standby menu */
+    service_thread_command("menu_add_item \"\" mpd_standby ring \"Standby\" "
+            "-strings \"0\t15\t30\t45\t60\t75\t90\t115\t130\t145\t160\"\n");
+
     /* set the title */
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
             config_get_string(MODULE_NAME, "name", 0, "Music Player"));
@@ -449,6 +467,7 @@ void *mpd_run(void *cookie)
 {
     time_t  next_check;
     int     result;
+    time_t  current;
 
     result = config_has_section(MODULE_NAME);
     if (!result)
@@ -470,18 +489,24 @@ void *mpd_run(void *cookie)
     /* dispatcher */
     while (!g_exit && !s_error)
     {
+        current = time(NULL);
+
         g_usleep(1000000);
         mpd_ob_status_queue_update(s_mpd);
         mpd_ob_status_check(s_mpd);
         mpd_update_status_time();
 
         /* check playlists ? */
-        if (time(NULL) > next_check)
+        if (current > next_check)
         {
             mpd_update_playlist_menu();
             next_check = time(NULL) + 60;
         }
-        
+        if (current > s_stop_time)
+        {
+            mpd_ob_player_stop(s_mpd);
+            s_stop_time = UINT_MAX;
+        }
     }
 
 out:

@@ -1,3 +1,8 @@
+2006-03-07  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: implemented standby timer
+	* mpd: fix SIGSEGV
+
 2006-03-04  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: use polling for songs
