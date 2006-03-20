@@ -1,3 +1,7 @@
+2006-03-20  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: reset standby time to 0 if timeout was reached
+
 2006-03-07  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: implemented standby timer

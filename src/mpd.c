@@ -506,6 +506,7 @@ void *mpd_run(void *cookie)
         {
             mpd_ob_player_stop(s_mpd);
             s_stop_time = UINT_MAX;
+            service_thread_command("menu_set_item \"\" mpd_standby -value 0\n");
         }
     }
 
