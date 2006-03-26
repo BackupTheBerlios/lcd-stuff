@@ -1,0 +1,54 @@
+lcd-stuff
+=========
+
+
+Description
+-----------
+
+lcd-stuff is a client for lcdproc written in C.
+
+
+Features
+--------
+
+    * display of e-mail using POP3
+    * mpd control
+    * display of news items using RSS
+    * display of the weather from weather.com
+
+
+Requirements
+------------
+
+    * 20×4 display
+    * lcdproc, of course
+    * C compiler
+    * libetpan for mail
+    * nxml for weather parsing
+    * mrss for RSS
+    * cURL for web access
+    * glib
+    * libmpd to access MPD
+
+
+Installation
+------------
+
+    * ./configure
+    * make
+    * make install
+
+
+Usage
+-----
+
+Just as every lcdproc client. Type "lcd-stuff -h" for more information. An 
+example configuration file is supplied with lcd-stuff (lcd-stuff.conf).
+
+
+License, Author
+---------------
+
+lcd-stuff was written by Bernhard Walle (bwalle@berlios.de). It's
+licensed under the terms of the GNU General Public License.
+
