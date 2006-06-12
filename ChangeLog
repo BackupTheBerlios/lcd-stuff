@@ -1,3 +1,7 @@
+2006-06-12  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* added sample configuration for all services, not only mail
+
 2006-03-20  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: reset standby time to 0 if timeout was reached
