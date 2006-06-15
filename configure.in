@@ -7,7 +7,7 @@ dnl | initialize autotools |---------------------------------------------------
 dnl  ----------------------
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(lcd-stuff, 0.1.0)
+AM_INIT_AUTOMAKE(lcd-stuff, 0.1.1)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -102,7 +102,7 @@ if test x"$ac_cv_enable_libetpan" = xyes; then
            LIBETPAN_LIBS="`$libetpanconfig --libs`"
            LIBETPAN_VERSION=`$libetpanconfig --version | sed "s/\.//g" | sed "s/-.*$//"`
            if test "$LIBETPAN_VERSION" -lt "041"; then
-                AC_MSG_RESULT([*** Sylpheed requires libetpan 0.41 or newer. See http://www.etpan.org/])
+                AC_MSG_RESULT([*** lcd-stuff requires libetpan 0.41 or newer. See http://www.etpan.org/])
                 AC_MSG_RESULT([*** You can use --disable-libetpan if you don't need IMAP4 support.])
                 AC_MSG_ERROR([libetpan 0.41 not found])
            fi
@@ -110,7 +110,7 @@ if test x"$ac_cv_enable_libetpan" = xyes; then
            AC_SUBST(LIBETPAN_LIBS)
            AC_DEFINE(HAVE_LIBETPAN, 1, Define if you want IMAP support.)
         else
-           AC_MSG_RESULT([*** Sylpheed requires libetpan 0.41 or newer. See http://www.etpan.org/ ])
+           AC_MSG_RESULT([*** lcd-stuff requires libetpan 0.41 or newer. See http://www.etpan.org/ ])
            AC_MSG_RESULT([*** You can use --disable-libetpan if you don't need IMAP4 support.])
            AC_MSG_ERROR([libetpan 0.41 not found])
         fi

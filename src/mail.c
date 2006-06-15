@@ -46,6 +46,8 @@ struct mailbox
     char            *username;
     char            *password;
     char            *name;
+    char            *type;          /* pop3, imap */
+    char            *mailbox_name;  /* imap only */
     unsigned int    messages_seen;
     unsigned int    messages_unseen;
     unsigned int    messages_total;
@@ -126,7 +128,7 @@ static void show_screen(void)
         struct mailbox *box = g_ptr_array_index(s_mailboxes, i);
 
         line1_old = line1 ? line1 : "";
-        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, box->messages_total);
+        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, box->messages_unseen);
 
         if (i != 0)
         {
@@ -213,6 +215,7 @@ static void mail_check(void)
         struct mailmessage       *message   = NULL;
         struct mailstorage       *storage   = NULL;
         int                      r, i;
+        int                      message_number = 1;
 
         if (!box)
         {
@@ -228,9 +231,9 @@ static void mail_check(void)
             goto end_loop;
         }
 
-        r = init_storage(storage, get_driver("pop3"), box->server, 110,
+        r = init_storage(storage, get_driver(box->type), box->server, 0,
                 CONNECTION_TYPE_PLAIN, box->username, box->password,
-                POP3_AUTH_TYPE_PLAIN, NULL, NULL, NULL);
+                POP3_AUTH_TYPE_PLAIN, box->mailbox_name, NULL, NULL);
         if (r != MAIL_NO_ERROR) 
         {
             report(RPT_ERR, "error initializing storage\n");
@@ -238,7 +241,7 @@ static void mail_check(void)
         }
 
         /* get the folder structure */
-        folder = mailfolder_new(storage, NULL, NULL);
+        folder = mailfolder_new(storage, box->mailbox_name, NULL);
         if (folder == NULL)
         {
             report(RPT_ERR, "mailfolder_new failed\n");
@@ -276,9 +279,10 @@ static void mail_check(void)
 
         for (i = 0; i < carray_count(messages->msg_tab); i++)
         {
-            clistiter             *cur  = NULL;
-            struct mailimf_fields *hdr  = NULL;
-            struct email          *mail = NULL;
+            clistiter             *cur   = NULL;
+            struct mailimf_fields *hdr   = NULL;
+            struct email          *mail  = NULL;
+            struct mail_flags     *flags = NULL;
 
             message = (struct mailmessage *)carray_get(messages->msg_tab, i);
 
@@ -294,7 +298,19 @@ static void mail_check(void)
             if (r != MAIL_NO_ERROR) 
             {
                 report(RPT_ERR, "mailmessage_fetch_envelope failed\n");
-                goto end_loop;
+                goto end_inner;
+            }
+
+            /* get the flags */
+            r = mailmessage_get_flags(message, &flags);
+            if (r == MAIL_NO_ERROR)
+            {
+                /* check if message is 'seen' */
+                if (flags->fl_flags & MAIL_FLAG_SEEN)
+                {
+                    /* skip this, move to next message */
+                    goto end_inner;
+                }
             }
 
             mail->from = NULL;
@@ -323,9 +339,11 @@ static void mail_check(void)
                 mail->subject = g_strdup("");
             }
 
-            mail->message_number_in_box = i + 1;
+            mail->message_number_in_box = message_number++;
             mail->box = box;
             s_email = g_list_append(s_email, mail);
+
+end_inner:
             CALL_IF_VALID(hdr, mailimf_fields_free);
         }
 
@@ -417,8 +435,16 @@ static bool mail_init(void)
         cur->username = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
         g_free(tmp);
 
+        tmp = g_strdup_printf("type%d", i);
+        cur->type = g_strdup(config_get_string(MODULE_NAME, tmp, 0, "pop3"));
+        g_free(tmp);
+
         tmp = g_strdup_printf("password%d", i);
         cur->password = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        g_free(tmp);
+
+        tmp = g_strdup_printf("mailbox_name%d", i);
+        cur->mailbox_name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, "INBOX"));
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
@@ -476,8 +502,10 @@ void *mail_run(void *cookie)
         struct mailbox *cur = (struct mailbox *)g_ptr_array_index(s_mailboxes, i);
         g_free(cur->server);
         g_free(cur->username);
+        g_free(cur->mailbox_name);
         g_free(cur->password);
         g_free(cur->name);
+        g_free(cur->type);
         free(cur);
     }
     g_ptr_array_free(s_mailboxes, true);
