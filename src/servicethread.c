@@ -197,6 +197,7 @@ static ProcessResponse lcd_process_response(char *string)
         }
 
         g_strfreev(id);
+        return PR_CALLBACK;
     }
     else
     {
