@@ -318,7 +318,7 @@ gpointer service_thread_run(gpointer data)
             {
                 if (check_for_input() != 0)
                 {
-                    report(RPT_ERR, "Error while checking for imput, maybe server died");
+                    report(RPT_ERR, "Error while checking for input, maybe server died");
                     break;
                 }
             }
