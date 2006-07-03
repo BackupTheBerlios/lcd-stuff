@@ -158,6 +158,7 @@ static void show_screen(void)
             {
                 break;
             }
+            memset(mail, 0, sizeof(struct email));
 
             if (i++ == s_current_screen)
             {
@@ -223,6 +224,7 @@ static void mail_check(void)
         }
 
         update_screen(box->name, "", "  Receiving ...", "");
+        box->messages_seen = box->messages_total = box->messages_unseen = 0;
 
         storage = mailstorage_new(NULL);
         if (!storage) 
@@ -426,6 +428,7 @@ static bool mail_init(void)
             report(RPT_ERR, MODULE_NAME ": Could not create mailbox: Of ouf memory");
             return false;
         }
+        memset(cur, 0, sizeof(struct mailbox));
 
         tmp = g_strdup_printf("server%d", i);
         cur->server = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
