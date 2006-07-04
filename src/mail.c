@@ -158,7 +158,6 @@ static void show_screen(void)
             {
                 break;
             }
-            memset(mail, 0, sizeof(struct email));
 
             if (i++ == s_current_screen)
             {
@@ -288,14 +287,6 @@ static void mail_check(void)
 
             message = (struct mailmessage *)carray_get(messages->msg_tab, i);
 
-            /* allocate the email */
-            mail = (struct email *)malloc(sizeof(struct email));
-            if (!mail)
-            {
-                report(RPT_ERR, MODULE_NAME ": Out of memory");
-                goto end_loop;
-            }
-
             r = mailmessage_fetch_envelope(message, &hdr);
             if (r != MAIL_NO_ERROR) 
             {
@@ -315,8 +306,15 @@ static void mail_check(void)
                 }
             }
 
-            mail->from = NULL;
-            mail->subject = NULL;
+            /* allocate the email */
+            mail = (struct email *)malloc(sizeof(struct email));
+            if (!mail)
+            {
+                report(RPT_ERR, MODULE_NAME ": Out of memory");
+                goto end_loop;
+            }
+            memset(mail, 0, sizeof(struct email));
+
             for (cur = clist_begin(hdr->fld_list) ; cur != NULL; cur = clist_next(cur)) 
             {
                 struct mailimf_field *field = (struct mailimf_field *)clist_content(cur);
