@@ -19,7 +19,6 @@
 #include <time.h>
 
 #include <shared/report.h>
-#include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
 
@@ -31,6 +30,7 @@
 #include "global.h"
 #include "servicethread.h"
 #include "weatherlib.h" 
+#include "keyfile.h"
 
 /* ---------------------- constants ------------------------------------------------------------ */
 #define MODULE_NAME           "weather"
@@ -88,18 +88,22 @@ static void weather_update(void)
 /* --------------------------------------------------------------------------------------------- */
 static bool weather_init(void)
 {
+    char *tmp;
+
     /* register client */
     service_thread_register_client(&weather_client);
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
-    service_thread_command("screen_set %s -name %s\n", MODULE_NAME,
-                          config_get_string(MODULE_NAME, "name", 0, "Mail"));
+    tmp = key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
+    service_thread_command("screen_set %s -name %s\n", MODULE_NAME, tmp);
+    g_free(tmp);
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    service_thread_command("widget_set %s title %s\n", 
-                          MODULE_NAME, config_get_string(MODULE_NAME, "name", 0, "Mail"));
+    tmp =key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
+    service_thread_command("widget_set %s title %s\n", MODULE_NAME, tmp);
+    g_free(tmp);
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");
@@ -107,8 +111,10 @@ static bool weather_init(void)
     service_thread_command("widget_add " MODULE_NAME " line3 string\n");
 
     /* get config items */
-    s_interval = config_get_int(MODULE_NAME, "interval", 0, 300);
-    strncpy(s_city, config_get_string(MODULE_NAME, "citycode", 0, ""), MAX_CITYCODE_LEN);
+    s_interval = key_file_get_integer_default(g_key_file, MODULE_NAME, "interval", 300);
+    tmp = key_file_get_string_default(g_key_file, MODULE_NAME, "citycode", "");
+    strncpy(s_city, tmp, MAX_CITYCODE_LEN);
+    g_free(tmp);
     s_city[MAX_CITYCODE_LEN-1] = 0;
 
     return true;
@@ -120,7 +126,7 @@ void *weather_run(void *cookie)
     time_t  next_check;
     int     result;
 
-    result = config_has_section(MODULE_NAME);
+    result = g_key_file_has_group(g_key_file, MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "weather disabled");

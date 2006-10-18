@@ -22,7 +22,6 @@
 #include <errno.h>
 
 #include <shared/report.h>
-#include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
 
@@ -33,6 +32,7 @@
 #include "constants.h"
 #include "global.h"
 #include "servicethread.h"
+#include "keyfile.h"
 
 /* ---------------------- forward declarations ------------------------------------------------- */
 static void rss_ignore_handler(void);
@@ -277,9 +277,10 @@ static bool rss_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = config_get_int(MODULE_NAME, "interval", 0, 300);
+    s_interval = key_file_get_integer_default(g_key_file, MODULE_NAME, "interval", 300);
 
-    number_of_feeds = config_get_int(MODULE_NAME, "number_of_feeds", 0, 0);
+    number_of_feeds = key_file_get_integer_default(g_key_file, 
+            MODULE_NAME, "number_of_feeds", 0);
     if (number_of_feeds == 0)
     {
         report(RPT_ERR, MODULE_NAME ": No feed sources specified");
@@ -300,15 +301,15 @@ static bool rss_init(void)
         }
 
         tmp = g_strdup_printf("url%d", i);
-        cur->url = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        cur->url = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
-        cur->name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        cur->name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("items%d", i);
-        cur->items = config_get_int(MODULE_NAME, tmp, 0, 0);
+        cur->items = key_file_get_integer_default(g_key_file, MODULE_NAME, tmp, 0);
         g_free(tmp);
 
         g_ptr_array_add(s_feeds, cur);
@@ -324,7 +325,7 @@ void *rss_run(void *cookie)
     time_t  next_check;
     int     result;
 
-    result = config_has_section(MODULE_NAME);
+    result = g_key_file_has_group(g_key_file, MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "rss disabled");

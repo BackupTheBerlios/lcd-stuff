@@ -22,7 +22,6 @@
 #include <errno.h>
 
 #include <shared/report.h>
-#include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
 
@@ -33,6 +32,7 @@
 #include "constants.h"
 #include "global.h"
 #include "servicethread.h"
+#include "keyfile.h"
 
 /* ---------------------- forward declarations ------------------------------------------------- */
 static void mpd_key_handler(const char *str);
@@ -415,9 +415,9 @@ static bool mpd_init(void)
     service_thread_register_client(&mpd_client);
 
     /* get config items */
-    host = g_strdup(config_get_string(MODULE_NAME, "server", 0, "localhost"));
-    password = g_strdup(config_get_string(MODULE_NAME, "password", 0, ""));
-    port = config_get_int(MODULE_NAME, "port", 0, 6600);
+    host = key_file_get_string_default(g_key_file, MODULE_NAME, "server", "localhost");
+    password = key_file_get_string_default(g_key_file, MODULE_NAME, "password", "");
+    port = key_file_get_integer_default(g_key_file, MODULE_NAME, "port", 6600);
 
     /* create the object */
     s_mpd = mpd_new(host, port, password);
@@ -440,7 +440,8 @@ static bool mpd_init(void)
     }
 
     /* set timeout */
-    mpd_set_connection_timeout(s_mpd, config_get_int(MODULE_NAME, "timeout", 0, 10));
+    mpd_set_connection_timeout(s_mpd, 
+            key_file_get_integer_default(g_key_file, MODULE_NAME, "timeout", 10));
     if (s_error)
     {
         mpd_disconnect(s_mpd);
@@ -468,7 +469,7 @@ static bool mpd_init(void)
 
     /* set the title */
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
-            config_get_string(MODULE_NAME, "name", 0, "Music Player"));
+            key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Music Player"));
 
 
     return true;
@@ -477,11 +478,10 @@ static bool mpd_init(void)
 /* --------------------------------------------------------------------------------------------- */
 void *mpd_run(void *cookie)
 {
-    time_t  next_check;
-    int     result;
-    time_t  current;
+    time_t      next_check, current;
+    gboolean    result;
 
-    result = config_has_section(MODULE_NAME);
+    result = g_key_file_has_group(g_key_file, MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "mpc disabled");

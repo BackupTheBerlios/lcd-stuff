@@ -1,3 +1,9 @@
+2006-10-19  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* switched config file parser to glib parser
+	  (more features)
+	* mpd: adapted to new library version
+
 2006-07-03  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* fixed missing return statement in service thread

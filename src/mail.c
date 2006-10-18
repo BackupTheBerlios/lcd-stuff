@@ -19,7 +19,6 @@
 #include <time.h>
 
 #include <shared/report.h>
-#include <shared/configfile.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
 
@@ -31,6 +30,7 @@
 #include "maillib.h"
 #include "global.h"
 #include "servicethread.h"
+#include "keyfile.h"
 
 /* ---------------------- forward declarations ------------------------------------------------- */
 static void mail_ignore_handler(void);
@@ -388,12 +388,15 @@ static bool mail_init(void)
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
-    service_thread_command("screen_set %s -name %s\n", MODULE_NAME,
-                          config_get_string(MODULE_NAME, "name", 0, "Mail"));
+
+    /* set the name */
+    tmp = key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
+    service_thread_command("screen_set %s -name %s\n", MODULE_NAME, tmp);
+    g_free(tmp);
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    s_title_prefix = g_strdup(config_get_string(MODULE_NAME, "name", 0, "Mail"));
+    s_title_prefix = key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");
@@ -405,9 +408,10 @@ static bool mail_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = config_get_int(MODULE_NAME, "interval", 0, 300);
+    s_interval = key_file_get_integer_default(g_key_file, MODULE_NAME, "interval", 300);
 
-    number_of_mailboxes = config_get_int(MODULE_NAME, "number_of_servers", 0, 0);
+    number_of_mailboxes = key_file_get_integer_default(g_key_file, MODULE_NAME,
+            "number_of_servers", 0);
     if (number_of_mailboxes == 0)
     {
         report(RPT_ERR, MODULE_NAME ": No mailboxes specified");
@@ -429,27 +433,27 @@ static bool mail_init(void)
         memset(cur, 0, sizeof(struct mailbox));
 
         tmp = g_strdup_printf("server%d", i);
-        cur->server = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        cur->server = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("user%d", i);
-        cur->username = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        cur->username = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("type%d", i);
-        cur->type = g_strdup(config_get_string(MODULE_NAME, tmp, 0, "pop3"));
+        cur->type = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "pop3");
         g_free(tmp);
 
         tmp = g_strdup_printf("password%d", i);
-        cur->password = g_strdup(config_get_string(MODULE_NAME, tmp, 0, ""));
+        cur->password = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("mailbox_name%d", i);
-        cur->mailbox_name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, "INBOX"));
+        cur->mailbox_name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "INBOX");
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
-        cur->name = g_strdup(config_get_string(MODULE_NAME, tmp, 0, cur->server));
+        cur->name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, cur->server);
         g_free(tmp);
 
         g_ptr_array_add(s_mailboxes, cur);
@@ -465,7 +469,7 @@ void *mail_run(void *cookie)
     time_t  next_check;
     int     result;
 
-    result = config_has_section(MODULE_NAME);
+    result = g_key_file_has_group(g_key_file, MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "mail disabled");

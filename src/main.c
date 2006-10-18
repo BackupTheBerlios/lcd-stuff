@@ -25,7 +25,6 @@
 #include <shared/report.h>
 #include <shared/str.h>
 #include <shared/sockets.h>
-#include <shared/configfile.h>
 
 #include "rss.h"
 #include "constants.h"
@@ -41,6 +40,7 @@ int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
 int            g_display_width         = 0;
+GKeyFile       *g_key_file;
 
 /* ========================= thread functions =================================================== */
 #define THREAD_NUMBER 4
@@ -168,7 +168,8 @@ void conf_dec_count(void)
 {
     if (g_atomic_int_dec_and_test(&s_refcount_conf))
     {
-        config_clear();
+        g_key_file_free(g_key_file);
+        g_key_file = NULL;
     }
 }
 
@@ -270,20 +271,14 @@ int main(int argc, char *argv[])
     }
 
     /* read configuration file */
-    err = config_read_file(s_config_file);
-    switch (err)
+    g_key_file = g_key_file_new();
+    err = g_key_file_load_from_file(g_key_file, s_config_file, G_KEY_FILE_NONE, NULL);
+    if (!err) 
     {
-        case -1:
-            report(RPT_ERR, "Parsing error in configuration file");
-            return 1;
-        case -2:
-            report(RPT_ERR, "File could not be opened");
-            return 1;
-        case -16:
-            report(RPT_ERR, "Memory allocation error");
-            return 1;
+        report(RPT_ERR, "Loading key file failed");
+        return 1;
     }
-
+    
     /* open socket */
     if (!communication_init())
     {
