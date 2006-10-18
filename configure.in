@@ -7,7 +7,7 @@ dnl | initialize autotools |---------------------------------------------------
 dnl  ----------------------
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(lcd-stuff, 0.1.1)
+AM_INIT_AUTOMAKE(lcd-stuff, 0.1.2)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 
@@ -123,7 +123,7 @@ PKG_CHECK_MODULES(PACKAGE, [
         mrss
         glib-2.0
         gthread-2.0
-        libmpd-0.01
+        libmpd
         ])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
