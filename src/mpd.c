@@ -415,9 +415,9 @@ static bool mpd_init(void)
     service_thread_register_client(&mpd_client);
 
     /* get config items */
-    host = key_file_get_string_default(g_key_file, MODULE_NAME, "server", "localhost");
-    password = key_file_get_string_default(g_key_file, MODULE_NAME, "password", "");
-    port = key_file_get_integer_default(g_key_file, MODULE_NAME, "port", 6600);
+    host = key_file_get_string_default(MODULE_NAME, "server", "localhost");
+    password = key_file_get_string_default(MODULE_NAME, "password", "");
+    port = key_file_get_integer_default(MODULE_NAME, "port", 6600);
 
     /* create the object */
     s_mpd = mpd_new(host, port, password);
@@ -441,7 +441,7 @@ static bool mpd_init(void)
 
     /* set timeout */
     mpd_set_connection_timeout(s_mpd, 
-            key_file_get_integer_default(g_key_file, MODULE_NAME, "timeout", 10));
+            key_file_get_integer_default(MODULE_NAME, "timeout", 10));
     if (s_error)
     {
         mpd_disconnect(s_mpd);
@@ -469,7 +469,7 @@ static bool mpd_init(void)
 
     /* set the title */
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
-            key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Music Player"));
+            key_file_get_string_default(MODULE_NAME, "name", "Music Player"));
 
 
     return true;
@@ -481,7 +481,7 @@ void *mpd_run(void *cookie)
     time_t      next_check, current;
     gboolean    result;
 
-    result = g_key_file_has_group(g_key_file, MODULE_NAME);
+    result = key_file_has_group(MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "mpc disabled");

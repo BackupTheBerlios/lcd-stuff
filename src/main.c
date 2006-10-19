@@ -33,6 +33,7 @@
 #include "servicethread.h"
 #include "global.h"
 #include "mpd.h" 
+#include "keyfile.h"
 
 /* ========================= global variables =================================================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
@@ -40,7 +41,6 @@ int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
 int            g_display_width         = 0;
-GKeyFile       *g_key_file;
 
 /* ========================= thread functions =================================================== */
 #define THREAD_NUMBER 4
@@ -168,8 +168,7 @@ void conf_dec_count(void)
 {
     if (g_atomic_int_dec_and_test(&s_refcount_conf))
     {
-        g_key_file_free(g_key_file);
-        g_key_file = NULL;
+        key_file_close();
     }
 }
 
@@ -271,8 +270,7 @@ int main(int argc, char *argv[])
     }
 
     /* read configuration file */
-    g_key_file = g_key_file_new();
-    err = g_key_file_load_from_file(g_key_file, s_config_file, G_KEY_FILE_NONE, NULL);
+    err = key_file_load_from_file(s_config_file);
     if (!err) 
     {
         report(RPT_ERR, "Loading key file failed");

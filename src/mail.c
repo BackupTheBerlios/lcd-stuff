@@ -390,13 +390,13 @@ static bool mail_init(void)
     service_thread_command("screen_add " MODULE_NAME "\n");
 
     /* set the name */
-    tmp = key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
+    tmp = key_file_get_string_default(MODULE_NAME, "name", "Mail");
     service_thread_command("screen_set %s -name %s\n", MODULE_NAME, tmp);
     g_free(tmp);
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    s_title_prefix = key_file_get_string_default(g_key_file, MODULE_NAME, "name", "Mail");
+    s_title_prefix = key_file_get_string_default(MODULE_NAME, "name", "Mail");
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");
@@ -408,9 +408,9 @@ static bool mail_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(g_key_file, MODULE_NAME, "interval", 300);
+    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
 
-    number_of_mailboxes = key_file_get_integer_default(g_key_file, MODULE_NAME,
+    number_of_mailboxes = key_file_get_integer_default(MODULE_NAME,
             "number_of_servers", 0);
     if (number_of_mailboxes == 0)
     {
@@ -433,27 +433,27 @@ static bool mail_init(void)
         memset(cur, 0, sizeof(struct mailbox));
 
         tmp = g_strdup_printf("server%d", i);
-        cur->server = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
+        cur->server = key_file_get_string_default(MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("user%d", i);
-        cur->username = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
+        cur->username = key_file_get_string_default(MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("type%d", i);
-        cur->type = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "pop3");
+        cur->type = key_file_get_string_default(MODULE_NAME, tmp, "pop3");
         g_free(tmp);
 
         tmp = g_strdup_printf("password%d", i);
-        cur->password = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
+        cur->password = key_file_get_string_default(MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("mailbox_name%d", i);
-        cur->mailbox_name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "INBOX");
+        cur->mailbox_name = key_file_get_string_default(MODULE_NAME, tmp, "INBOX");
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
-        cur->name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, cur->server);
+        cur->name = key_file_get_string_default(MODULE_NAME, tmp, cur->server);
         g_free(tmp);
 
         g_ptr_array_add(s_mailboxes, cur);
@@ -469,7 +469,7 @@ void *mail_run(void *cookie)
     time_t  next_check;
     int     result;
 
-    result = g_key_file_has_group(g_key_file, MODULE_NAME);
+    result = key_file_has_group(MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "mail disabled");

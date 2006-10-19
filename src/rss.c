@@ -277,10 +277,9 @@ static bool rss_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(g_key_file, MODULE_NAME, "interval", 300);
+    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
 
-    number_of_feeds = key_file_get_integer_default(g_key_file, 
-            MODULE_NAME, "number_of_feeds", 0);
+    number_of_feeds = key_file_get_integer_default(MODULE_NAME, "number_of_feeds", 0);
     if (number_of_feeds == 0)
     {
         report(RPT_ERR, MODULE_NAME ": No feed sources specified");
@@ -301,15 +300,15 @@ static bool rss_init(void)
         }
 
         tmp = g_strdup_printf("url%d", i);
-        cur->url = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
+        cur->url = key_file_get_string_default(MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
-        cur->name = key_file_get_string_default(g_key_file, MODULE_NAME, tmp, "");
+        cur->name = key_file_get_string_default(MODULE_NAME, tmp, "");
         g_free(tmp);
 
         tmp = g_strdup_printf("items%d", i);
-        cur->items = key_file_get_integer_default(g_key_file, MODULE_NAME, tmp, 0);
+        cur->items = key_file_get_integer_default(MODULE_NAME, tmp, 0);
         g_free(tmp);
 
         g_ptr_array_add(s_feeds, cur);
@@ -325,7 +324,7 @@ void *rss_run(void *cookie)
     time_t  next_check;
     int     result;
 
-    result = g_key_file_has_group(g_key_file, MODULE_NAME);
+    result = key_file_has_group(MODULE_NAME);
     if (!result)
     {
         report(RPT_INFO, "rss disabled");
