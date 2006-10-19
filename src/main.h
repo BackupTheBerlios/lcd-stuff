@@ -24,8 +24,6 @@ extern int           g_lcdproc_port;
 extern volatile bool g_exit;
 extern int           g_socket;
 extern int           g_display_width;
-extern GKeyFile      *g_key_file;
-
 
 void conf_dec_count(void);
 
