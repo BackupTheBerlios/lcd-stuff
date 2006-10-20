@@ -1,4 +1,5 @@
 
+INCLUDES                = -I$(top_builddir) -I$(top_srcdir)
 MAINTAINERCLEANFILES    = Makefile.in
 bin_PROGRAMS            = lcd-stuff 
 
