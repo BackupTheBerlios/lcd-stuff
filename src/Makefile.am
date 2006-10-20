@@ -5,6 +5,8 @@ bin_PROGRAMS            = lcd-stuff
 lcd_stuff_SOURCES       =                               \
     keyfile.h						\
     keyfile.c						\
+    util.c						\
+    util.h						\
     servicethread.c					\
     servicethread.h					\
     main.c                                              \

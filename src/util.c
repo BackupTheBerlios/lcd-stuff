@@ -12,21 +12,33 @@
  *
  * ------------------------------------------------------------------------------------------------- 
  */
-#ifndef MAIN_H
-#define MAIN_H
-
 #include <stdbool.h>
-#include <pthread.h>
+
 #include <glib.h>
 
-extern char          g_lcdproc_server[1024];
-extern int           g_lcdproc_port;
-extern volatile bool g_exit;
-extern int           g_socket;
-extern int           g_display_width;
-extern char          g_valid_chars[256];
+/* ---------------------- static variables ----------------------------------------------------- */
+static char s_valid_chars[256];
 
-void conf_dec_count(void);
+/* --------------------------------------------------------------------------------------------- */
+void string_canon_init(void)
+{
+    int i, character;
 
-#endif /* MAIN_H */
+    /* init the list of valid chars, we don't use utf-8 or any other multibyte encoding */
+    for (character = (int)' ', i = 0; character <= 255; character++)
+    {
+        if (character != '{' && character != '}')
+        {
+            s_valid_chars[i++] = character;
+        }
+    }
 
+    s_valid_chars[i] = '\0';
+}
+
+
+/* --------------------------------------------------------------------------------------------- */
+char *string_canon(char *string)
+{
+    return g_strcanon(string, s_valid_chars, '?');
+}

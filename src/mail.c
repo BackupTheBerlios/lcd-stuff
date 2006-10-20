@@ -31,6 +31,7 @@
 #include "global.h"
 #include "servicethread.h"
 #include "keyfile.h"
+#include "util.h"
 
 /* ---------------------- forward declarations ------------------------------------------------- */
 static void mail_ignore_handler(void);
@@ -76,10 +77,7 @@ struct client           mail_client =
                         }; 
 
 /* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *title, 
-                          const char *line1, 
-                          const char *line2, 
-                          const char *line3)
+static void update_screen(const char *title, char *line1, char *line2, char *line3)
 {
     if (title)
     {
@@ -127,13 +125,9 @@ static void show_screen(void)
     {
         struct mailbox *box = g_ptr_array_index(s_mailboxes, i);
 
-        line1_old = line1 ? line1 : "";
+        line1_old = line1 ? line1 : g_strdup("");
         line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, box->messages_unseen);
-
-        if (i != 0)
-        {
-            g_free(line1_old);
-        }
+        g_free(line1_old);
     }
 
     if (s_current_screen < 0)
@@ -323,10 +317,12 @@ static void mail_check(void)
                 {
                       case MAILIMF_FIELD_FROM:
                           mail->from = display_from(field->fld_data.fld_from);
+                          string_canon(mail->from);
                           break;
 
                       case MAILIMF_FIELD_SUBJECT:
                           mail->subject = display_subject(field->fld_data.fld_subject);
+                          string_canon(mail->subject);
                           break;
                 }
             }

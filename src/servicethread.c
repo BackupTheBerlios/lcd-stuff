@@ -171,7 +171,16 @@ static ProcessResponse lcd_process_response(char *string)
     }
     else if (strcmp(argv[0], "huh?") == 0)
     {
-        report(RPT_ERR, "Error: %s\n", argv[1]);
+        char    errorstring[512] = "";
+        int     i;
+
+        for (i = 1; i < argc; i++)
+        {
+            g_strlcat(errorstring, argv[i], 512);
+            g_strlcat(errorstring, " ", 512);
+        }
+
+        report(RPT_ERR, "Error: %s\n", errorstring);
         return PR_FAILURE;
     }
     else if (strcmp(argv[0], "menuevent") == 0)

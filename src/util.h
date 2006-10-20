@@ -12,21 +12,10 @@
  *
  * ------------------------------------------------------------------------------------------------- 
  */
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef UTIL_H
+#define UTIL_H
 
-#include <stdbool.h>
-#include <pthread.h>
-#include <glib.h>
+void string_canon_init(void);
+char *string_canon(char *string);
 
-extern char          g_lcdproc_server[1024];
-extern int           g_lcdproc_port;
-extern volatile bool g_exit;
-extern int           g_socket;
-extern int           g_display_width;
-extern char          g_valid_chars[256];
-
-void conf_dec_count(void);
-
-#endif /* MAIN_H */
-
+#endif /* UTIL_H */

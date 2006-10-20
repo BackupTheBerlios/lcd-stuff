@@ -34,6 +34,7 @@
 #include "global.h"
 #include "mpd.h" 
 #include "keyfile.h"
+#include "util.h"
 
 /* ========================= global variables =================================================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
@@ -242,6 +243,7 @@ int main(int argc, char *argv[])
     GThread *threads[THREAD_NUMBER];
 
 	set_reporting(PRG_NAME, RPT_ERR, RPT_DEST_STDERR);
+    string_canon_init();
 
     /* check availability of threads */
     if (!g_thread_supported())

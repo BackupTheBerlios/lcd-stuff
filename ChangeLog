@@ -1,3 +1,10 @@
+2006-10-20  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mail: fixed bug with '}' or '{' contained in Subject
+	  (since this is the delimiter for the MPD command, this lead
+	  to a server error)
+	* servicethread: error message for "huh?" is now correct
+
 2006-10-19  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* switched config file parser to glib parser
