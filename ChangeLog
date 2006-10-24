@@ -1,3 +1,7 @@
+2006-10-24  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* utility functions: added filewalk
+
 2006-10-20  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mail: fixed bug with '}' or '{' contained in Subject

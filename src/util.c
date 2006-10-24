@@ -13,8 +13,9 @@
  * ------------------------------------------------------------------------------------------------- 
  */
 #include <stdbool.h>
-
 #include <glib.h>
+
+#include "util.h"
 
 /* ---------------------- static variables ----------------------------------------------------- */
 static char s_valid_chars[256];
@@ -42,3 +43,51 @@ char *string_canon(char *string)
 {
     return g_strcanon(string, s_valid_chars, '?');
 }
+
+/* --------------------------------------------------------------------------------------------- */
+bool filewalk(const char *basedir, filewalk_function fn, GError **err)
+{
+    GDir        *dir;
+    GError      *err_result = NULL;
+    const char  *name;
+
+    dir = g_dir_open(basedir, 0, &err_result);
+    if (!dir) 
+    {
+        g_propagate_error(err, err_result);
+        return false;
+    }
+
+    while ( (name = g_dir_read_name(dir)) )
+    {
+        char *path = g_build_filename(basedir, name, NULL);
+
+        if (!g_file_test(path, G_FILE_TEST_EXISTS))
+        {
+            g_free(path);
+            g_dir_close(dir);
+            continue;
+        }
+
+        if (g_file_test(path, G_FILE_TEST_IS_DIR))
+        {
+            if (!filewalk(path, fn, err))
+            {
+                g_free(path);
+                g_dir_close(dir);
+                return false;
+            }
+        }
+        else
+        {
+            fn(path);
+        }
+
+        g_free(path);
+    }
+
+    g_dir_close(dir);
+
+    return true;
+}
+

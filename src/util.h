@@ -15,7 +15,12 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <stdbool.h>
+
 void string_canon_init(void);
 char *string_canon(char *string);
+
+typedef void (*filewalk_function)(const char *filename);
+bool filewalk(const char *basedir, filewalk_function fn, GError **err);
 
 #endif /* UTIL_H */
