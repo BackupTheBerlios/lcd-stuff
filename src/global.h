@@ -34,5 +34,16 @@
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) < (b)) ? (b) : (a))
 
+enum ButtonType {
+    BT_None,
+    BT_Up,
+    BT_Down
+};
+
+#define UNUSED(var)                                     \
+    (void)(var)
+
+extern GQuark g_lcdstuff_quark;
+
 #endif /* GLOBAL_H */
 

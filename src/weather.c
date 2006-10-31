@@ -36,31 +36,27 @@
 #define MODULE_NAME           "weather"
 
 /* ------------------------variables ----------------------------------------------------------- */
-static int          s_interval;
-static char         s_city[MAX_CITYCODE_LEN];
-struct client       weather_client = 
-                    {
-                        .name            = MODULE_NAME,
-                        .key_callback    = NULL,
-                        .listen_callback = NULL,
-                        .ignore_callback = NULL
-                    }; 
+static int              s_interval;
+static char             s_city[MAX_CITYCODE_LEN];
+static struct client    weather_client = {
+                            .name            = MODULE_NAME,
+                            .key_callback    = NULL,
+                            .listen_callback = NULL,
+                            .ignore_callback = NULL
+                        };
 
 /* --------------------------------------------------------------------------------------------- */
 static void update_screen(const char *line1, const char *line2, const char *line3)
 {
-    if (line1)
-    {
+    if (line1) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
     }
 
-    if (line2)
-    {
+    if (line2) {
         service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
     }
 
-    if (line3)
-    {
+    if (line3) {
         service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
     }
 }
@@ -71,8 +67,7 @@ static void weather_update(void)
     char *line1, *line2, *line3;
     struct weather_data data;
 
-    if (retrieve_weather_data(s_city, &data) == 0)
-    {
+    if (retrieve_weather_data(s_city, &data) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
         line2 = g_strdup_printf("%dC (%dC)  %.1fhPa", 
                                 data.temp_c, data.temp_fl_c, data.pressure_hPa);
@@ -127,15 +122,13 @@ void *weather_run(void *cookie)
     int     result;
 
     result = key_file_has_group(MODULE_NAME);
-    if (!result)
-    {
+    if (!result) {
         report(RPT_INFO, "weather disabled");
         conf_dec_count();
         return NULL;
     }
 
-    if (!weather_init())
-    {
+    if (!weather_init()) {
         return NULL;
     }
     conf_dec_count();
@@ -144,13 +137,11 @@ void *weather_run(void *cookie)
     next_check = time(NULL);
 
     /* dispatcher */
-    while (!g_exit)
-    {
+    while (!g_exit) {
         g_usleep(100000);
 
         /* check emails? */
-        if (time(NULL) > next_check)
-        {
+        if (time(NULL) > next_check) {
             weather_update();
             next_check = time(NULL) + s_interval;
         }

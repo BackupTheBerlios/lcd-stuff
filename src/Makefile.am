@@ -25,7 +25,9 @@ lcd_stuff_SOURCES       =                               \
     weatherlib.c					\
     weatherlib.h					\
     mpd.c						\
-    mpd.h
+    mpd.h						\
+    mp3load.h						\
+    mp3load.c
 
 lcd_stuff_LDADD = ../shared/libLCDstuff.a
 

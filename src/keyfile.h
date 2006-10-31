@@ -25,8 +25,20 @@ gchar *key_file_get_string_default(const gchar      *group_name,
                                    const gchar      *key,
                                    const gchar      *default_value);
 
+gchar *key_file_get_string(const gchar      *group_name,
+                           const gchar      *key);
+
 gint key_file_get_integer_default(const gchar       *group_name,
                                   const gchar       *key,
                                   gint              default_value);
+
+gchar **key_file_get_string_list(const gchar        *group_name,
+                                 const gchar        *key,
+                                 gsize              *length);
+
+gchar **key_file_get_string_list_default(const gchar        *group_name,
+                                         const gchar        *key,
+                                         const gchar        *default_value,
+                                         gsize              *length);
 
 #endif /* KEYFILE_H */

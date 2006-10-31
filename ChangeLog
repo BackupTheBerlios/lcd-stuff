@@ -1,3 +1,7 @@
+2006-10-31  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* added mp3load
+
 2006-10-24  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* utility functions: added filewalk

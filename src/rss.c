@@ -56,17 +56,16 @@ struct newsitem
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
-static int         s_interval;
-static GPtrArray   *s_feeds;
-static GList       *s_news          = NULL;
-static int         s_current_screen = 0;
-struct client      rss_client = 
-                   {
-                       .name            = MODULE_NAME,
-                       .key_callback    = rss_key_handler,
-                       .listen_callback = NULL,
-                       .ignore_callback = rss_ignore_handler
-                   }; 
+static int              s_interval;
+static GPtrArray        *s_feeds;
+static GList            *s_news          = NULL;
+static int              s_current_screen = 0;
+static struct client    rss_client = {
+                           .name            = MODULE_NAME,
+                           .key_callback    = rss_key_handler,
+                           .listen_callback = NULL,
+                           .ignore_callback = rss_ignore_handler
+                        };
 
 /* --------------------------------------------------------------------------------------------- */
 static void update_screen(const char *title, 
@@ -74,23 +73,19 @@ static void update_screen(const char *title,
                           const char *line2, 
                           const char *line3)
 {
-    if (title)
-    {
+    if (title) {
         service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
     }
 
-    if (line1)
-    {
+    if (line1) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
     }
 
-    if (line2)
-    {
+    if (line2) {
         service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
     }
 
-    if (line3)
-    {
+    if (line3) {
         service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
     }
 }
@@ -101,30 +96,23 @@ static void update_screen_news(void)
     int     i;
     int     tot             = g_list_length(s_news);
 
-    if (s_current_screen < 0)
-    {
+    if (s_current_screen < 0) {
         s_current_screen = tot - 1;
-    }
-    else if (s_current_screen >= tot)
-    {
+    } else if (s_current_screen >= tot) {
         s_current_screen = 0;
     }
 
-    if (tot != 0)
-    {
+    if (tot != 0) {
         GList *cur = g_list_first(s_news);
         i = 0;
 
-        while (cur)
-        {
+        while (cur) {
             struct newsitem *item = (struct newsitem *)cur->data;
-            if (!item)
-            {
+            if (!item) {
                 break;
             }
 
-            if (i++ == s_current_screen)
-            {
+            if (i++ == s_current_screen) {
                 int cur_line;
                 char line[MAX_LINE_LEN];
                 char text[MAX_LINE_LEN * LINES];
@@ -136,8 +124,7 @@ static void update_screen_news(void)
                 service_thread_command("widget_set %s title {%s}\n", 
                         MODULE_NAME,  item->site);
 
-                for (cur_line = 0; cur_line < (LINES-1); cur_line++)
-                {
+                for (cur_line = 0; cur_line < (LINES-1); cur_line++) {
                     strncpy(line, text + cur_line*g_display_width, g_display_width);
                     line[g_display_width] = 0;
                     service_thread_command("widget_set %s line%d 1 %d {%s}\n", 
@@ -155,8 +142,7 @@ static void update_screen_news(void)
 void free_news(void)
 {
     GList *cur = g_list_first(s_news);
-    while (cur)
-    {
+    while (cur) {
         struct newsitem *item = (struct newsitem *)cur->data;
         free(item->headline);
         free(cur->data);
@@ -177,45 +163,39 @@ static void rss_check(void)
     /* free old mail */
     free_news();
 
-    for (nf = 0; nf < s_feeds->len; nf++)
-    {
+    for (nf = 0; nf < s_feeds->len; nf++) {
         struct rss_feed           *feed       = g_ptr_array_index(s_feeds, nf);
         mrss_error_t              err_read;
         mrss_t                    *data_cur = NULL;
         mrss_item_t               *item_cur = NULL;
         int                       i = 0;
 
-        if (!feed)
-        {
+        if (!feed) {
             break;
         }
 
         update_screen(feed->name, "", "  Receiving ...", "");
         
         err_read = mrss_parse_url(feed->url, &data_cur);
-		if (err_read != MRSS_OK)
-		{
+		if (err_read != MRSS_OK) {
 			report(RPT_ERR, "Error reading RSS feed: %s", mrss_strerror(err_read));
             continue;
 		}
 
         item_cur = data_cur->item;
-        while(item_cur && i++ < feed->items)
-        {
+        while(item_cur && i++ < feed->items) {
             gsize written;
 
             /* create a new newsitem */
             struct newsitem *newsitem = (struct newsitem *)malloc(sizeof(struct newsitem));
-            if (!newsitem)
-            {
+            if (!newsitem) {
                 report(RPT_ERR, MODULE_NAME ": Out of memory");
                 goto end_loop;
             }
 
             newsitem->headline = g_convert(item_cur->title, -1, "ISO-8859-1",
                                            data_cur->encoding, NULL, &written, NULL);
-            if (!newsitem->headline)
-            {
+            if (!newsitem->headline) {
                 newsitem->headline = g_strdup("");
             }
             
@@ -233,12 +213,9 @@ end_loop:
 /* --------------------------------------------------------------------------------------------- */
 static void rss_key_handler(const char *str)
 {
-    if (strcmp(str, "Up") == 0)
-    {
+    if (strcmp(str, "Up") == 0) {
         s_current_screen++;
-    }
-    else
-    {
+    } else {
         s_current_screen--;
     }
     update_screen_news();
@@ -280,8 +257,7 @@ static bool rss_init(void)
     s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
 
     number_of_feeds = key_file_get_integer_default(MODULE_NAME, "number_of_feeds", 0);
-    if (number_of_feeds == 0)
-    {
+    if (number_of_feeds == 0) {
         report(RPT_ERR, MODULE_NAME ": No feed sources specified");
         return false;
     }
@@ -290,11 +266,9 @@ static bool rss_init(void)
     s_feeds = g_ptr_array_sized_new(number_of_feeds);
 
     /* process the mailboxes */
-    for (i = 1; i <= number_of_feeds; i++)
-    {
+    for (i = 1; i <= number_of_feeds; i++) {
         struct rss_feed *cur = malloc(sizeof(struct rss_feed));
-        if (!cur)
-        {
+        if (!cur) {
             report(RPT_ERR, MODULE_NAME ": Out of memory");
             return false;
         }
@@ -325,15 +299,13 @@ void *rss_run(void *cookie)
     int     result;
 
     result = key_file_has_group(MODULE_NAME);
-    if (!result)
-    {
+    if (!result) {
         report(RPT_INFO, "rss disabled");
         conf_dec_count();
         return NULL;
     }
 
-    if (!rss_init())
-    {
+    if (!rss_init()) {
         report(RPT_ERR, "rss_init failed");
         return NULL;
     }
@@ -343,13 +315,11 @@ void *rss_run(void *cookie)
     next_check = time(NULL);
 
     /* dispatcher */
-    while (!g_exit)
-    {
+    while (!g_exit) {
         g_usleep(1000000);
 
         /* check emails? */
-        if (time(NULL) > next_check)
-        {
+        if (time(NULL) > next_check) {
             rss_check();
             update_screen_news();
             next_check = time(NULL) + s_interval;
@@ -358,8 +328,7 @@ void *rss_run(void *cookie)
 
     service_thread_unregister_client(MODULE_NAME);
 
-    for (i = 0; i < s_feeds->len; i++)
-    {
+    for (i = 0; i < s_feeds->len; i++) {
         struct rss_feed *cur = (struct rss_feed *)g_ptr_array_index(s_feeds, i);
         g_free(cur->url);
         g_free(cur->name);

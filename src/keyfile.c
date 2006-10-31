@@ -45,12 +45,18 @@ gchar *key_file_get_string_default(const gchar      *group_name,
     gchar *ret;
 
     ret = g_key_file_get_string(s_key_file, group_name, key, NULL);
-    if (!ret)
-    {
+    if (!ret) {
         ret = default_value ? g_strdup(default_value) : NULL;
     }
 
     return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+gchar *key_file_get_string(const gchar      *group_name,
+                           const gchar      *key)
+{
+    return g_key_file_get_string(s_key_file, group_name, key, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -62,11 +68,60 @@ gint key_file_get_integer_default(const gchar       *group_name,
     gint   ret;
 
     ret = g_key_file_get_integer(s_key_file, group_name, key, &err);
-    if (err)
-    {
+    if (err) {
         g_error_free(err);
         ret = default_value;
     }
 
     return ret;
 }
+
+/* --------------------------------------------------------------------------------------------- */
+gchar **key_file_get_string_list_default(const gchar        *group_name,
+                                         const gchar        *key,
+                                         const gchar        *default_value,
+                                         gsize              *length)
+{
+    gchar  **ret = NULL;
+    GError *err = NULL;
+
+    g_assert(length != NULL);
+    g_assert(default_value != NULL);
+
+    ret = g_key_file_get_string_list(s_key_file, group_name, key, length, &err);
+    if (err) {
+        char **tmp;
+
+        g_error_free(err);
+
+        /* parse default value */
+        ret = g_strsplit(default_value, ";", 100);
+        tmp = ret;
+        while (*tmp++ != NULL) {
+            (*length)++;
+        }
+    }
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+gchar **key_file_get_string_list(const gchar        *group_name,
+                                 const gchar        *key,
+                                 gsize              *length)
+{
+    gchar  **ret;
+    GError *err = NULL;
+
+    g_assert(length != NULL);
+
+    ret = g_key_file_get_string_list(s_key_file, group_name, key, length, &err);
+    if (err) {
+        g_error_free(err);
+        ret = NULL;
+        *length = 0;
+    }
+
+    return ret;
+}
+

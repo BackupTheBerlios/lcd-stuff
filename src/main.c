@@ -35,6 +35,7 @@
 #include "mpd.h" 
 #include "keyfile.h"
 #include "util.h"
+#include "mp3load.h"
 
 /* ========================= global variables =================================================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
@@ -42,14 +43,16 @@ int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
 int            g_display_width         = 0;
+GQuark          g_lcdstuff_quark;
 
 /* ========================= thread functions =================================================== */
-#define THREAD_NUMBER 4
+#define THREAD_NUMBER 5
 static GThreadFunc s_thread_funcs[] = {
     rss_run,
     mail_run,
     weather_run,
-    mpd_run
+    mpd_run,
+    mp3load_run
 };
 
 /* ========================= static variables =================================================== */
@@ -242,55 +245,48 @@ int main(int argc, char *argv[])
     int     i;
     GThread *threads[THREAD_NUMBER];
 
+    g_lcdstuff_quark = g_quark_from_static_string("lcd-stuff");
 	set_reporting(PRG_NAME, RPT_ERR, RPT_DEST_STDERR);
     string_canon_init();
 
     /* check availability of threads */
-    if (!g_thread_supported())
-    {
+    if (!g_thread_supported()) {
         g_thread_init(NULL);
     }
 
     /* parse command line */
     err = parse_command_line(argc, argv);
-    if (err != 0)
-    {
+    if (err != 0) {
         return -1;
     }
 	set_reporting(PRG_NAME, s_report_level, s_report_dest);
 
     /* register signal handlers */
-    if (signal(SIGTERM, sig_handler) == SIG_ERR)
-    {
+    if (signal(SIGTERM, sig_handler) == SIG_ERR) {
         report(RPT_ERR, "Registering signal handler failed");
         return 1;
     }
-    if (signal(SIGINT, sig_handler) == SIG_ERR)
-    {
+    if (signal(SIGINT, sig_handler) == SIG_ERR) {
         report(RPT_ERR, "Registering signal handler failed");
         return 1;
     }
 
     /* read configuration file */
     err = key_file_load_from_file(s_config_file);
-    if (!err) 
-    {
+    if (!err) {
         report(RPT_ERR, "Loading key file failed");
         return 1;
     }
     
     /* open socket */
-    if (!communication_init())
-    {
+    if (!communication_init()) {
         report(RPT_ERR, "Error: communication init");
         return 1;
     }
         
     /* daemonize */
-    if (!s_foreground_mode)
-    {
-        if (daemon(1, 1) != 0)
-        {
+    if (!s_foreground_mode) {
+        if (daemon(1, 1) != 0) {
             report(RPT_ERR, "Error: daemonize failed");
             return 1;
         }
@@ -299,19 +295,16 @@ int main(int argc, char *argv[])
     service_thread_init();
 
     /* create the threads */
-    for (i = 0; i < THREAD_NUMBER; i++)
-    {
+    for (i = 0; i < THREAD_NUMBER; i++) {
         threads[i] = g_thread_create(s_thread_funcs[i], NULL, true, NULL);
-        if (!threads[i])
-        {
+        if (!threads[i]) {
             report(RPT_ERR, "Thread creation (%d) failed", i);
         }
     }
 
     service_thread_run(NULL);
 
-    for (i = 0; i < THREAD_NUMBER; i++)
-    {
+    for (i = 0; i < THREAD_NUMBER; i++) {
         g_thread_join(threads[i]);
     }
 

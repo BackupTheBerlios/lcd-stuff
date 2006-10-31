@@ -42,38 +42,35 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 #define MODULE_NAME           "mpd"
 
 /* ---------------------- types ---------------------------------------------------------------- */
-struct song 
-{
+struct song {
     char            *title;
     char            *artist;
 };
 
 /* ------------------------variables ----------------------------------------------------------- */
-static MpdObj      *s_mpd;
-static int         s_error          = 0;
-static int         s_current_state  = 0;
-static bool        s_song_displayed = false;
-static struct song *s_current_song;
-static guint       s_stop_time      = UINT_MAX;
-static GPtrArray   *s_current_list  = NULL;
-struct client      mpd_client = 
-                   {
-                       .name            = MODULE_NAME,
-                       .key_callback    = mpd_key_handler,
-                       .listen_callback = NULL,
-                       .ignore_callback = NULL,
-                       .menu_callback   = mpd_menu_handler
-                   };
+static MpdObj           *s_mpd;
+static int              s_error          = 0;
+static int              s_current_state  = 0;
+static bool             s_song_displayed = false;
+static struct song      *s_current_song;
+static guint            s_stop_time      = UINT_MAX;
+static GPtrArray        *s_current_list  = NULL;
+static struct client    mpd_client = {
+                           .name            = MODULE_NAME,
+                           .key_callback    = mpd_key_handler,
+                           .listen_callback = NULL,
+                           .ignore_callback = NULL,
+                           .menu_callback   = mpd_menu_handler
+                        };
 
 
 /* --------------------------------------------------------------------------------------------- */
-struct song *mpd_song_new(const char *title, const char *artist)
+static struct song *mpd_song_new(const char *title, const char *artist)
 {
     struct song     *song;
 
     song = g_malloc(sizeof(struct song));
-    if (!song)
-    {
+    if (!song) {
         return NULL;
     }
 
@@ -84,10 +81,9 @@ struct song *mpd_song_new(const char *title, const char *artist)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void mpd_song_delete(struct song *song)
+static void mpd_song_delete(struct song *song)
 {
-    if (song) 
-    {
+    if (song) {
         g_free(song->title);
         g_free(song->artist);
         g_free(song);
@@ -95,12 +91,11 @@ void mpd_song_delete(struct song *song)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void mpd_free_playlist(GPtrArray *playlist)
+static void mpd_free_playlist(GPtrArray *playlist)
 {
     int i;
 
-    for (i = 0; i < playlist->len; i++)
-    {
+    for (i = 0; i < playlist->len; i++) {
         g_free(playlist->pdata[i]);
     }
 
@@ -108,7 +103,7 @@ void mpd_free_playlist(GPtrArray *playlist)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-GPtrArray *mpd_get_playlists(void)
+static GPtrArray *mpd_get_playlists(void)
 {
     MpdData     *data;
     GPtrArray   *array;
@@ -116,9 +111,7 @@ GPtrArray *mpd_get_playlists(void)
     array = g_ptr_array_new();
 
     for (data = mpd_database_get_directory(s_mpd, "/"); 
-            data != NULL; 
-            data = mpd_data_get_next(data))
-    {
+            data != NULL; data = mpd_data_get_next(data)) {
         if (data->type == MPD_DATA_TYPE_PLAYLIST)
         {
             g_ptr_array_add(array, g_path_get_basename(data->playlist));
@@ -129,19 +122,16 @@ GPtrArray *mpd_get_playlists(void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
+static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 {
     int i;
 
-    if (a->len != b->len)
-    {
+    if (a->len != b->len) {
         return false;
     }
 
-    for (i = 0; i < a->len; i++)
-    {
-        if (g_ascii_strcasecmp((char *)a->pdata[i], (char *)b->pdata[i]) != 0)
-        {
+    for (i = 0; i < a->len; i++) {
+        if (g_ascii_strcasecmp((char *)a->pdata[i], (char *)b->pdata[i]) != 0) {
             return false;
         }
     }
@@ -150,7 +140,7 @@ bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-void mpd_update_playlist_menu(void)
+static void mpd_update_playlist_menu(void)
 {
     bool        add = false;
     int         i;
@@ -160,24 +150,19 @@ void mpd_update_playlist_menu(void)
     new = mpd_get_playlists();
 
     /* if no old playlist, simply add the whole playlist */
-    if (!old)
-    {
+    if (!old) {
         add = true;
-    }
-    else if (!mpd_playlists_equals(old, new))
-    {
+    } else if (!mpd_playlists_equals(old, new)) {
         service_thread_command("menu_del_item \"\" mpd_pl\n");
         add = true;
     }
 
-    if (add)
-    {
+    if (add) {
         service_thread_command("menu_add_item \"\" mpd_pl menu {Playlists}\n");
         service_thread_command("menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
                 "== Clear ==");
 
-        for (i = 0; i < new->len; i++)
-        {
+        for (i = 0; i < new->len; i++) {
             service_thread_command("menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
                     i + 1, (char *)new->pdata[i]);
         }
@@ -188,38 +173,31 @@ void mpd_update_playlist_menu(void)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-bool mpd_song_compare(const struct song *a, const struct song *b)
+static bool mpd_song_compare(const struct song *a, const struct song *b)
 {
     return a && b && (g_ascii_strcasecmp(a->title, b->title) == 0) &&
            (g_ascii_strcasecmp(a->artist, b->artist) == 0);
 }
 
 /* --------------------------------------------------------------------------------------------- */
-struct song *mpd_get_current_song(void)
+static struct song *mpd_get_current_song(void)
 {
     mpd_Song        *current;
     gchar           **strings;
     struct song     *ret;
 
     current = mpd_playlist_get_current_song(s_mpd);
-    if (s_current_state != MPD_PLAYER_PLAY || !current)
-    {
+    if (s_current_state != MPD_PLAYER_PLAY || !current) {
         ret = mpd_song_new("", "");
     }
 
-    if (!current->title)
-    {
+    if (!current->title) {
         ret = mpd_song_new("(unknown)", "");
-    }
-    else
-    {
+    } else {
         strings = g_strsplit(current->title, " - ", 2);
-        if (g_strv_length(strings) == 2)
-        {
+        if (g_strv_length(strings) == 2) {
             ret = mpd_song_new(strings[0], strings[1]);
-        }
-        else
-        {
+        } else {
             ret = mpd_song_new(current->artist ? current->artist : "",
                     current->title ? current->title : "");
         }
@@ -232,26 +210,17 @@ struct song *mpd_get_current_song(void)
 /* --------------------------------------------------------------------------------------------- */
 static void mpd_key_handler(const char *str)
 {
-    if (g_ascii_strcasecmp(str, "Up") == 0)
-    {
+    if (g_ascii_strcasecmp(str, "Up") == 0) {
         /* if playing, next song */
-        if (s_current_state == MPD_PLAYER_PLAY)
-        {
+        if (s_current_state == MPD_PLAYER_PLAY) {
             mpd_player_next(s_mpd);
-        }
-        else
-        {
+        } else {
             mpd_player_stop(s_mpd);
         }
-    }
-    else
-    {
-        if (s_current_state == MPD_PLAYER_PLAY)
-        {
+    } else {
+        if (s_current_state == MPD_PLAYER_PLAY) {
             mpd_player_pause(s_mpd);
-        }
-        else
-        {
+        } else {
             mpd_player_play(s_mpd);
         }
     }
@@ -262,46 +231,35 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 {
     char **ids;
 
-    if (strlen(id) == 0)
-    {
+    if (strlen(id) == 0) {
         return;
     }
 
     ids = g_strsplit(id, "_", 2);
 
-    if ((g_ascii_strcasecmp(ids[0], "pl") == 0) && (ids[1] != NULL))
-    {
+    if ((g_ascii_strcasecmp(ids[0], "pl") == 0) && (ids[1] != NULL)) {
         int no = atoi(ids[1]) - 1;
 
-        if (no == -1)
-        {
+        if (no == -1) {
             mpd_playlist_clear(s_mpd);
             mpd_playlist_queue_commit(s_mpd);
-        }
-        else if (s_current_list && (no < s_current_list->len))
-        {
+        } else if (s_current_list && (no < s_current_list->len)) {
             char *list;
             list = g_strconcat( s_current_list->pdata[no], NULL);
             mpd_playlist_queue_load(s_mpd, list);
             mpd_playlist_queue_commit(s_mpd);
 
-            if (s_current_state != MPD_PLAYER_PLAY)
-            {
+            if (s_current_state != MPD_PLAYER_PLAY) {
                 mpd_player_play(s_mpd);
             }
             
             g_free(list);
         }
-    }
-    else if ((g_ascii_strcasecmp(ids[0], "standby") == 0))
-    {
+    } else if ((g_ascii_strcasecmp(ids[0], "standby") == 0)) {
         int min = atoi(arg) * 15;
-        if (min == 0)
-        {
+        if (min == 0) {
             s_stop_time = INT_MAX;
-        }
-        else
-        {
+        } else {
             s_stop_time = time(NULL) + 60 * min;
         }
     }
@@ -322,15 +280,13 @@ static void mpd_update_status_time(void)
     char            *line3;
     struct song     *cur_song;
 
-    if (s_current_state != MPD_PLAYER_PLAY)
-    {
+    if (s_current_state != MPD_PLAYER_PLAY) {
         return;
     }
 
     /* song ? */
     cur_song = mpd_get_current_song();
-    if (!mpd_song_compare(cur_song, s_current_song) || !s_song_displayed)
-    {
+    if (!mpd_song_compare(cur_song, s_current_song) || !s_song_displayed) {
         mpd_song_delete(s_current_song);
         s_current_song = cur_song;
 
@@ -338,9 +294,7 @@ static void mpd_update_status_time(void)
         service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, cur_song->title);
 
         s_song_displayed = true;
-    }
-    else
-    {
+    } else {
         mpd_song_delete(s_current_song);
         s_current_song = NULL;
     }
@@ -367,8 +321,7 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
 
     s_song_displayed = false;
 
-    switch (s_current_state)
-    {
+    switch (s_current_state) {
         case MPD_PLAYER_PAUSE:
             str = "paused";
             break;
@@ -393,12 +346,9 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
 /* --------------------------------------------------------------------------------------------- */
 static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userdata)
 {
-    if (connect)
-    {
+    if (connect) {
         report(RPT_DEBUG, "Connected\n");
-    }
-    else
-    {
+    } else {
         s_error = true;
         report(RPT_ERR, "Disconnected\n");
     }
@@ -434,16 +384,14 @@ static bool mpd_init(void)
     
     /* connect */
     mpd_connect(s_mpd);
-    if (s_error)
-    {
+    if (s_error) {
         return false;
     }
 
     /* set timeout */
     mpd_set_connection_timeout(s_mpd, 
             key_file_get_integer_default(MODULE_NAME, "timeout", 10));
-    if (s_error)
-    {
+    if (s_error) {
         mpd_disconnect(s_mpd);
         return false;
     }
@@ -482,15 +430,13 @@ void *mpd_run(void *cookie)
     gboolean    result;
 
     result = key_file_has_group(MODULE_NAME);
-    if (!result)
-    {
+    if (!result) {
         report(RPT_INFO, "mpc disabled");
         conf_dec_count();
         goto song_free;
     }
 
-    if (!mpd_init())
-    {
+    if (!mpd_init()) {
         goto out;
     }
     conf_dec_count();
@@ -499,8 +445,7 @@ void *mpd_run(void *cookie)
     next_check = time(NULL);
 
     /* dispatcher */
-    while (!g_exit && !s_error)
-    {
+    while (!g_exit && !s_error) {
         current = time(NULL);
 
         g_usleep(1000000);
@@ -509,13 +454,10 @@ void *mpd_run(void *cookie)
         mpd_update_status_time();
 
         /* check playlists ? */
-        if (current > next_check)
-        {
+        if (current > next_check) {
             mpd_update_playlist_menu();
             next_check = time(NULL) + 60;
-        }
-        if (current > s_stop_time)
-        {
+        } if (current > s_stop_time) {
             mpd_player_stop(s_mpd);
             s_stop_time = UINT_MAX;
             service_thread_command("menu_set_item \"\" mpd_standby -value 0\n");
