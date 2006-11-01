@@ -125,13 +125,13 @@ static bool directory_delete_function(const char    *filename,
     int     err = 0;
 
     if (g_file_test(filename, G_FILE_TEST_IS_SYMLINK)) {
-        printf("g_unlink(%s)\n", filename);
+        /*printf("g_unlink(%s)\n", filename);*/
         err = g_unlink(filename);
     } else if (g_file_test(filename, G_FILE_TEST_IS_DIR)) {
-        printf("g_rmdir(%s)\n", filename);
+        /*printf("g_rmdir(%s)\n", filename);*/
         err = g_rmdir(filename);
     } else {
-        printf("g_unlink(%s)\n", filename);
+        /*printf("g_unlink(%s)\n", filename);*/
         err = g_unlink(filename);
     }
 

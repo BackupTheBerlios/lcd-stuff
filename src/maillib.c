@@ -18,6 +18,8 @@
 #include <glib.h>
 #include <stdlib.h>
 
+#include <shared/report.h>
+
 #include "maillib.h"
 
 /* from http://cvs.sourceforge.net/viewcvs.py/libetpan/libetpan/tests/readmsg-simple.c?rev=1.7&view=markup */
@@ -71,7 +73,7 @@ int init_storage(struct mailstorage * storage,
                     auth_type, user, password, cached, cache_directory,
                     flags_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing POP3 storage\n");
+                report(RPT_ERR, "error initializing POP3 storage\n");
                 goto err;
             }
             break;
@@ -80,7 +82,7 @@ int init_storage(struct mailstorage * storage,
             r = imap_mailstorage_init(storage, server, port, NULL, connection_type,
                     IMAP_AUTH_TYPE_PLAIN, user, password, cached, cache_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing IMAP storage\n");
+                report(RPT_ERR, "error initializing IMAP storage\n");
                 goto err;
             }
             break;
@@ -90,7 +92,7 @@ int init_storage(struct mailstorage * storage,
                     NNTP_AUTH_TYPE_PLAIN, user, password, cached, cache_directory,
                     flags_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing NNTP storage\n");
+                report(RPT_ERR, "error initializing NNTP storage\n");
                 goto err;
             }
             break;
@@ -99,7 +101,7 @@ int init_storage(struct mailstorage * storage,
             r = mbox_mailstorage_init(storage, path, cached, cache_directory,
                     flags_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing mbox storage\n");
+                report(RPT_ERR, "error initializing mbox storage\n");
                 goto err;
             }
             break;
@@ -108,7 +110,7 @@ int init_storage(struct mailstorage * storage,
             r = mh_mailstorage_init(storage, path, cached, cache_directory,
                     flags_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing MH storage\n");
+                report(RPT_ERR, "error initializing MH storage\n");
                 goto err;
             }
             break;
@@ -116,7 +118,7 @@ int init_storage(struct mailstorage * storage,
             r = maildir_mailstorage_init(storage, path, cached, cache_directory,
                     flags_directory);
             if (r != MAIL_NO_ERROR) {
-                printf("error initializing maildir storage\n");
+                report(RPT_ERR, "error initializing maildir storage\n");
                 goto err;
             }
             break;

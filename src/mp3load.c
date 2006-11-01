@@ -78,47 +78,6 @@ static void update_screen(const char *line1, const char *line2, const char *line
 }
 
 /* --------------------------------------------------------------------------------------------- */
-#if 0
-void mpd_update_playlist_menu(void)
-{
-    bool        add = false;
-    int         i;
-    GPtrArray   *old, *new;
-    
-    old = s_current_list;
-    new = mpd_get_playlists();
-
-    /* if no old playlist, simply add the whole playlist */
-    if (!old)
-    {
-        add = true;
-    }
-    else if (!mpd_playlists_equals(old, new))
-    {
-        service_thread_command("menu_del_item \"\" mpd_pl\n");
-        add = true;
-    }
-
-    if (add)
-    {
-        service_thread_command("menu_add_item \"\" mpd_pl menu {Playlists}\n");
-        service_thread_command("menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
-                "== Clear ==");
-
-        for (i = 0; i < new->len; i++)
-        {
-            service_thread_command("menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
-                    i + 1, (char *)new->pdata[i]);
-        }
-    }
-
-    s_current_list = new;
-    CALL_IF_VALID(old, mpd_free_playlist);
-}
-#endif
-/* --------------------------------------------------------------------------------------------- */
-
-/* --------------------------------------------------------------------------------------------- */
 static void mp3load_key_handler(const char *str)
 {
     if (g_ascii_strcasecmp(str, "Up") == 0) {
@@ -269,7 +228,7 @@ static void mp3load_fill_player(void)
         goto end_umount;
     }
 
-    printf("bytes to copy: %llu\n", bytes);
+    report(RPT_DEBUG, "bytes to copy: %llu\n", bytes);
 
     /* collect the files */
     update_screen("Collecting files", "Please be patient", "");
@@ -298,9 +257,8 @@ static void mp3load_fill_player(void)
         snprintf(buffer, 20, "[%d]", count++);
         update_screen("Copying files ...", buffer, "");
 
-        printf("Copy: %s to %s\n", file_name, s_target_directory);
+        report(RPT_DEBUG, "Copy: %s to %s\n", file_name, s_target_directory);
         bytes_copied = copy_file(file_name, s_target_directory, &gerr_result);
-        /*bytes_copied = 3 * 1024 * 1024;//copy_file(file_name, s_target_directory, &gerr_result);+|*/
         if (bytes_copied < 0) {
             update_screen("Error while", "copying file,", "aboring");
             report(RPT_ERR, "%s", gerr_result->message);
@@ -359,47 +317,11 @@ end:
 /* --------------------------------------------------------------------------------------------- */
 static void mp3load_menu_handler(const char *event, const char *id, const char *arg)
 {
-    /*char **ids;*/
-
     if (strlen(id) == 0) {
         return;
     }
 
-
     g_cond_broadcast(s_condition);
-
-#if 0
-    ids = g_strsplit(id, "_", 2);
-
-    if ((g_ascii_strcasecmp(ids[0], "pl") == 0) && (ids[1] != NULL)) {
-        int no = atoi(ids[1]) - 1;
-
-        if (no == -1) {
-            mpd_playlist_clear(s_mpd);
-            mpd_playlist_queue_commit(s_mpd);
-        } else if (s_current_list && (no < s_current_list->len)) {
-            char *list;
-            list = g_strconcat( s_current_list->pdata[no], NULL);
-            mpd_playlist_queue_load(s_mpd, list);
-            mpd_playlist_queue_commit(s_mpd);
-
-            if (s_current_state != MPD_PLAYER_PLAY) {
-                mpd_player_play(s_mpd);
-            }
-            
-            g_free(list);
-        }
-    } else if ((g_ascii_strcasecmp(ids[0], "standby") == 0)) {
-        int min = atoi(arg) * 15;
-        if (min == 0) {
-            s_stop_time = INT_MAX;
-        } else {
-            s_stop_time = time(NULL) + 60 * min;
-        }
-    }
-
-    g_strfreev(ids);
-#endif
 }
 
 /* --------------------------------------------------------------------------------------------- */
