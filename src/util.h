@@ -23,6 +23,8 @@
 
 void string_canon_init(void);
 char *string_canon(char *string);
+char *format_time(unsigned long seconds);
+char *format_bytes(unsigned long long bytes);
 
 /*
  * file walking functions, replacement for ftw -----------------------------------------------------

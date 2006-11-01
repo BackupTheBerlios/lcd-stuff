@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <errno.h>
+#include <time.h>
 
 #include <shared/report.h>
 #include <shared/sockets.h>
@@ -163,10 +164,10 @@ static void mp3load_fill_player(void)
 {
     GError              *gerr_result = NULL;
     bool                ret;
-    long long           bytes = 0;
+    long long           bytes = 0, total_bytes = 0;
     GPtrArray           *files = NULL;
     GRand               *randomizer = NULL;
-    int                 count = 0;
+    time_t              start;
 
     /* make screen visible */
     service_thread_command("screen_set " MODULE_NAME " -priority alert\n");
@@ -227,6 +228,7 @@ static void mp3load_fill_player(void)
         g_usleep(2 * G_USEC_PER_SEC);
         goto end_umount;
     }
+    total_bytes = bytes;
 
     report(RPT_DEBUG, "bytes to copy: %llu\n", bytes);
 
@@ -244,18 +246,19 @@ static void mp3load_fill_player(void)
 
     /* now use the randomizer to find out which titles should be copied */
     randomizer = g_rand_new();
+    start = time(NULL);
 
     while (bytes >= 0 && files->len > 1) {
         int          file_number;
         char         *file_name;
-        char         buffer[20];
+        char         buffer[30], buffer2[30];
         long         bytes_copied;
+        char         *bytes_copied_str, *bytes_total_str;
+        time_t       eta;
+        char         *eta_str;
         
         file_number = g_rand_int_range(randomizer, 0, files->len);
         file_name = g_ptr_array_index(files, file_number);
-
-        snprintf(buffer, 20, "[%d]", count++);
-        update_screen("Copying files ...", buffer, "");
 
         report(RPT_DEBUG, "Copy: %s to %s\n", file_name, s_target_directory);
         bytes_copied = copy_file(file_name, s_target_directory, &gerr_result);
@@ -266,6 +269,23 @@ static void mp3load_fill_player(void)
             g_usleep(2 * G_USEC_PER_SEC);
             goto end_umount;
         }
+
+        bytes_copied_str = format_bytes(total_bytes - bytes);
+        bytes_total_str = format_bytes(total_bytes);
+        snprintf(buffer, 30, "%s/%s", bytes_copied_str, bytes_total_str);
+        g_free(bytes_copied_str);
+        g_free(bytes_total_str);
+
+        eta = time(NULL) - start;
+        if (bytes == total_bytes) {
+            *buffer2 = 0;
+        } else {
+            eta = ((double)total_bytes) / ((double)total_bytes - bytes) * eta - eta;
+            eta_str = format_time(eta);
+            snprintf(buffer2, 30, "ETA: %s", eta_str);
+            g_free(eta_str);
+        }
+        update_screen("Copying files ...", buffer, buffer2);
 
         bytes -= bytes_copied;
 

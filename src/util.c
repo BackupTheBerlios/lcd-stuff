@@ -27,6 +27,10 @@
 #include "util.h"
 #include "global.h"
 
+#define BYTES_PER_KBYTE (1024)
+#define BYTES_PER_MBYTE (1024*BYTES_PER_KBYTE)
+#define BYTES_PER_GBYTE (1024*BYTES_PER_MBYTE)
+
 /* ---------------------- static variables ----------------------------------------------------- */
 static char s_valid_chars[256];
 
@@ -43,6 +47,32 @@ void string_canon_init(void)
     }
 
     s_valid_chars[i] = '\0';
+}
+
+/* --------------------------------------------------------------------------------------------- */
+char *format_time(unsigned long seconds)
+{
+    unsigned long sec_disp;
+    unsigned long min_disp;
+
+    sec_disp = seconds % 60;
+    min_disp = seconds / 60;
+
+    return g_strdup_printf("%lu:%02lu", min_disp, sec_disp);
+}
+
+/* --------------------------------------------------------------------------------------------- */
+char *format_bytes(unsigned long long bytes)
+{
+    if (bytes > BYTES_PER_GBYTE) {
+        return g_strdup_printf("%.2f GB", (double)bytes / BYTES_PER_GBYTE);
+    } else if (bytes > BYTES_PER_MBYTE) {
+        return g_strdup_printf("%.2f MB", (double)bytes / BYTES_PER_MBYTE);
+    } else if (bytes > BYTES_PER_KBYTE) {
+        return g_strdup_printf("%.2f KB", (double)bytes / BYTES_PER_KBYTE);
+    } else {
+        return g_strdup_printf("%llu B", bytes);
+    }
 }
 
 
