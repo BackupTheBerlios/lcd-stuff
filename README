@@ -28,6 +28,7 @@ Requirements
     * mrss for RSS
     * cURL for web access
     * glib
+    * taglib_c
     * libmpd to access MPD
 
 

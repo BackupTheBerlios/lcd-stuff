@@ -115,6 +115,7 @@ static GPtrArray *mpd_get_playlists(void)
         if (data->type == MPD_DATA_TYPE_PLAYLIST)
         {
             g_ptr_array_add(array, g_path_get_basename(data->playlist));
+            g_free(data->playlist);
         }
     }
 
@@ -360,6 +361,7 @@ static bool mpd_init(void)
     char     *host;
     char     *password;
     int      port;
+    char     *string;
 
     /* register client */
     service_thread_register_client(&mpd_client);
@@ -416,9 +418,9 @@ static bool mpd_init(void)
             "-strings \"0\t15\t30\t45\t60\t75\t90\t115\t130\t145\t160\"\n");
 
     /* set the title */
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
-            key_file_get_string_default(MODULE_NAME, "name", "Music Player"));
-
+    string = key_file_get_string_default(MODULE_NAME, "name", "Music Player");
+    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
+    g_free(string);
 
     return true;
 }

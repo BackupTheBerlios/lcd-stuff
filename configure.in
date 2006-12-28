@@ -119,6 +119,22 @@ else
 fi
 AM_CONDITIONAL(SYLPHEED_LIBETPAN, test "x$libetpan_result" = "xyes")
 
+dnl ***********************************
+dnl *** Check for taglib_c          ***
+dnl ***********************************
+TAGLIBC_LIBS=""
+TAGLIBC_CFLAGS=""
+AC_CHECK_LIB([tag_c], [taglib_file_new],
+[
+  AC_CHECK_HEADER([taglib/tag_c.h],
+  [
+    TAGLIBC_LIBS="-ltag_c"
+    AC_DEFINE([HAVE_TAGLIBC], [1], [Define to 1 if tag_c is found])
+  ])
+], [-lm])
+AC_SUBST([TAGLIBC_CFLAGS])
+AC_SUBST([TAGLIBC_LIBS])
+
 PKG_CHECK_MODULES(PACKAGE, [
         mrss
         glib-2.0
@@ -128,8 +144,8 @@ PKG_CHECK_MODULES(PACKAGE, [
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 
-LIBS="$LIBS $PACKAGE_LIBS $LIBETPAN_LIBS"
-CFLAGS="$CFLAGS $PACKAGE_CFLAGS $LIBETPAN_FLAGS"
+LIBS="$LIBS $PACKAGE_LIBS $LIBETPAN_LIBS $TAGLIBC_LIBS"
+CFLAGS="$CFLAGS $PACKAGE_CFLAGS $LIBETPAN_FLAGS $TAGLIBC_CFLAGS"
 
 
 dnl  --------

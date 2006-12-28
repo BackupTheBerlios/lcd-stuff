@@ -41,7 +41,7 @@ void string_canon_init(void)
 
     /* init the list of valid chars, we don't use utf-8 or any other multibyte encoding */
     for (character = (int)' ', i = 0; character <= 255; character++) {
-        if (character != '{' && character != '}') {
+        if (character != '{' && character != '}' && character != '\\') {
             s_valid_chars[i++] = character;
         }
     }
@@ -80,6 +80,18 @@ char *format_bytes(unsigned long long bytes)
 char *string_canon(char *string)
 {
     return g_strcanon(string, s_valid_chars, '?');
+}
+
+/* --------------------------------------------------------------------------------------------- */
+void string_replace(char *string, char from, char to)
+{
+	char *cur = string;
+
+	while (*cur++ != 0) {
+		if (*cur == from) {
+			*cur = to;
+		}
+	}
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -193,7 +205,7 @@ bool delete_directory_recursively(const char *directory, GError **gerr)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-long copy_file(const char *src_name, const char *dest_dir, GError **gerr)
+long copy_file(const char *src_name, const char *dest_dir, const char *dest_name, GError **gerr)
 {
     int             src_fd = 0, dest_fd = 0;
     long            retval = -1;
@@ -211,9 +223,12 @@ long copy_file(const char *src_name, const char *dest_dir, GError **gerr)
         goto end_copy;
     }
 
-    filename = g_path_get_basename(src_name);
+	filename = dest_name 
+		? g_strdup(dest_name)
+		: g_path_get_basename(src_name);
+
     dest_path = g_build_filename(dest_dir, filename, NULL);
-    g_free(filename);
+	/*g_free(filename);*/
     dest_fd = g_open(dest_path, O_CREAT|O_WRONLY, 0644);
     if (dest_fd <= 0) {
         char buffer[1024];
@@ -279,4 +294,5 @@ unsigned long long get_free_bytes(const char *path, GError **gerr)
     }
     return (unsigned long long)my_statfs.f_bavail * my_statfs.f_bsize;
 }
+
 

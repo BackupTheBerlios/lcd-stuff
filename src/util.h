@@ -25,6 +25,7 @@ void string_canon_init(void);
 char *string_canon(char *string);
 char *format_time(unsigned long seconds);
 char *format_bytes(unsigned long long bytes);
+void string_replace(char *string, char from, char to);
 
 /*
  * file walking functions, replacement for ftw -----------------------------------------------------
@@ -54,7 +55,7 @@ bool delete_directory_recursively(const char *directory, GError **err);
  * Other file functions ---------------------------------------------------------------------------
  */
 
-long copy_file(const char *src_name, const char *dest_dir, GError **err);
+long copy_file(const char *src_name, const char *dest_dir, const char *dest_name, GError **gerr);
 
 /*
  * disk functions ---------------------------------------------------------------------------------

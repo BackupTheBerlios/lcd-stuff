@@ -21,7 +21,9 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/stat.h>
 
+#include <taglib/tag_c.h>
 #include <shared/report.h>
 #include <shared/sockets.h>
 
@@ -49,9 +51,10 @@ static GCond            *s_condition = NULL;
 static char             *s_source_directory = NULL;
 static char             *s_target_directory = NULL;
 static char             **s_extensions = NULL;
-static unsigned int     s_extension_len = 0;
+static gsize            s_extension_len = 0;
 static char             *s_mount_command = NULL;
 static char             *s_umount_command = NULL;
+static char             *s_default_subdir = NULL;
 static char             *s_size = NULL;
 static struct client    mpd_client = {
                            .name            = MODULE_NAME,
@@ -159,6 +162,63 @@ static bool file_collect_function(const char    *filename,
     return true;
 }
 
+
+struct ArtistTitle {
+    char *artist;
+    char *title;
+};
+
+/* --------------------------------------------------------------------------------------------- */
+static struct ArtistTitle get_artist_title(const char *path)
+{
+    TagLib_File         *taglib_file = NULL;
+    TagLib_Tag          *taglib_tag;
+    struct ArtistTitle  artisttitle;
+
+    taglib_set_string_management_enabled(false);
+    taglib_file = taglib_file_new(path);
+    if (!taglib_file) {
+        report(RPT_WARNING, "taglib_file_newtag failed");
+        goto out_artist;
+    }
+
+    taglib_tag = taglib_file_tag(taglib_file);
+    if (!taglib_tag) {
+        report(RPT_WARNING, "taglib_file_tag failed");
+        goto out_artist;
+    }
+
+    artisttitle.artist = taglib_tag_artist(taglib_tag);
+    if (!artisttitle.artist || strlen(artisttitle.artist) == 0) {
+        g_free(artisttitle.artist);
+        goto out_artist;
+    }
+
+    artisttitle.title = taglib_tag_title(taglib_tag);
+    if (!artisttitle.title || strlen(artisttitle.title) == 0) {
+        g_free(artisttitle.title);
+        goto out_title;
+    }
+
+    goto out_noerror;
+
+out_artist:
+    artisttitle.artist = g_strdup(s_default_subdir);
+out_title:
+    artisttitle.title = g_path_get_basename(path);
+
+out_noerror:
+    taglib_file_free(taglib_file);
+
+    string_canon(artisttitle.artist);
+    string_replace(artisttitle.artist, '/', '_');
+    g_strstrip(artisttitle.artist);
+    string_canon(artisttitle.title);
+    string_replace(artisttitle.title, '/', '_');
+    g_strstrip(artisttitle.title);
+    return artisttitle;
+}
+
 /* --------------------------------------------------------------------------------------------- */
 static void mp3load_fill_player(void)
 {
@@ -256,12 +316,38 @@ static void mp3load_fill_player(void)
         char         *bytes_copied_str, *bytes_total_str;
         time_t       eta;
         char         *eta_str;
-        
+        struct ArtistTitle  artisttitle;
+        char         *target_directory_with_artist;
+        char         *dest_file;
+        int          err = 0;
+
         file_number = g_rand_int_range(randomizer, 0, files->len);
         file_name = g_ptr_array_index(files, file_number);
 
-        report(RPT_DEBUG, "Copy: %s to %s\n", file_name, s_target_directory);
-        bytes_copied = copy_file(file_name, s_target_directory, &gerr_result);
+        /* get out the artist name */
+        artisttitle = get_artist_title(file_name);
+
+        target_directory_with_artist = g_build_filename(s_target_directory, 
+                artisttitle.artist, NULL);
+        g_free(artisttitle.artist);
+
+        err = g_mkdir_with_parents(target_directory_with_artist, S_IRWXU|S_IRWXG|S_IRWXO);
+        if (err != 0) {
+            report(RPT_ERR, "%s", errno);
+            update_screen("Error while", "creating dir", "aborting");
+            g_usleep(2 * G_USEC_PER_SEC);
+            goto end_umount;
+        }
+
+        /* add the extension */
+        dest_file = g_strconcat(artisttitle.title, strrchr(file_name, '.'), NULL);
+        g_free(artisttitle.title);
+
+        report(RPT_DEBUG, "Copy: %s to %s/%s\n", file_name, 
+                target_directory_with_artist, dest_file);
+        bytes_copied = 1000000;/*copy_file(file_name, target_directory_with_artist, 
+                artisttitle.title, &gerr_result);*/
+        g_free(dest_file);
         if (bytes_copied < 0) {
             update_screen("Error while", "copying file,", "aboring");
             report(RPT_ERR, "%s", gerr_result->message);
@@ -290,6 +376,7 @@ static void mp3load_fill_player(void)
         bytes -= bytes_copied;
 
         g_free(file_name);
+        g_free(target_directory_with_artist);
         g_ptr_array_remove_index_fast(files, file_number);
     }
 
@@ -327,6 +414,7 @@ end:
         }
         g_ptr_array_free(files, TRUE);
     }
+    g_rand_free(randomizer);
 
     /* make screen invisible again */
     update_screen("", "", "");
@@ -347,6 +435,8 @@ static void mp3load_menu_handler(const char *event, const char *id, const char *
 /* --------------------------------------------------------------------------------------------- */
 static bool mp3load_init(void)
 {
+    char *string;
+
     /* register client */
     service_thread_register_client(&mpd_client);
 
@@ -357,6 +447,7 @@ static bool mp3load_init(void)
             ".mp3", &s_extension_len);
     s_mount_command = key_file_get_string_default(MODULE_NAME, "mount_command", "");
     s_umount_command = key_file_get_string_default(MODULE_NAME, "umount_command", "");
+    s_default_subdir = key_file_get_string_default(MODULE_NAME, "default_subdir", "misc");
     s_size = key_file_get_string_default(MODULE_NAME, "size", "90%");
 
     /* check if necessary config items are available */
@@ -390,8 +481,9 @@ static bool mp3load_init(void)
             "\"Fill MP3 player\" -next \"_quit_\"\n");
 
     /* set the title */
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
-            key_file_get_string_default(MODULE_NAME, "name", "MP3 Load"));
+    string = key_file_get_string_default(MODULE_NAME, "name", "MP3 Load");
+    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
+    g_free(string);
 
     return true;
 }
@@ -445,6 +537,7 @@ out:
     CALL_IF_VALID(s_extensions, g_strfreev);
     CALL_IF_VALID(s_mount_command, g_free);
     CALL_IF_VALID(s_umount_command, g_free);
+    CALL_IF_VALID(s_default_subdir, g_free);
     CALL_IF_VALID(s_size, g_free);
 out_end:
     return NULL;
