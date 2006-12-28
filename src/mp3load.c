@@ -346,7 +346,7 @@ static void mp3load_fill_player(void)
         report(RPT_DEBUG, "Copy: %s to %s/%s\n", file_name, 
                 target_directory_with_artist, dest_file);
         bytes_copied = copy_file(file_name, target_directory_with_artist, 
-                artisttitle.title, &gerr_result);
+                dest_file, &gerr_result);
         g_free(dest_file);
         if (bytes_copied < 0) {
             update_screen("Error while", "copying file,", "aboring");

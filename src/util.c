@@ -228,7 +228,7 @@ long copy_file(const char *src_name, const char *dest_dir, const char *dest_name
 		: g_path_get_basename(src_name);
 
     dest_path = g_build_filename(dest_dir, filename, NULL);
-	/*g_free(filename);*/
+	g_free(filename);
     dest_fd = g_open(dest_path, O_CREAT|O_WRONLY, 0644);
     if (dest_fd <= 0) {
         char buffer[1024];
