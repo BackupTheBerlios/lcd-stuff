@@ -359,7 +359,7 @@ static bool mail_init(void)
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    s_title_prefix = key_file_get_string_default(MODULE_NAME, "name", "Mail");
+    s_title_prefix = key_file_get_string_default_l1(MODULE_NAME, "name", "Mail");
 
     /* add three lines */
     service_thread_command("widget_add " MODULE_NAME " line1 string\n");

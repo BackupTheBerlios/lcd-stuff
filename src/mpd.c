@@ -115,10 +115,22 @@ static GPtrArray *mpd_get_playlists(void)
 
     for (data = mpd_database_get_directory(s_mpd, "/"); 
             data != NULL; data = mpd_data_get_next(data)) {
-        if (data->type == MPD_DATA_TYPE_PLAYLIST)
-        {
-            g_ptr_array_add(array, g_path_get_basename(data->playlist));
-            g_free(data->playlist);
+        switch (data->type) {
+            case MPD_DATA_TYPE_PLAYLIST:
+                g_ptr_array_add(array, g_path_get_basename(data->playlist));
+                g_free(data->playlist);
+                break;
+
+            case MPD_DATA_TYPE_DIRECTORY:
+                g_free(data->directory);
+                break;
+
+            case MPD_INFO_ENTITY_TYPE_SONG:
+                g_free(data->directory);
+                break;
+
+            default:
+                break;
         }
     }
 
@@ -294,8 +306,10 @@ static void mpd_update_status_time(void)
         mpd_song_delete(s_current_song);
         s_current_song = cur_song;
 
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, cur_song->artist);
-        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, cur_song->title);
+        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
+                cur_song->artist);
+        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
+                cur_song->title);
 
         s_song_displayed = true;
     } else {
@@ -312,7 +326,8 @@ static void mpd_update_status_time(void)
                             mpd_player_get_repeat(s_mpd) ? "R" : "_",
                             mpd_player_get_random(s_mpd) ? "S" : "_");
 
-    service_thread_command("widget_set %s line3 1 4 {%10s}\n", MODULE_NAME, line3);
+    service_thread_command("widget_set %s line3 1 4 {%10s}\n",
+            MODULE_NAME, line3);
     g_free(line3);
 }
 
@@ -421,7 +436,7 @@ static bool mpd_init(void)
             "-strings \"0\t15\t30\t45\t60\t75\t90\t115\t130\t145\t160\"\n");
 
     /* set the title */
-    string = key_file_get_string_default(MODULE_NAME, "name", "Music Player");
+    string = key_file_get_string_default_l1(MODULE_NAME, "name", "Music Player");
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
     g_free(string);
 

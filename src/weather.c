@@ -101,7 +101,7 @@ static bool weather_init(void)
 
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
-    tmp =key_file_get_string_default(MODULE_NAME, "name", "Mail");
+    tmp = key_file_get_string_default_l1(MODULE_NAME, "name", "Weather");
     service_thread_command("widget_set %s title %s\n", MODULE_NAME, tmp);
     g_free(tmp);
 

@@ -17,6 +17,8 @@
  */
 #include <glib.h>
 
+#include "keyfile.h"
+
 static GKeyFile *s_key_file;
 
 /* -------------------------------------------------------------------------- */
@@ -37,6 +39,27 @@ void key_file_close(void)
 gboolean key_file_has_group(const gchar *group_name)
 {
     return g_key_file_has_group(s_key_file, group_name);
+}
+
+/* -------------------------------------------------------------------------- */
+gchar *key_file_get_string_default_l1(const gchar      *group_name,
+                                      const gchar      *key,
+                                      const gchar      *default_value)
+{
+	gchar *string;
+	gchar *ret;
+
+	string = key_file_get_string_default(group_name, key, default_value);
+
+	ret = g_convert_with_fallback(string, -1, "iso-8859-1", "utf-8",
+			"?", NULL, NULL, NULL);
+	if (!ret) {
+		ret = g_strdup(default_value);
+	}
+
+	g_free(string);
+
+	return ret;
 }
 
 /* -------------------------------------------------------------------------- */
