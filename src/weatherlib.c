@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include "weatherlib.h"
 
@@ -19,7 +22,7 @@
 
 #define WEATHER_URL "http://xoap.weather.com/weather/local/%s?prod=xoap&par=1003832479&key=bb12936706a2d601&cc=*&dayf=0&unit=m"
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 int retrieve_weather_data(const char *code, struct weather_data *data)
 {
      nxml_t *nxml;
@@ -121,8 +124,6 @@ int retrieve_weather_data(const char *code, struct weather_data *data)
              }
          }
      }
-
-     
      
      nxml_free(nxml);
      g_free(url);

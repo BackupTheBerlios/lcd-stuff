@@ -1,3 +1,7 @@
+2006-12-29  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* change license to GPL v2 only
+
 2006-12-28  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mp3load: added file naming according to artist/title

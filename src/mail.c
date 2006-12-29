@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -33,14 +36,14 @@
 #include "keyfile.h"
 #include "util.h"
 
-/* ---------------------- forward declarations ------------------------------------------------- */
+/* ---------------------- forward declarations ------------------------------ */
 static void mail_ignore_handler(void);
 static void mail_key_handler(const char *str);
 
-/* ---------------------- constants ------------------------------------------------------------ */
+/* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mail"
 
-/* ---------------------- types ---------------------------------------------------------------- */
+/* ---------------------- types --------------------------------------------- */
 struct mailbox {
     char            *server;
     char            *username;
@@ -60,7 +63,7 @@ struct email {
     char            *from;
 };
 
-/* ------------------------variables ----------------------------------------------------------- */
+/* ------------------------variables ---------------------------------------- */
 static int              s_interval;
 static GPtrArray        *s_mailboxes;
 static GList            *s_email         = NULL;
@@ -74,8 +77,11 @@ struct client           mail_client =
                             .ignore_callback = mail_ignore_handler
                         }; 
 
-/* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *title, char *line1, char *line2, char *line3)
+/* -------------------------------------------------------------------------- */
+static void update_screen(const char    *title,
+                          char          *line1,
+                          char          *line2,
+                          char          *line3)
 {
     if (title) {
         if (strlen(title) > 0) {
@@ -100,7 +106,7 @@ static void update_screen(const char *title, char *line1, char *line2, char *lin
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void show_screen(void)
 {
     int     tot             = g_list_length(s_email);
@@ -116,7 +122,8 @@ static void show_screen(void)
         struct mailbox *box = g_ptr_array_index(s_mailboxes, i);
 
         line1_old = line1 ? line1 : g_strdup("");
-        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, box->messages_unseen);
+        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, 
+                box->messages_unseen);
         g_free(line1_old);
     }
 
@@ -157,7 +164,7 @@ static void show_screen(void)
     g_free(line1);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void free_emails(void)
 {
     GList *cur = g_list_first(s_email);
@@ -171,8 +178,7 @@ void free_emails(void)
     s_email = NULL;
 }
 
-
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mail_check(void)
 {
     int mb;
@@ -315,7 +321,7 @@ end_loop:
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mail_key_handler(const char *str)
 {
     if (strcmp(str, "Up") == 0) {
@@ -326,14 +332,14 @@ static void mail_key_handler(const char *str)
     show_screen();
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mail_ignore_handler(void)
 {
     s_current_screen++;
     show_screen();
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool mail_init(void)
 {
     int        i;
@@ -416,7 +422,7 @@ static bool mail_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void *mail_run(void *cookie)
 {
     int     i;

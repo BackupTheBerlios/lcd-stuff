@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdbool.h>
 #include <unistd.h>
@@ -37,7 +40,7 @@
 #include "util.h"
 #include "mp3load.h"
 
-/* ========================= global variables =================================================== */
+/* ========================= global variables =============================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
 int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
@@ -45,7 +48,7 @@ int            g_socket                = 0;
 int            g_display_width         = 0;
 GQuark          g_lcdstuff_quark;
 
-/* ========================= thread functions =================================================== */
+/* ========================= thread functions =============================== */
 #define THREAD_NUMBER 5
 static GThreadFunc s_thread_funcs[] = {
     rss_run,
@@ -55,7 +58,7 @@ static GThreadFunc s_thread_funcs[] = {
     mp3load_run
 };
 
-/* ========================= static variables =================================================== */
+/* ========================= static variables =============================== */
 static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
 static int s_report_level           = RPT_ERR;
 static int s_report_dest            = RPT_DEST_STDERR;
@@ -77,13 +80,13 @@ static char g_help_text[] =
 
 
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void sig_handler(int signal)
 {
     g_exit = true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 int parse_command_line(int argc, char *argv[])
 {
     int c;
@@ -94,10 +97,8 @@ int parse_command_line(int argc, char *argv[])
     /* No error output from getopt */
 	opterr = 0;
 
-	while(( c = getopt( argc, argv, "c:a:p:s:r:f:h" )) > 0) 
-    {
-        switch (c)
-        {
+	while(( c = getopt( argc, argv, "c:a:p:s:r:f:h" )) > 0) {
+        switch (c) {
             case 'c':
                 strncpy(s_config_file, optarg, PATH_MAX);
                 break;
@@ -106,12 +107,9 @@ int parse_command_line(int argc, char *argv[])
                 break;
             case 'p':
                 temp_int = strtol(optarg, &p, 0 );
-                if (*optarg != 0 && *p == 0)
-                {
+                if (*optarg != 0 && *p == 0) {
                     g_lcdproc_port = temp_int;
-                }
-                else 
-                {
+                } else {
                     report(RPT_ERR, "Could not interpret value for -%c", c );
                     error = -1;
                 }
@@ -121,12 +119,9 @@ int parse_command_line(int argc, char *argv[])
                 exit(0);
             case 'r':
                 temp_int = strtol(optarg, &p, 0);
-                if (*optarg != 0 && *p == 0)
-                {
+                if (*optarg != 0 && *p == 0) {
                     s_report_level = temp_int;
-                }
-                else 
-                {
+                } else {
                     report(RPT_ERR, "Could not interpret value for -%c", c);
                     error = -1;
                 }
@@ -134,12 +129,9 @@ int parse_command_line(int argc, char *argv[])
 
             case 'f':
                 temp_int = strtol(optarg, &p, 0);
-                if (*optarg != 0 && *p == 0)
-                {
+                if (*optarg != 0 && *p == 0) {
                     s_foreground_mode = temp_int;
-                }
-                else
-                {
+                } else {
                     report(RPT_ERR, "Could not interpret value for -%c", c);
                     error = -1;
                 }
@@ -148,12 +140,9 @@ int parse_command_line(int argc, char *argv[])
 
             case 's':
                 temp_int = strtol(optarg, &p, 0);
-                if (*optarg != 0 && *p == 0)
-                {
+                if (*optarg != 0 && *p == 0) {
                     s_report_dest = (temp_int?RPT_DEST_SYSLOG:RPT_DEST_STDERR);
-                }
-                else 
-                {
+                } else {
                     report(RPT_ERR, "Could not interpret value for -%c", c );
                     error = -1;
                 }
@@ -167,7 +156,7 @@ int parse_command_line(int argc, char *argv[])
     return error;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void conf_dec_count(void)
 {
     if (g_atomic_int_dec_and_test(&s_refcount_conf))
@@ -176,7 +165,7 @@ void conf_dec_count(void)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static int send_command(char *result, int size, char *command)
 {
     char        buffer[BUFSIZ];
@@ -206,7 +195,7 @@ static int send_command(char *result, int size, char *command)
     return num_bytes;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool communication_init(void)
 {
 	char     *argv[10];
@@ -238,7 +227,7 @@ static bool communication_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
     int     err;

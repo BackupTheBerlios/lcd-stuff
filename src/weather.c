@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -32,10 +35,10 @@
 #include "weatherlib.h" 
 #include "keyfile.h"
 
-/* ---------------------- constants ------------------------------------------------------------ */
+/* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "weather"
 
-/* ------------------------variables ----------------------------------------------------------- */
+/* ------------------------variables ---------------------------------------- */
 static int              s_interval;
 static char             s_city[MAX_CITYCODE_LEN];
 static struct client    weather_client = {
@@ -45,8 +48,10 @@ static struct client    weather_client = {
                             .ignore_callback = NULL
                         };
 
-/* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *line1, const char *line2, const char *line3)
+/* -------------------------------------------------------------------------- */
+static void update_screen(const char    *line1,
+                          const char    *line2,
+                          const char    *line3)
 {
     if (line1) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
@@ -61,7 +66,7 @@ static void update_screen(const char *line1, const char *line2, const char *line
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void weather_update(void)
 {
     char *line1, *line2, *line3;
@@ -70,9 +75,9 @@ static void weather_update(void)
     if (retrieve_weather_data(s_city, &data) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
         line2 = g_strdup_printf("%dC (%dC)  %.1fhPa", 
-                                data.temp_c, data.temp_fl_c, data.pressure_hPa);
+                data.temp_c, data.temp_fl_c, data.pressure_hPa);
         line3 = g_strdup_printf("%d%%  %dkm/h %s", 
-                                data.humid, data.wind_speed, data.wind_dir);
+                data.humid, data.wind_speed, data.wind_dir);
         update_screen(line1, line2, line3);
         g_free(line1);
         g_free(line2);
@@ -80,7 +85,7 @@ static void weather_update(void)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool weather_init(void)
 {
     char *tmp;
@@ -115,7 +120,7 @@ static bool weather_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void *weather_run(void *cookie)
 {
     time_t  next_check;

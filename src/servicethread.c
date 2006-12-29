@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -33,11 +36,10 @@ static struct client *s_current       = NULL;
 static GStaticMutex  s_mutex          = G_STATIC_MUTEX_INIT;
 static int           s_client_number  = 0;
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void service_thread_register_client(struct client *client)
 {
-    if (g_exit)
-    {
+    if (g_exit) {
         return;
     }
 
@@ -48,11 +50,10 @@ void service_thread_register_client(struct client *client)
     g_atomic_int_inc(&s_client_number);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void service_thread_unregister_client(const char *name)
 {
-    if (g_exit)
-    {
+    if (g_exit) {
         return;
     }
         
@@ -60,35 +61,32 @@ void service_thread_unregister_client(const char *name)
     g_hash_table_remove(s_clients, name);
     g_static_mutex_unlock(&s_mutex);
 
-    if (g_atomic_int_dec_and_test(&s_client_number))
-    {
+    if (g_atomic_int_dec_and_test(&s_client_number)) {
         g_exit = true;
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void key_handler(const char *key)
 {
     report(RPT_DEBUG, "Key received, %s", key);
     
-    if (s_current && s_current->key_callback)
-    {
+    if (s_current && s_current->key_callback) {
         s_current->key_callback(key);
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void ignore_handler(const char *screen)
 {
     report(RPT_DEBUG, "Ignore received for screen", screen);
 
-    if (s_current && s_current->ignore_callback)
-    {
+    if (s_current && s_current->ignore_callback) {
         s_current->ignore_callback();
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void listen_handler(const char *screen)
 {
     report(RPT_DEBUG, "Listen received for screen", screen);
@@ -98,20 +96,18 @@ static void listen_handler(const char *screen)
     s_current = g_hash_table_lookup(s_clients, screen);
     g_static_mutex_unlock(&s_mutex);
 
-    if (s_current && s_current->listen_callback)
-    {
+    if (s_current && s_current->listen_callback) {
         s_current->listen_callback();
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void service_thread_command(const char *string, ...)
 {
     gchar   *result;
     va_list ap;
     
-    if (g_exit)
-    {
+    if (g_exit) {
         return;
     }
 
@@ -122,19 +118,16 @@ void service_thread_command(const char *string, ...)
     g_async_queue_push(s_command_queue, result);
 }
 
-/* --------------------------------------------------------------------------------------------- */
-
-/* --------------------------------------------------------------------------------------------- */
-typedef enum
-{
+/* -------------------------------------------------------------------------- */
+enum ProcessResponse {
     PR_SUCCESS,
     PR_FAILURE,
     PR_CALLBACK,
     PR_ERR_MISC,
     PR_INVALID
-} ProcessResponse;
+};
 
-static ProcessResponse lcd_process_response(char *string)
+static enum ProcessResponse lcd_process_response(char *string)
 {
 	char        *argv[10];
 	int         argc;
@@ -215,14 +208,14 @@ static ProcessResponse lcd_process_response(char *string)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static int send_command_succ(gchar *command)
 {
-    ProcessResponse  process_err;
-    int              err;
-    int              num_bytes      = 0;
-    int              loopcount;
-    char             buffer[BUFSIZ];
+    enum ProcessResponse    process_err;
+    int                     err;
+    int                     num_bytes = 0;
+    int                     loopcount;
+    char                    buffer[BUFSIZ];
     
     err = sock_send_string(g_socket, command);
     if (err < 0)
@@ -257,12 +250,12 @@ static int send_command_succ(gchar *command)
     return 0;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static int check_for_input(void)
 {
-    int             num_bytes         = 1;
-    char            buffer[BUFSIZ];
-    ProcessResponse err;
+    int                     num_bytes = 1;
+    char                    buffer[BUFSIZ];
+    enum ProcessResponse    err;
         
     while (num_bytes != 0)
     {
@@ -288,46 +281,37 @@ static int check_for_input(void)
     return 0;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void service_thread_init(void)
 {
     s_command_queue = g_async_queue_new();
     s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 gpointer service_thread_run(gpointer data)
 {
     int count = 0;
 
-    while (!g_exit)
-    {
+    while (!g_exit) {
         gchar *command;
 
         command = g_async_queue_try_pop(s_command_queue);
-        if (command)
-        {
+        if (command) {
             send_command_succ(command);
             g_free(command);
-        }
-        else
-        {
+        } else {
             g_usleep(100000);
 
-            if (count++ == 30)
-            {
+            if (count++ == 30) {
                 /* still alive? */
-                if (send_command_succ("noop\n") < 0)
-                {
+                if (send_command_succ("noop\n") < 0) {
                     report(RPT_ERR, "Server died");
                     break;
                 }
                 count = 0;
-            }
-            else
-            {
-                if (check_for_input() != 0)
-                {
+            } else {
+                if (check_for_input() != 0) {
                     report(RPT_ERR, "Error while checking for input, maybe server died");
                     break;
                 }

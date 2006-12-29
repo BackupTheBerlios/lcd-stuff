@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -34,20 +37,20 @@
 #include "servicethread.h"
 #include "keyfile.h"
 
-/* ---------------------- forward declarations ------------------------------------------------- */
+/* ---------------------- forward declarations ------------------------------ */
 static void mpd_key_handler(const char *str);
 static void mpd_menu_handler(const char *event, const char *id, const char *arg);
 
-/* ---------------------- constants ------------------------------------------------------------ */
+/* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mpd"
 
-/* ---------------------- types ---------------------------------------------------------------- */
+/* ---------------------- types --------------------------------------------- */
 struct song {
     char            *title;
     char            *artist;
 };
 
-/* ------------------------variables ----------------------------------------------------------- */
+/* ------------------------variables ---------------------------------------- */
 static MpdObj           *s_mpd;
 static int              s_error          = 0;
 static int              s_current_state  = 0;
@@ -64,7 +67,7 @@ static struct client    mpd_client = {
                         };
 
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static struct song *mpd_song_new(const char *title, const char *artist)
 {
     struct song     *song;
@@ -80,7 +83,7 @@ static struct song *mpd_song_new(const char *title, const char *artist)
     return song;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_song_delete(struct song *song)
 {
     if (song) {
@@ -90,7 +93,7 @@ static void mpd_song_delete(struct song *song)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_free_playlist(GPtrArray *playlist)
 {
     int i;
@@ -102,7 +105,7 @@ static void mpd_free_playlist(GPtrArray *playlist)
     g_ptr_array_free(playlist, true);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static GPtrArray *mpd_get_playlists(void)
 {
     MpdData     *data;
@@ -122,7 +125,7 @@ static GPtrArray *mpd_get_playlists(void)
     return array;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 {
     int i;
@@ -140,7 +143,7 @@ static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_update_playlist_menu(void)
 {
     bool        add = false;
@@ -173,14 +176,14 @@ static void mpd_update_playlist_menu(void)
     CALL_IF_VALID(old, mpd_free_playlist);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool mpd_song_compare(const struct song *a, const struct song *b)
 {
     return a && b && (g_ascii_strcasecmp(a->title, b->title) == 0) &&
            (g_ascii_strcasecmp(a->artist, b->artist) == 0);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static struct song *mpd_get_current_song(void)
 {
     mpd_Song        *current;
@@ -208,7 +211,7 @@ static struct song *mpd_get_current_song(void)
     return ret;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_key_handler(const char *str)
 {
     if (g_ascii_strcasecmp(str, "Up") == 0) {
@@ -227,7 +230,7 @@ static void mpd_key_handler(const char *str)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 {
     char **ids;
@@ -268,13 +271,13 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
     g_strfreev(ids);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_error_handler(MpdObj *mpd, int id, char *msg, void *ptr)
 {
     report(RPT_ERR, "MPD Error: %s", msg);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_update_status_time(void)
 {
     int             elapsed, total;
@@ -313,7 +316,7 @@ static void mpd_update_status_time(void)
     g_free(line3);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *userdata)
 {
     char *str;
@@ -344,7 +347,7 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
     service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, str);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userdata)
 {
     if (connect) {
@@ -355,7 +358,7 @@ static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userda
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool mpd_init(void)
 {
     char     *host;
@@ -425,7 +428,7 @@ static bool mpd_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void *mpd_run(void *cookie)
 {
     time_t      next_check, current;

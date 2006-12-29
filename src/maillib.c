@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <libetpan/libetpan.h>
 #include <string.h>
@@ -24,8 +27,7 @@
 
 /* from http://cvs.sourceforge.net/viewcvs.py/libetpan/libetpan/tests/readmsg-simple.c?rev=1.7&view=markup */
 
-struct storage_name 
-{
+struct storage_name {
     int id;
     char * name;
 };
@@ -39,7 +41,7 @@ static struct storage_name storage_tab[] = {
     {MAILDIR_STORAGE, "maildir"},
 };
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 int get_driver(char * name)
 {
     int driver_type;
@@ -56,11 +58,18 @@ int get_driver(char * name)
     return driver_type;
 }
 
-/* --------------------------------------------------------------------------------------------- */
-int init_storage(struct mailstorage * storage,
-        int driver, char * server, int port,
-        int connection_type, char * user, char * password, int auth_type,
-        char * path, char * cache_directory, char * flags_directory)
+/* -------------------------------------------------------------------------- */
+int init_storage(struct mailstorage     *storage,
+                 int                    driver,
+                 char                   *server,
+                 int                    port,
+                 int                    connection_type,
+                 char                   *user,
+                 char                   *password,
+                 int                    auth_type,
+                 char                   *path,
+                 char                   *cache_directory,
+                 char                   *flags_directory)
 {
     int r;
     int cached;
@@ -130,7 +139,7 @@ err:
     return r;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *mail_decode(const char *string)
 {
     size_t cur_token;
@@ -149,7 +158,7 @@ char *mail_decode(const char *string)
     return decoded_subject;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *display_from(struct mailimf_from * from)
 {
     clistiter * cur;
@@ -165,7 +174,7 @@ char *display_from(struct mailimf_from * from)
     return g_strdup("");
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *display_subject(struct mailimf_subject * subject)
 {
     return mail_decode(subject->sbj_value);

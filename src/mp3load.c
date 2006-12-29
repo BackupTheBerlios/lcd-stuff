@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -35,16 +38,16 @@
 #include "keyfile.h"
 #include "util.h"
 
-/* ---------------------- forward declarations ------------------------------------------------- */
+/* ---------------------- forward declarations ------------------------------ */
 static void mp3load_key_handler(const char *str);
 static void mp3load_menu_handler(const char *event, const char *id, const char *arg);
 
-/* ---------------------- constants ------------------------------------------------------------ */
+/* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mp3load"
 
-/* ---------------------- types ---------------------------------------------------------------- */
+/* ---------------------- types ---------------------------------------------- */
 
-/* ------------------------variables ----------------------------------------------------------- */
+/* ------------------------variables ----------------------------------------- */
 static volatile int     s_button_pressed = BT_None;
 static GMutex           *s_mutex = NULL;
 static GCond            *s_condition = NULL;
@@ -65,8 +68,10 @@ static struct client    mpd_client = {
                         };
 
 
-/* --------------------------------------------------------------------------------------------- */
-static void update_screen(const char *line1, const char *line2, const char *line3)
+/* -------------------------------------------------------------------------- */
+static void update_screen(const char *line1,
+                          const char *line2,
+                          const char *line3)
 {
     if (line1) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
@@ -81,7 +86,7 @@ static void update_screen(const char *line1, const char *line2, const char *line
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mp3load_key_handler(const char *str)
 {
     if (g_ascii_strcasecmp(str, "Up") == 0) {
@@ -91,7 +96,7 @@ static void mp3load_key_handler(const char *str)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static unsigned long long bytes_to_copy(const char      *path, 
                                         const char      *size_desc, 
                                         GError          **gerr)
@@ -139,7 +144,7 @@ static unsigned long long bytes_to_copy(const char      *path,
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool file_collect_function(const char    *filename, 
                                   void          *cookie, 
                                   GError        **gerr)
@@ -168,7 +173,7 @@ struct ArtistTitle {
     char *title;
 };
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static struct ArtistTitle get_artist_title(const char *path)
 {
     TagLib_File         *taglib_file = NULL;
@@ -219,7 +224,7 @@ out_noerror:
     return artisttitle;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mp3load_fill_player(void)
 {
     GError              *gerr_result = NULL;
@@ -233,7 +238,7 @@ static void mp3load_fill_player(void)
     service_thread_command("screen_set " MODULE_NAME " -priority alert\n");
 
     /*
-     * ask the user to press Up if he really wants to continue ------------------------------------
+     * ask the user to press Up if he really wants to continue -----------------
      */
 
     s_button_pressed = BT_None;
@@ -249,7 +254,7 @@ static void mp3load_fill_player(void)
     }
 
     /*
-     * mount -------------------------------------------------------------------------------------
+     * mount -------------------------------------------------------------------
      */
     if (s_mount_command && strlen(s_mount_command) > 0) {
         int err;
@@ -266,7 +271,7 @@ static void mp3load_fill_player(void)
     }
 
     /*
-     * up pressed, continue to fill the stick  ---------------------------------------------------
+     * up pressed, continue to fill the stick  ---------------------------------
      */
     
     /* delete the files on the stick */
@@ -295,7 +300,8 @@ static void mp3load_fill_player(void)
     /* collect the files */
     update_screen("Collecting files", "Please be patient", "");
     files = g_ptr_array_new();
-    if (!filewalk(s_source_directory, file_collect_function, files, FWF_NO_FLAGS, &gerr_result))
+    if (!filewalk(s_source_directory, file_collect_function, files, 
+                FWF_NO_FLAGS, &gerr_result))
     {
         update_screen("Error while", "collecting files,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
@@ -382,7 +388,7 @@ static void mp3load_fill_player(void)
 
 end_umount:
     /*
-     * unmount -------------------------------------------------------------------------------------
+     * unmount -----------------------------------------------------------------
      */
     if (s_umount_command && strlen(s_umount_command) > 0) {
         int err;
@@ -402,7 +408,7 @@ end_umount:
     g_usleep(2 * G_USEC_PER_SEC);
 
     /*
-     * Cleanup -------------------------------------------------------------------------------------
+     * Cleanup -----------------------------------------------------------------
      */
 
 end:
@@ -422,7 +428,7 @@ end:
 }
 
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void mp3load_menu_handler(const char *event, const char *id, const char *arg)
 {
     if (strlen(id) == 0) {
@@ -432,7 +438,7 @@ static void mp3load_menu_handler(const char *event, const char *id, const char *
     g_cond_broadcast(s_condition);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool mp3load_init(void)
 {
     char *string;
@@ -445,16 +451,19 @@ static bool mp3load_init(void)
     s_target_directory = key_file_get_string(MODULE_NAME, "target_directory");
     s_extensions = key_file_get_string_list_default(MODULE_NAME, "extensions", 
             ".mp3", &s_extension_len);
-    s_mount_command = key_file_get_string_default(MODULE_NAME, "mount_command", "");
-    s_umount_command = key_file_get_string_default(MODULE_NAME, "umount_command", "");
-    s_default_subdir = key_file_get_string_default(MODULE_NAME, "default_subdir", "misc");
+    s_mount_command = key_file_get_string_default(MODULE_NAME, 
+            "mount_command", "");
+    s_umount_command = key_file_get_string_default(MODULE_NAME, 
+            "umount_command", "");
+    s_default_subdir = key_file_get_string_default(MODULE_NAME, 
+            "default_subdir", "misc");
     s_size = key_file_get_string_default(MODULE_NAME, "size", "90%");
 
     /* check if necessary config items are available */
     if (!s_source_directory || strlen(s_target_directory) <= 0 || 
             !s_target_directory || strlen(s_source_directory) <= 0) {
-        report(RPT_ERR, MODULE_NAME ": `source_directory' and `target_directory' are "
-                "necessary configuration variables");
+        report(RPT_ERR, MODULE_NAME ": `source_directory' and "
+                "`target_directory' are necessary configuration variables");
         return false;
     }
 
@@ -488,7 +497,7 @@ static bool mp3load_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void *mp3load_run(void *cookie)
 {
     gboolean    result;
@@ -510,8 +519,8 @@ void *mp3load_run(void *cookie)
     conf_dec_count();
 
     /*
-     * dispatcher, wait until we can exit and execute the main function if triggered
-     * from the menu 
+     * dispatcher, wait until we can exit and execute the main function if 
+     * triggered from the menu 
      */
     while (!g_exit) {
         GTimeVal next_timeout;

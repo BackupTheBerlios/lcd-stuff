@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #ifndef SERVICETHREAD_H
 #define SERVICETHREAD_H
@@ -28,15 +31,16 @@ typedef void (*menu_callback_fun) (const char *, const char *, const char *);
  */
 struct client
 {
-    char                        *name;              /**< the unique name of the client */
-    key_callback_fun            key_callback;       /**< the callback function for key
-                                                         events or NULL */
-    listen_callback_fun         listen_callback;    /**< the callback function if the
-                                                         client gets displayed on the
-                                                         display */
-    ignore_callback_fun         ignore_callback;    /**< the callback function if the
-                                                         client gets hidden on the display */
-    menu_callback_fun           menu_callback;      /**< the callback function for menu events */
+    char                 *name;              /**< the unique name of the client */
+    key_callback_fun     key_callback;       /**< the callback function for key
+                                                  events or NULL */
+    listen_callback_fun  listen_callback;    /**< the callback function if the
+                                                  client gets displayed on the
+                                                  display */
+    ignore_callback_fun  ignore_callback;    /**< the callback function if the
+                                                  client gets hidden on the display */
+    menu_callback_fun    menu_callback;      /**< the callback function for menu 
+                                                  events */
 };
 
 /**

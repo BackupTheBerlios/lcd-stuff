@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdio.h>
 #include <stdbool.h>
@@ -34,28 +37,26 @@
 #include "servicethread.h"
 #include "keyfile.h"
 
-/* ---------------------- forward declarations ------------------------------------------------- */
+/* ---------------------- forward declarations ------------------------------ */
 static void rss_ignore_handler(void);
 static void rss_key_handler(const char *str);
 
-/* ---------------------- constants ------------------------------------------------------------ */
+/* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "rss"
 
-/* ---------------------- types ---------------------------------------------------------------- */
-struct rss_feed 
-{
+/* ---------------------- types --------------------------------------------- */
+struct rss_feed {
     char *url;
     char *name;
     int  items;
 };
 
-struct newsitem
-{
+struct newsitem {
     char *site;
     char *headline;
 };
 
-/* ------------------------variables ----------------------------------------------------------- */
+/* ------------------------variables ---------------------------------------- */
 static int              s_interval;
 static GPtrArray        *s_feeds;
 static GList            *s_news          = NULL;
@@ -67,7 +68,7 @@ static struct client    rss_client = {
                            .ignore_callback = rss_ignore_handler
                         };
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void update_screen(const char *title, 
                           const char *line1, 
                           const char *line2, 
@@ -90,7 +91,7 @@ static void update_screen(const char *title,
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void update_screen_news(void)
 {
     int     i;
@@ -138,7 +139,7 @@ static void update_screen_news(void)
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void free_news(void)
 {
     GList *cur = g_list_first(s_news);
@@ -152,8 +153,7 @@ void free_news(void)
     s_news = NULL;
 }
 
-
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void rss_check(void)
 {
     int nf;
@@ -210,7 +210,7 @@ end_loop:
     }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void rss_key_handler(const char *str)
 {
     if (strcmp(str, "Up") == 0) {
@@ -221,14 +221,14 @@ static void rss_key_handler(const char *str)
     update_screen_news();
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static void rss_ignore_handler(void)
 {
     s_current_screen++;
     update_screen_news();
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool rss_init(void)
 {
     int      i;
@@ -291,7 +291,7 @@ static bool rss_init(void)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void *rss_run(void *cookie)
 {
     int     i;

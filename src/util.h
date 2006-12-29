@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #ifndef UTIL_H
 #define UTIL_H
@@ -18,7 +21,7 @@
 #include <stdbool.h>
 
 /*
- * string functions --------------------------------------------------------------------------------
+ * string functions ------------------------------------------------------------
  */
 
 void string_canon_init(void);
@@ -28,7 +31,7 @@ char *format_bytes(unsigned long long bytes);
 void string_replace(char *string, char from, char to);
 
 /*
- * file walking functions, replacement for ftw -----------------------------------------------------
+ * file walking functions, replacement for ftw ---------------------------------
  */
 
 typedef enum {
@@ -52,15 +55,20 @@ bool filewalk(const char            *basedir,
 bool delete_directory_recursively(const char *directory, GError **err);
 
 /*
- * Other file functions ---------------------------------------------------------------------------
+ * Other file functions --------------------------------------------------------
  */
 
-long copy_file(const char *src_name, const char *dest_dir, const char *dest_name, GError **gerr);
+long copy_file(const char       *src_name,
+               const char       *dest_dir,
+               const char       *dest_name,
+               GError           **gerr);
 
 /*
- * disk functions ---------------------------------------------------------------------------------
+ * disk functions --------------------------------------------------------------
  */
 
 unsigned long long get_free_bytes(const char *path, GError **err);
 
 #endif /* UTIL_H */
+
+/* vim: set ts=4 sw=4 et: */

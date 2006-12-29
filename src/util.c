@@ -1,16 +1,19 @@
 /*
- * This program is free software; you can redistribute it and/or modify it under the terms of the 
- * GNU General Public License as published by the Free Software Foundation; You may only use 
- * version 2 of the License, you have no option to use any other version.
+ * This file is part of lcd-stuff.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See 
- * the GNU General Public License for more details.
+ * lcd-stuff is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License.
  *
- * You should have received a copy of the GNU General Public License along with this program; if 
- * not, write to the Free Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ * lcd-stuff is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * ------------------------------------------------------------------------------------------------- 
+ * You should have received a copy of the GNU General Public License
+ * along with lcd-stuff; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ *
  */
 #include <stdbool.h>
 #define _GNU_SOURCE
@@ -32,15 +35,18 @@
 #define BYTES_PER_MBYTE (1024*BYTES_PER_KBYTE)
 #define BYTES_PER_GBYTE (1024*BYTES_PER_MBYTE)
 
-/* ---------------------- static variables ----------------------------------------------------- */
+/* ---------------------- static variables ---------------------------------- */
 static char s_valid_chars[256];
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void string_canon_init(void)
 {
     int i, character;
 
-    /* init the list of valid chars, we don't use utf-8 or any other multibyte encoding */
+    /* 
+     * init the list of valid chars, we don't use utf-8 or any other 
+     * multibyte encoding
+     */
     for (character = (int)' ', i = 0; character <= 255; character++) {
         if (character != '{' && character != '}' && character != '\\') {
             s_valid_chars[i++] = character;
@@ -50,7 +56,7 @@ void string_canon_init(void)
     s_valid_chars[i] = '\0';
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *format_time(unsigned long seconds)
 {
     unsigned long sec_disp;
@@ -62,10 +68,10 @@ char *format_time(unsigned long seconds)
     return g_strdup_printf("%lu:%02lu", min_disp, sec_disp);
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *format_bytes(unsigned long long bytes)
 {
-	char *ret;
+    char *ret;
     if (bytes > BYTES_PER_GBYTE) {
         asprintf(&ret, "%.2f GB", (double)bytes / BYTES_PER_GBYTE);
     } else if (bytes > BYTES_PER_MBYTE) {
@@ -73,32 +79,31 @@ char *format_bytes(unsigned long long bytes)
     } else if (bytes > BYTES_PER_KBYTE) {
         asprintf(&ret, "%.2f KB", (double)bytes / BYTES_PER_KBYTE);
     } else {
-		asprintf(&ret, "%llu B", bytes);
+        asprintf(&ret, "%llu B", bytes);
     }
 
-	return ret;
+    return ret;
 }
 
-
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 char *string_canon(char *string)
 {
     return g_strcanon(string, s_valid_chars, '?');
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 void string_replace(char *string, char from, char to)
 {
-	char *cur = string;
+    char *cur = string;
 
-	while (*cur++ != 0) {
-		if (*cur == from) {
-			*cur = to;
-		}
-	}
+    while (*cur++ != 0) {
+        if (*cur == from) {
+            *cur = to;
+        }
+    }
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 bool filewalk(const char            *basedir, 
               filewalk_function     fn,
               void                  *cookie, 
@@ -127,7 +132,8 @@ bool filewalk(const char            *basedir,
         }
 
         if (g_file_test(path, G_FILE_TEST_IS_DIR) &&
-                !(g_file_test(path, G_FILE_TEST_IS_SYMLINK) && (flags & FWF_NO_SYMLINK_FOLLOW))) {
+                !(g_file_test(path, G_FILE_TEST_IS_SYMLINK) && 
+                    (flags & FWF_NO_SYMLINK_FOLLOW))) {
             if (!(flags & FWF_NO_RECURSION)) {
                 if (!filewalk(path, fn, cookie, flags, gerr)) {
                     result = false;
@@ -162,7 +168,7 @@ endloop:
     return result;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 static bool directory_delete_function(const char    *filename, 
                                       void          *cookie, 
                                       GError        **gerr)
@@ -184,14 +190,15 @@ static bool directory_delete_function(const char    *filename,
     if (err < 0) {
         char buffer[1024];
         strerror_r(errno, buffer, 1024);
-        g_set_error(gerr, g_lcdstuff_quark, errno, "Deletion failed: %s", buffer);
+        g_set_error(gerr, g_lcdstuff_quark, errno, "Deletion failed: %s",
+                buffer);
         return false;
     }
 
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 bool delete_directory_recursively(const char *directory, GError **gerr)
 {
     GError *gerr_result = NULL;
@@ -208,8 +215,11 @@ bool delete_directory_recursively(const char *directory, GError **gerr)
     return true;
 }
 
-/* --------------------------------------------------------------------------------------------- */
-long copy_file(const char *src_name, const char *dest_dir, const char *dest_name, GError **gerr)
+/* -------------------------------------------------------------------------- */
+long copy_file(const char       *src_name,
+               const char       *dest_dir,
+               const char       *dest_name,
+               GError           **gerr)
 {
     int             src_fd = 0, dest_fd = 0;
     long            retval = -1;
@@ -227,18 +237,18 @@ long copy_file(const char *src_name, const char *dest_dir, const char *dest_name
         goto end_copy;
     }
 
-	filename = dest_name 
-		? g_strdup(dest_name)
-		: g_path_get_basename(src_name);
+    filename = dest_name 
+        ? g_strdup(dest_name)
+        : g_path_get_basename(src_name);
 
     dest_path = g_build_filename(dest_dir, filename, NULL);
-	g_free(filename);
+    g_free(filename);
     dest_fd = g_open(dest_path, O_CREAT|O_WRONLY, 0644);
     if (dest_fd <= 0) {
         char buffer[1024];
         strerror_r(errno, buffer, 1024);
-        g_set_error(gerr, g_lcdstuff_quark, errno, "Opening '%s' for write failed: %s",
-                dest_path, buffer);
+        g_set_error(gerr, g_lcdstuff_quark, errno, "Opening '%s' for "
+                "write failed: %s", dest_path, buffer);
         goto end_copy;
     }
 
@@ -283,7 +293,7 @@ end_copy:
     return retval;
 }
 
-/* --------------------------------------------------------------------------------------------- */
+/* -------------------------------------------------------------------------- */
 unsigned long long get_free_bytes(const char *path, GError **gerr)
 {
     struct statfs   my_statfs;
@@ -299,4 +309,4 @@ unsigned long long get_free_bytes(const char *path, GError **gerr)
     return (unsigned long long)my_statfs.f_bavail * my_statfs.f_bsize;
 }
 
-
+/* vim: set ts=4 sw=4 et: */
