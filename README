@@ -12,9 +12,10 @@ Features
 --------
 
     * display of e-mail using POP3
-    * mpd control
+    * MPD control
     * display of news items using RSS
     * display of the weather from weather.com
+    * fill your USB-Storage based MP3 player with music
 
 
 Requirements
@@ -44,12 +45,167 @@ Usage
 -----
 
 Just as every lcdproc client. Type "lcd-stuff -h" for more information. An 
-example configuration file is supplied with lcd-stuff (lcd-stuff.conf).
+example configuration file is supplied with lcd-stuff (lcd-stuff.conf). The
+documentation for all the various parameters is contained below.
 
+
+Configuration file
+------------------
+
+The configuration file is in a INI-style format. As parser, the glib2
+"Key-value file parser" is used which is documented at
+http://developer.gnome.org/doc/API/2.0/glib/glib-Key-value-file-parser.html.
+
+In the description below, following place holders are used
+
+    <str>                   A simple text which may contain spaces. There's
+                            _no_ need to escape spaces with backslash or
+                            something else.
+    <no>                    A continuous number, starting with 0 and increased
+                            each time. You'll see below the sense of this
+                            <no> stuff.
+    <int>                   A number in decimal representation.
+    <list>                  Not any arbitrary string but a string from a list
+                            that is listed in the description on the right.
+
+Now, the options for each client are explained. It's legal to leave out a client
+in the configuration file which means that this client doesn't get displayed.
+
+    [mail]
+
+    name=<str>              This is the name that is shown as title for the
+                            mail screen.
+                            Default: Mail
+
+    interval=<int>          The update interval in seconds at which lcd-stuff
+                            looks for new mails.
+                            Default: 300
+
+    number_of_servers=<int> The number of mail servers to check. The number is
+                            read to retrieve the information that is specific
+                            for the mail server below.
+                            Default: 0
+
+    name<no>=<str>          The name for the server which gets displayed in the
+                            title.
+                            Default: Server name
+
+    type<no>1=<list>        The type of the server, currently "pop3" and "imap"
+                            are supported.
+                            Default: pop3
+
+    server<no>=<str>        The server that contains the mailbox, e.g.
+                            "pop3.gmx.net" if your mail provider is GMX.
+                            Default: no default
+
+    user<no>=<str>          The user name for the login.
+                            Default: no default
+
+    password<no>=<str>      The password for the login. Please set the
+                            permissions of the file so that no other user
+                            from your system can read your mail passwords.
+                            Default: no default
+
+    mailbox_name<no>=<str>  Only if type=imap. The name of the mailbox to
+                            check for mail.
+                            Default: INBOX
+
+    [rss]
+
+    interval=<int>          The update interval at which the RSS feeds are
+                            retrieved. Currently, there's no check if the
+                            feed was updated, always the complete titles
+                            are retrieved and updated.
+                            Default: 1800 (= 30 min)
+
+    number_of_feeds=<int>   The number of RSS feeds to retrieve. The number is
+                            read to retrieve the information that is specific
+                            for the RSS feed below.
+                            Default: 0
+
+    url<no>=<str>           The URL to the feed.
+                            Default: no default
+
+    items<no>=<int>         The number of items to retrieve. This is counted from
+                            new to old, so if e.g. items=10, the 10 latest
+                            items are shown.
+                            Default: 0
+
+    name<no>=<str>          The name that is shown in the title for the feed.
+                            Default: no default
+
+    [weather]
+
+    name=<str>              The title that is used for the weather screen.
+                            Default: Weather
+
+    interval=<int>          The update interval for the weather.
+                            Default: 3600 (= 1 h)
+
+    citycode=<str>          The city code that can be retrieved from
+                            http://www.weather.com/. Just enter your city
+                            in the search box, click on the city. Then you
+                            can extract the code from the URL. For example,
+                            GMXX0096 stands for Nürnberg in Germany.
+                            Default: no default
+
+    [mpd]
+
+    name=<str>              The title for the MPD screen.
+
+    server=<str>            The server name, can also be "localhost" if
+                            the MPD server is running on the same machine.
+                            Default: localhost
+
+    port=<int>              The port number where the MPD accepts connections.
+                            Default: 6600
+
+    timeout=<int>           Timeout for MPD connections in seconds.
+                            Default: 10
+
+    [mp3load]
+
+    name=<str>              The title for the mp3load screen that is displayed
+                            if you select "Fill MP3 Player" from the lcdproc
+                            menu.
+                            Default: MP3 Load
+
+    target_directory=<str>  The directory where the music files gets stored.
+                            The contents of this directory is completely
+                            deleted before new MP3s are filled, so please make
+                            sure that this directory is right. Spaces are
+                            okay.
+                            Default: no default
+
+    source_directory=<str>  The directory where your music is stored. Of course,
+                            the music can be in subdirectories of this directory.
+                            Default: no default
+
+    size=<string>           The amount of music you want to have on your player.
+                            Following are legal size specifications:
+                                 - 30m      => 30 megabytes
+                                 - 10k      => 10 kilobytes
+                                 - 80%      => 80 percent of the storage of
+                                               the volume that contains
+                                               target_directory
+
+    mount_command=<str>     The command that should be executed before accessing
+                            target_directory. Can be empty.
+                            Default: empty
+    
+    umount_command=<str>    The command that should be executed after accessing
+                            target_directory and before the "you can remove
+                            your device" screen is displayed. Can be empty.
+                            Default: empty
+
+    extensions=<str>        File extensions that are treated as music file.
+                            Depends on your player hardware which files you
+                            want here.
+                            Default: .mp3
 
 License, Author
 ---------------
 
-lcd-stuff was written by Bernhard Walle (bwalle@berlios.de). It's
-licensed under the terms of the GNU General Public License.
+lcd-stuff was written by Bernhard Walle <bernhard.walle@gmx.de>. It's
+licensed under the terms of the GNU General Public License version 2.
 

@@ -111,7 +111,7 @@ static bool weather_init(void)
     service_thread_command("widget_add " MODULE_NAME " line3 string\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
+    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 3600);
     tmp = key_file_get_string_default(MODULE_NAME, "citycode", "");
     strncpy(s_city, tmp, MAX_CITYCODE_LEN);
     g_free(tmp);

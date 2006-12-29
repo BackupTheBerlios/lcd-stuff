@@ -261,7 +261,7 @@ static bool rss_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
+    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 1800);
 
     number_of_feeds = key_file_get_integer_default(MODULE_NAME, "number_of_feeds", 0);
     if (number_of_feeds == 0) {
