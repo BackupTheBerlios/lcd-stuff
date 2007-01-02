@@ -1,6 +1,7 @@
 2007-01-02  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* changed coding style
+	* revert r46 and remove the custom snprintf() in shared/ instead
 
 2006-12-29  Bernhard Walle <bernhard.walle@gmx.de>
 

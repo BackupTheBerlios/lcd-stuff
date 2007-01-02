@@ -71,18 +71,15 @@ char *format_time(unsigned long seconds)
 /* -------------------------------------------------------------------------- */
 char *format_bytes(unsigned long long bytes)
 {
-    char *ret;
     if (bytes > BYTES_PER_GBYTE) {
-        asprintf(&ret, "%.2f GB", (double)bytes / BYTES_PER_GBYTE);
+        return g_strdup_printf("%.2f GB", (double)bytes / BYTES_PER_GBYTE);
     } else if (bytes > BYTES_PER_MBYTE) {
-        asprintf(&ret, "%.2f MB", (double)bytes / BYTES_PER_MBYTE);
+        return g_strdup_printf("%.2f MB", (double)bytes / BYTES_PER_MBYTE);
     } else if (bytes > BYTES_PER_KBYTE) {
-        asprintf(&ret, "%.2f KB", (double)bytes / BYTES_PER_KBYTE);
+        return g_strdup_printf("%.2f KB", (double)bytes / BYTES_PER_KBYTE);
     } else {
-        asprintf(&ret, "%llu B", bytes);
+        return g_strdup_printf("%llu B", bytes);
     }
-
-    return ret;
 }
 
 /* -------------------------------------------------------------------------- */
