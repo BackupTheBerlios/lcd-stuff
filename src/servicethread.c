@@ -133,51 +133,36 @@ static enum ProcessResponse lcd_process_response(char *string)
 	int         argc;
 
     argc = get_args(argv, string, 10);
-    if (argc < 1)
-    {
+    if (argc < 1) {
         report(RPT_ERR, "Error received");
         return PR_ERR_MISC;
     }
 
-    if (strcmp(argv[0], "key") == 0)
-    {
+    if (strcmp(argv[0], "key") == 0) {
         key_handler(argv[1]);
         return PR_CALLBACK;
-    }
-    else if (strcmp(argv[0], "listen") == 0)
-    {
+    } else if (strcmp(argv[0], "listen") == 0) {
         listen_handler(argv[1]);
         return PR_CALLBACK;
-    }
-    else if (strcmp(argv[0], "ignore") == 0)
-    {
+    } else if (strcmp(argv[0], "ignore") == 0) {
         ignore_handler(argv[1]);
         return PR_CALLBACK;
-    }
-    else if (strcmp(argv[0], "success") == 0)
-    {
+    } else if (strcmp(argv[0], "success") == 0) {
         return PR_SUCCESS;
-    }
-    else if (strcmp(argv[0], "noop") == 0)
-    {
+    } else if (strcmp(argv[0], "noop") == 0) {
         return PR_SUCCESS;
-    }
-    else if (strcmp(argv[0], "huh?") == 0)
-    {
+    } else if (strcmp(argv[0], "huh?") == 0) {
         char    errorstring[512] = "";
         int     i;
 
-        for (i = 1; i < argc; i++)
-        {
+        for (i = 1; i < argc; i++) {
             g_strlcat(errorstring, argv[i], 512);
             g_strlcat(errorstring, " ", 512);
         }
 
         report(RPT_ERR, "Error: %s\n", errorstring);
         return PR_FAILURE;
-    }
-    else if (strcmp(argv[0], "menuevent") == 0)
-    {
+    } else if (strcmp(argv[0], "menuevent") == 0) {
         char **id;
         struct client *client;
         gpointer param;
@@ -190,19 +175,15 @@ static enum ProcessResponse lcd_process_response(char *string)
         g_static_mutex_unlock(&s_mutex);
         client = (struct client *)param;
 
-        if (found)
-        {
-            if (client->menu_callback)
-            {
+        if (found) {
+            if (client->menu_callback) {
                 client->menu_callback(argv[1], id[1], argc == 4 ? argv[3] : "");
             }
         }
 
         g_strfreev(id);
         return PR_CALLBACK;
-    }
-    else
-    {
+    } else {
         report(RPT_ERR, "Invalid response: %s\n", string);
         return PR_INVALID;
     }
@@ -218,30 +199,34 @@ static int send_command_succ(gchar *command)
     char                    buffer[BUFSIZ];
     
     err = sock_send_string(g_socket, command);
-    if (err < 0)
-    {
+    if (err < 0) {
         report(RPT_ERR, "Could not send '%s': %d", command, err);
         return err;
     }
 
-    for (loopcount = 0; loopcount < 10; loopcount++)
-    {
+    for (loopcount = 0; loopcount < 10; loopcount++) {
         num_bytes = sock_recv_string(g_socket, buffer, BUFSIZ - 1);
-        if (num_bytes < 0)
-        {
+        if (num_bytes < 0) {
             report(RPT_ERR, "Could not receive string: %s", strerror(errno));
             return err;
-        }
-        else if (num_bytes > 0)
-        {
+        } else if (num_bytes > 0) {
+
             process_err = lcd_process_response(buffer);
             switch (process_err)
             {
-                case PR_SUCCESS:        return 0;
-                case PR_FAILURE:        return -1;
-                case PR_CALLBACK:       continue;
-                case PR_INVALID:        return -1;
-                case PR_ERR_MISC:       return -1;
+                case PR_SUCCESS:
+                    return 0;
+
+                case PR_FAILURE:
+                    return -1;
+
+                case PR_CALLBACK:
+                    continue;
+                case PR_INVALID:
+                    return -1;
+
+                case PR_ERR_MISC:
+                    return -1;
             }
         }
         g_usleep(100);
@@ -257,23 +242,28 @@ static int check_for_input(void)
     char                    buffer[BUFSIZ];
     enum ProcessResponse    err;
         
-    while (num_bytes != 0)
-    {
+    while (num_bytes != 0) {
         num_bytes = sock_recv_string(g_socket, buffer, BUFSIZ - 1);
-        if (num_bytes > 0)
-        {
+
+        if (num_bytes > 0) {
             err = lcd_process_response(buffer);
-            switch (err)
-            {
-                case PR_SUCCESS:        return 0;
-                case PR_FAILURE:        return -1;
-                case PR_CALLBACK:       continue;
-                case PR_INVALID:        return -1;
-                case PR_ERR_MISC:       return -1;
+            switch (err) {
+                case PR_SUCCESS:
+                    return 0;
+
+                case PR_FAILURE:
+                    return -1;
+
+                case PR_CALLBACK:
+                    continue;
+
+                case PR_INVALID:
+                    return -1;
+
+                case PR_ERR_MISC:
+                    return -1;
             }
-        }
-        else if (num_bytes < 0)
-        {
+        } else if (num_bytes < 0) {
             return -1;
         }
     }
