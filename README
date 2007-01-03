@@ -24,13 +24,20 @@ Requirements
     * 20×4 display
     * lcdproc, of course
     * C compiler
-    * libetpan for mail
-    * nxml for weather parsing
-    * mrss for RSS
-    * cURL for web access
     * glib
-    * taglib_c
-    * libmpd to access MPD
+    * mail
+      - libetpan
+    * weather
+      - nxml
+      - curl (required by nxml)
+    * mp3load
+      - taglib_c
+    * mpd
+      - libmpd
+    * rss
+      - mrss
+      - nxml
+      - curl (required by nxml)
 
 
 Installation
@@ -39,6 +46,16 @@ Installation
     * ./configure
     * make
     * make install
+
+If you don't have all libraries installed and you don't need the features, you
+can use following parameters for the configure script to disable the libraries
+and their corresponding features:
+
+   --disable-nxml               disables rss and weather
+   --disable-mrss               disables rss
+   --disable-libetpan           disables mail
+   --disable-taglib_c           disables mp3load
+   --disable-libmpd             disables mpd
 
 
 Usage

@@ -25,8 +25,6 @@
 #include <shared/sockets.h>
 #include <shared/str.h>
 
-#include <libetpan/libetpan.h>
-
 #include "weather.h"
 #include "main.h"
 #include "constants.h"

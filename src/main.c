@@ -29,16 +29,26 @@
 #include <shared/str.h>
 #include <shared/sockets.h>
 
-#include "rss.h"
 #include "constants.h"
-#include "mail.h"
-#include "weather.h"
-#include "servicethread.h"
-#include "global.h"
-#include "mpd.h" 
 #include "keyfile.h"
 #include "util.h"
-#include "mp3load.h"
+#include "servicethread.h"
+#include "global.h"
+#ifdef HAVE_LCDSTUFF_MAIL
+#  include "mail.h"
+#endif
+#ifdef HAVE_LCDSTUFF_WEATHER
+#  include "weather.h"
+#endif
+#ifdef HAVE_LCDSTUFF_MPD
+#  include "mpd.h" 
+#endif
+#ifdef HAVE_LCDSTUFF_RSS
+#  include "rss.h"
+#endif
+#ifdef HAVE_LCDSTUFF_MP3LOAD
+#  include "mp3load.h"
+#endif
 
 /* ========================= global variables =============================== */
 char           *g_lcdproc_server       = DEFAULT_SERVER;
@@ -46,17 +56,27 @@ int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
 int            g_display_width         = 0;
-GQuark          g_lcdstuff_quark;
+GQuark         g_lcdstuff_quark;
 
 /* ========================= thread functions =============================== */
-#define THREAD_NUMBER 5
 static GThreadFunc s_thread_funcs[] = {
+#ifdef HAVE_LCDSTUFF_RSS
     rss_run,
+#endif
+#ifdef HAVE_LCDSTUFF_MAIL
     mail_run,
+#endif
+#ifdef HAVE_LCDSTUFF_WEATHER
     weather_run,
+#endif
+#ifdef HAVE_LCDSTUFF_MPD
     mpd_run,
+#endif
+#ifdef HAVE_LCDSTUFF_MP3LOAD
     mp3load_run
+#endif
 };
+#define THREAD_NUMBER (sizeof(s_thread_funcs)/sizeof(GThreadFunc))
 
 /* ========================= static variables =============================== */
 static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
@@ -76,7 +96,24 @@ static char g_help_text[] =
      "  -f <0|1>\tRun in foreground (1) or background (0, default)\n"
      "  -r <level>\tSet reporting level (0-5) [2: errors and warnings]\n"
      "  -s <0|1>\tReport to syslog (1) or stderr (0, default)\n"
-     "  -h\t\tShow this help\n";
+     "  -h\t\tShow this help\n"
+     "Features:\n"
+#ifdef HAVE_LCDSTUFF_MAIL
+     "  mail\n"
+#endif
+#ifdef HAVE_LCDSTUFF_MP3LOAD
+     "  mp3load\n"
+#endif
+#ifdef HAVE_LCDSTUFF_MPD
+     "  mpd\n"
+#endif
+#ifdef HAVE_LCDSTUFF_WEATHER
+     "  weather\n"
+#endif
+#ifdef HAVE_LCDSTUFF_RSS
+     "  rss\n"
+#endif
+     ;
 
 
 

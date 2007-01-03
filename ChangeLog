@@ -1,3 +1,8 @@
+2007-01-04  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* added configure flags to disable features if the libraries are not
+	  installed
+
 2007-01-02  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* changed coding style

@@ -117,35 +117,137 @@ if test x"$ac_cv_enable_libetpan" = xyes; then
 else
         AC_MSG_RESULT(no)
 fi
-AM_CONDITIONAL(SYLPHEED_LIBETPAN, test "x$libetpan_result" = "xyes")
+
+dnl building mail ?
+AM_CONDITIONAL(LCDSTUFF_MAIL, test "x$libetpan_result" = "xyes")
+if test "x$libetpan_result" = "xyes" ; then
+    AC_DEFINE([HAVE_LCDSTUFF_MAIL], [1], [Define 1 if mail support is built])
+fi
 
 dnl ***********************************
 dnl *** Check for taglib_c          ***
 dnl ***********************************
 TAGLIBC_LIBS=""
 TAGLIBC_CFLAGS=""
-AC_CHECK_LIB([tag_c], [taglib_file_new],
-[
-  AC_CHECK_HEADER([taglib/tag_c.h],
-  [
-    TAGLIBC_LIBS="-ltag_c"
-    AC_DEFINE([HAVE_TAGLIBC], [1], [Define to 1 if tag_c is found])
-  ])
-], [-lm])
-AC_SUBST([TAGLIBC_CFLAGS])
-AC_SUBST([TAGLIBC_LIBS])
+AC_ARG_ENABLE(taglib_c,
+        [  --disable-taglib_c           Do not compile mp3load support with taglib_c],
+        [ac_cv_enable_taglib_c=$enableval], [ac_cv_enable_taglib_c=yes])
+if test x"$ac_cv_enable_taglib_c" = xyes; then
+        taglib_c_result=no
+        AC_CHECK_LIB([tag_c], [taglib_file_new],
+        [
+          AC_CHECK_HEADER([taglib/tag_c.h],
+          [
+            TAGLIBC_LIBS="-ltag_c"
+            taglib_c_result=yes
+            AC_DEFINE([HAVE_TAGLIBC], [1], [Define to 1 if tag_c is found])
+          ])
+        ])
+        AC_SUBST([TAGLIBC_CFLAGS])
+        AC_SUBST([TAGLIBC_LIBS])
+        if test "x$taglib_c_result" != "xyes" ; then
+           AC_MSG_RESULT([*** lcd-stuff requires taglib_c ])
+           AC_MSG_RESULT([*** You can use --disable-taglib_c if you don't need mp3load.])
+           AC_MSG_ERROR([taglib_c not found])
+        fi
+fi
+
+dnl building mp3load?
+AM_CONDITIONAL(LCDSTUFF_MP3LOAD, test "x$taglib_c_result" = "xyes")
+if test "x$taglib_c_result" = "xyes" ; then
+    AC_DEFINE([HAVE_LCDSTUFF_MP3LOAD], [1], [Define 1 if mp3load support is enabled])
+fi
+
+PKG_PROG_PKG_CONFIG()
+
+MRSS_LIBS=""
+MRSS_CFLAGS=""
+AC_ARG_ENABLE(mrss,
+         [  --disable-mrss               Do not compile rss support with mrss],
+         [ac_cv_enable_mrss=$enableval], [ac_cv_enable_mrss=yes])
+if test x"$ac_cv_enable_mrss" = xyes; then
+         mrss_result="no"
+         PKG_CHECK_MODULES(MRSS, [mrss],
+         [
+            mrss_result="yes"
+            AC_SUBST(MRSS_CFLAGS)
+            AC_SUBST(MRSS_LIBS)
+         ],
+         [
+            AC_MSG_RESULT([*** lcd-stuff requires mrss ])
+            AC_MSG_RESULT([*** You can use --disable-mrss if you don't need rss support.])
+            AC_MSG_ERROR([mrss not found])
+         ])
+fi
+
+NXML_LIBS=""
+NXML_CFLAGS=""
+AC_ARG_ENABLE(nxml,
+        [  --disable-nxml               Do not compile rss and weather support with nxml],
+        [ac_cv_enable_nxml=$enableval], [ac_cv_enable_nxml=yes])
+if test x"$ac_cv_enable_nxml" = xyes; then
+        nxml_result="no"
+        PKG_CHECK_MODULES(NXML, [nxml], 
+        [
+           nxml_result="yes"
+           AC_SUBST(NXML_CFLAGS)
+           AC_SUBST(NXML_LIBS)
+        ],
+        [
+           AC_MSG_RESULT([*** lcd-stuff requires nxml ])
+           AC_MSG_RESULT([*** You can use --disable-nxml if you don't need rss and weather support.])
+           AC_MSG_ERROR([nxml not found])
+        ])
+fi
+
+dnl Should we build weather
+AM_CONDITIONAL(LCDSTUFF_WEATHER, test "x$nxml_result" = "xyes")
+if test "x$nxml_result" = "xyes" ; then
+    AC_DEFINE([HAVE_LCDSTUFF_WEATHER], [1], [Define 1 if weather support is enabled])
+fi
+
+dnl Should we build rss
+AM_CONDITIONAL(LCDSTUFF_RSS, test "x$nxml_result" = "xyes" -a "x$mrss_result" = "xyes")
+if test "x$nxml_result" = "xyes" -a "x$mrss_result" = "xyes" ; then
+    AC_DEFINE([HAVE_LCDSTUFF_RSS], [1], [Define 1 if rss support is enabled])
+fi
+
+LIBMPD_LIBS=""
+LIBMPD_CFLAGS=""
+AC_ARG_ENABLE(libmpd,
+        [  --disable-libmpd             Do not compile mpd support with libmpd],
+        [ac_cv_enable_libmpd=$enableval], [ac_cv_enable_libmpd=yes])
+if test x"$ac_cv_enable_libmpd" = xyes; then
+        libmpd_result="no"
+        PKG_CHECK_MODULES(LIBMPD, [libmpd], 
+        [
+           libmpd_result="yes"
+           AC_SUBST(LIBMPD_CFLAGS)
+           AC_SUBST(LIBMPD_LIBS)
+        ],
+        [
+           AC_MSG_RESULT([*** lcd-stuff requires libmpd ])
+           AC_MSG_RESULT([*** You can use --disable-libmpd if you don't need rss support.])
+           AC_MSG_ERROR([libmpd not found])
+        ])
+fi
+
+dnl Should we build libmpd
+AM_CONDITIONAL(LCDSTUFF_MPD, test "x$libmpd_result" = "xyes")
+if test "x$libmpd_result" = "xyes" ; then
+    AC_DEFINE([HAVE_LCDSTUFF_MPD], [1], [Define 1 if mpd support is enabled])
+fi
 
 PKG_CHECK_MODULES(PACKAGE, [
-        mrss
         glib-2.0
         gthread-2.0
-        libmpd
-        ])
+])
 AC_SUBST(PACKAGE_CFLAGS)
 AC_SUBST(PACKAGE_LIBS)
 
-LIBS="$LIBS $PACKAGE_LIBS $LIBETPAN_LIBS $TAGLIBC_LIBS"
-CFLAGS="$CFLAGS $PACKAGE_CFLAGS $LIBETPAN_FLAGS $TAGLIBC_CFLAGS"
+
+LIBS="$LIBS $PACKAGE_LIBS $LIBETPAN_LIBS $TAGLIBC_LIBS $NXML_LIBS $MRSS_LIBS $LIBMPD_LIBS"
+CFLAGS="$CFLAGS $PACKAGE_CFLAGS $LIBETPAN_FLAGS $TAGLIBC_CFLAGS $NXML_CFLAGS $MRSS_CFLAGS $LIBMPD_CFLAGS"
 
 
 dnl  --------

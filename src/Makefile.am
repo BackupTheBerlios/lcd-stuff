@@ -12,22 +12,28 @@ lcd_stuff_SOURCES       =                               \
     servicethread.h					\
     main.c                                              \
     main.h                                              \
-    mail.c						\
-    mail.h						\
-    maillib.c						\
-    maillib.h						\
     constants.h						\
-    global.h						\
-    rss.h						\
-    rss.c						\
-    weather.c						\
-    weather.h						\
-    weatherlib.c					\
-    weatherlib.h					\
-    mpd.c						\
-    mpd.h						\
-    mp3load.h						\
-    mp3load.c
+    global.h
+
+if LCDSTUFF_RSS
+lcd_stuff_SOURCES += rss.c rss.h
+endif
+
+if LCDSTUFF_WEATHER
+lcd_stuff_SOURCES += weather.h weather.c weatherlib.c weatherlib.h
+endif
+
+if LCDSTUFF_MAIL
+lcd_stuff_SOURCES += mail.c mail.h maillib.c maillib.h
+endif
+
+if LCDSTUFF_MP3LOAD
+lcd_stuff_SOURCES += mp3load.c mp3load.h
+endif
+
+if LCDSTUFF_MPD
+lcd_stuff_SOURCES += mpd.c mpd.h
+endif
 
 lcd_stuff_LDADD = ../shared/libLCDstuff.a
 

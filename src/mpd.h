@@ -15,16 +15,16 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
-#ifndef RSS_H
-#define RSS_H
+#ifndef MPD_H
+#define MPD_H
 
 #include "mail.h"
 
 /**
- * Run function of the mail daemon.
+ * Run function of the MPD daemon.
  */
-void *rss_run(void *cookie);
+void *mpd_run(void *cookie);
 
-#endif /* RSS_H */
+#endif /* MPD_H */
 
 /* vim: set ts=4 sw=4 et: */
