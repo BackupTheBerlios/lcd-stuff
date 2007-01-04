@@ -84,6 +84,7 @@ In the description below, following place holders are used
     <int>                   A number in decimal representation.
     <list>                  Not any arbitrary string but a string from a list
                             that is listed in the description on the right.
+	<bool>					"true" or "false"
 
 Now, the options for each client are explained. It's legal to leave out a client
 in the configuration file which means that this client doesn't get displayed.
@@ -126,6 +127,11 @@ in the configuration file which means that this client doesn't get displayed.
     mailbox_name<no>=<str>  Only if type=imap. The name of the mailbox to
                             check for mail.
                             Default: INBOX
+
+	hidden<no>=<bool>		Show only the number of mails in the first line but
+	                        don't browse through the mails with author and
+							subject
+							Default: false
 
     [rss]
 

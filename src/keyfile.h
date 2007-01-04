@@ -32,6 +32,10 @@ gchar *key_file_get_string_default(      const gchar     *group_name,
                                          const gchar     *key,
                                          const gchar     *default_value);
 
+gboolean key_file_get_boolean_default(   const gchar     *group_name,
+									     const gchar     *key,
+									     gboolean        default_value);
+
 gchar *key_file_get_string(              const gchar     *group_name,
                                          const gchar     *key);
 

@@ -86,9 +86,11 @@ static int s_foreground_mode        = -1;
 static int s_refcount_conf          = THREAD_NUMBER;
 static char g_help_text[] =
      "lcd-stuff - Mail, RSS on a display\n"
-     "Copyright (c) 2006 Bernhard Walle\n"
+     "Copyright (c) 2006-07 Bernhard Walle <bernhard.walle@gmx.de>\n"
+     "\n"
      "This file is released under the GNU General Public License. Refer to the\n"
      "COPYING file distributed with this package.\n"
+     "\n"
      "Options:\n"
      "  -c <file>\tSpecify configuration file ["DEFAULT_CONFIG_FILE"]\n"
      "  -a <address>\tDNS name or IP address of the LCDd server [localhost]\n"
@@ -97,24 +99,25 @@ static char g_help_text[] =
      "  -r <level>\tSet reporting level (0-5) [2: errors and warnings]\n"
      "  -s <0|1>\tReport to syslog (1) or stderr (0, default)\n"
      "  -h\t\tShow this help\n"
-     "Features:\n"
+     "\n"
+     "Compiled-in features:\n  "
 #ifdef HAVE_LCDSTUFF_MAIL
-     "  mail\n"
+     "mail "
 #endif
 #ifdef HAVE_LCDSTUFF_MP3LOAD
-     "  mp3load\n"
+     "mp3load "
 #endif
 #ifdef HAVE_LCDSTUFF_MPD
-     "  mpd\n"
+     "mpd "
 #endif
 #ifdef HAVE_LCDSTUFF_WEATHER
-     "  weather\n"
+     "weather "
 #endif
 #ifdef HAVE_LCDSTUFF_RSS
-     "  rss\n"
+     "rss "
 #endif
+     "\n"
      ;
-
 
 
 /* -------------------------------------------------------------------------- */
@@ -196,8 +199,7 @@ int parse_command_line(int argc, char *argv[])
 /* -------------------------------------------------------------------------- */
 void conf_dec_count(void)
 {
-    if (g_atomic_int_dec_and_test(&s_refcount_conf))
-    {
+    if (g_atomic_int_dec_and_test(&s_refcount_conf)) {
         key_file_close();
     }
 }
@@ -210,19 +212,15 @@ static int send_command(char *result, int size, char *command)
     int         num_bytes        = 0;
     
     err = sock_send_string(g_socket, command);
-    if (err < 0)
-    {
+    if (err < 0) {
         report(RPT_ERR, "Could not send '%s': %d", buffer, err);
         return err;
     }
     
-    if (result)
-    {
-        while (num_bytes == 0)
-        {
+    if (result) {
+        while (num_bytes == 0) {
             num_bytes = sock_recv_string(g_socket, result, size - 1);
-            if (num_bytes < 0)
-            {
+            if (num_bytes < 0) {
                 report(RPT_ERR, "Could not receive string: %s", strerror(errno));
                 return err;
             }
@@ -241,8 +239,7 @@ static bool communication_init(void)
 
     /* create the connection that will be used in the service thread */
     g_socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
-    if (g_socket <= 0)
-    {
+    if (g_socket <= 0) {
         report(RPT_ERR, "Could not create socket: %s", strerror(errno));
         return false;
     }
@@ -251,8 +248,7 @@ static bool communication_init(void)
     send_command(buffer, BUFSIZ, "hello\n");
     
     argc = get_args(argv, buffer, 10);
-    if (argc < 8)
-    {
+    if (argc < 8) {
         report(RPT_ERR, "rss: Error received: %s", buffer);
         return false;
     }

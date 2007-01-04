@@ -2,6 +2,10 @@
 
 	* added configure flags to disable features if the libraries are not
 	  installed
+	* implemented "hidden" option for mails so that only the number 
+	  gets shown in the first line of the mail screen but not
+	  the author/subject of the mails (makes sense for large mail accounts 
+	  where you receive mails from various mailing lists)
 
 2007-01-02  Bernhard Walle <bernhard.walle@gmx.de>
 

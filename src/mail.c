@@ -54,6 +54,7 @@ struct mailbox {
     unsigned int    messages_seen;
     unsigned int    messages_unseen;
     unsigned int    messages_total;
+    bool            hidden;
 };
 
 struct email {
@@ -140,7 +141,7 @@ static void show_screen(void)
         i = 0;
         while (cur) {
             struct email *mail = (struct email *)cur->data;
-            if (!mail) {
+            if (!mail || mail->box->hidden) {
                 break;
             }
 
@@ -410,6 +411,10 @@ static bool mail_init(void)
 
         tmp = g_strdup_printf("mailbox_name%d", i);
         cur->mailbox_name = key_file_get_string_default(MODULE_NAME, tmp, "INBOX");
+        g_free(tmp);
+
+        tmp = g_strdup_printf("hidden%d", i);
+        cur->hidden = key_file_get_string_default(MODULE_NAME, tmp, "false");
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);
