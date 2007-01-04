@@ -141,7 +141,7 @@ static void show_screen(void)
         i = 0;
         while (cur) {
             struct email *mail = (struct email *)cur->data;
-            if (!mail || mail->box->hidden) {
+            if (!mail) {
                 break;
             }
 
@@ -215,39 +215,44 @@ static void mail_check(void)
                 CONNECTION_TYPE_PLAIN, box->username, box->password,
                 POP3_AUTH_TYPE_PLAIN, box->mailbox_name, NULL, NULL);
         if (r != MAIL_NO_ERROR) {
-            report(RPT_ERR, "error initializing storage\n");
+            report(RPT_ERR, "error initializing storage");
             goto end_loop;
         }
 
         /* get the folder structure */
         folder = mailfolder_new(storage, box->mailbox_name, NULL);
         if (folder == NULL) {
-            report(RPT_ERR, "mailfolder_new failed\n");
+            report(RPT_ERR, "mailfolder_new failed");
             goto end_loop;
         }
 
         r = mailfolder_connect(folder);
         if (r != MAIL_NO_ERROR) {
-            report(RPT_ERR, "mailfolder_connect failed\n");
+            report(RPT_ERR, "mailfolder_connect failed");
             goto end_loop;
         }
 
         r = mailfolder_status(folder, &box->messages_total, &box->messages_seen,
                 &box->messages_unseen);
         if (r != MAIL_NO_ERROR) {
-            report(RPT_ERR, "mailfolder_status failed\n");
+            report(RPT_ERR, "mailfolder_status failed");
+            goto end_loop;
+        }
+
+        /* end here when no message fetching is required */
+        if (box->hidden) {
             goto end_loop;
         }
 
         r = mailfolder_get_messages_list(folder, &messages);
         if (r != MAIL_NO_ERROR) {
-            report(RPT_ERR, "mailfolder_get_message failed\n");
+            report(RPT_ERR, "mailfolder_get_message failed");
             goto end_loop;
         }
 
         r = mailfolder_get_envelopes_list(folder, messages);
         if (r != MAIL_NO_ERROR) {
-            report(RPT_ERR, "mailfolder_get_mailmessages_list failed\n");
+            report(RPT_ERR, "mailfolder_get_mailmessages_list failed");
             goto end_loop;
         }
 
@@ -414,7 +419,7 @@ static bool mail_init(void)
         g_free(tmp);
 
         tmp = g_strdup_printf("hidden%d", i);
-        cur->hidden = key_file_get_string_default(MODULE_NAME, tmp, "false");
+        cur->hidden = key_file_get_boolean_default(MODULE_NAME, tmp, false);
         g_free(tmp);
 
         tmp = g_strdup_printf("name%d", i);

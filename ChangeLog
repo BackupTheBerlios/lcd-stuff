@@ -6,6 +6,7 @@
 	  gets shown in the first line of the mail screen but not
 	  the author/subject of the mails (makes sense for large mail accounts 
 	  where you receive mails from various mailing lists)
+	* added local mailboxes (the documentation, it already worked :))
 
 2007-01-02  Bernhard Walle <bernhard.walle@gmx.de>
 

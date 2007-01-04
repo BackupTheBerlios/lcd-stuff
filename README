@@ -11,7 +11,7 @@ lcd-stuff is a client for lcdproc written in C.
 Features
 --------
 
-    * display of e-mail using POP3
+    * display of e-mail using POP3, IMAP and local mailboxes
     * MPD control
     * display of news items using RSS
     * display of the weather from weather.com
@@ -109,23 +109,34 @@ in the configuration file which means that this client doesn't get displayed.
                             Default: Server name
 
     type<no>1=<list>        The type of the server, currently "pop3" and "imap"
-                            are supported.
+                            are supported. For local mailboxes, "maildir" (for
+							the maildir format which stores mails in three
+							subdirectories named "cur", "tmp" and "new),
+							"mbox" (for the mbox format, which stores all
+							mails in a single file) and "mh" (stores each
+							mail in a file, but all in one directory)
+							are supported.
                             Default: pop3
 
     server<no>=<str>        The server that contains the mailbox, e.g.
                             "pop3.gmx.net" if your mail provider is GMX.
+							For local mailboxes use "localhost".
                             Default: no default
 
-    user<no>=<str>          The user name for the login.
-                            Default: no default
+    user<no>=<str>          The user name for the login. Not required when
+							using local mailboxes.
+                            Default: empty string
 
     password<no>=<str>      The password for the login. Please set the
                             permissions of the file so that no other user
                             from your system can read your mail passwords.
+							Not required when using mailboxes.
                             Default: no default
 
-    mailbox_name<no>=<str>  Only if type=imap. The name of the mailbox to
-                            check for mail.
+    mailbox_name<no>=<str>  When type=imap, this variable holds the name of the
+							mailbox to check for new mail. For pop3, this is
+							ignored. For local mailboxes, you have to specify
+							the full path for the box, e.g. /home/user/mail/inbox.
                             Default: INBOX
 
 	hidden<no>=<bool>		Show only the number of mails in the first line but
