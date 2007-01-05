@@ -1,6 +1,7 @@
 2007-01-05  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* removed configfile.c
+	* added hint to README in sample configuration file
 
 2007-01-04  Bernhard Walle <bernhard.walle@gmx.de>
 
