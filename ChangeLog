@@ -2,6 +2,8 @@
 
 	* removed configfile.c
 	* added hint to README in sample configuration file
+	* use AC_CHECK_LIB instead of AC_TRY_LINK to fix usage of
+	  LDFLAGS=--as-needed.
 
 2007-01-04  Bernhard Walle <bernhard.walle@gmx.de>
 
