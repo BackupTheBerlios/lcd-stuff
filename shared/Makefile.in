@@ -50,8 +50,7 @@ ARFLAGS = cru
 libLCDstuff_a_AR = $(AR) $(ARFLAGS)
 libLCDstuff_a_DEPENDENCIES = @LIBOBJS@
 am_libLCDstuff_a_OBJECTS = LL.$(OBJEXT) sockets.$(OBJEXT) \
-	str.$(OBJEXT) configfile.$(OBJEXT) report.$(OBJEXT) \
-	fileio.$(OBJEXT)
+	str.$(OBJEXT) report.$(OBJEXT) fileio.$(OBJEXT)
 libLCDstuff_a_OBJECTS = $(am_libLCDstuff_a_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
@@ -172,7 +171,7 @@ sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
 noinst_LIBRARIES = libLCDstuff.a
-libLCDstuff_a_SOURCES = LL.c LL.h sockets.c sockets.h str.c str.h configfile.c configfile.h debug.h report.c report.h fileio.c fileio.h
+libLCDstuff_a_SOURCES = LL.c LL.h sockets.c sockets.h str.c str.h debug.h report.c report.h fileio.c fileio.h
 libLCDstuff_a_LIBADD = @LIBOBJS@
 AM_CPPFLAGS = -I$(top_srcdir)
 EXTRA_DIST = Makefile.in
@@ -226,7 +225,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/getopt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@$(DEPDIR)/getopt1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LL.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/configfile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fileio.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/report.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sockets.Po@am__quote@
