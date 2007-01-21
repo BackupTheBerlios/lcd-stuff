@@ -1,3 +1,8 @@
+2007-01-21  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: fixed wrapping
+	* increased version number to 0.1.3.
+
 2007-01-05  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* removed configfile.c

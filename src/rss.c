@@ -116,8 +116,9 @@ static void update_screen_news(void)
             if (i++ == s_current_screen) {
                 int     cur_line;
                 char    line[MAX_LINE_LEN];
-                char    *linestart = line;
                 char    text[MAX_LINE_LEN * LINES];
+                char    *text_start = text;
+                int     len = strlen(item->headline);
 
                 memset(text, 0, MAX_LINE_LEN);
                 snprintf(text, MAX_LINE_LEN * LINES, "%s", item->headline);
@@ -127,15 +128,24 @@ static void update_screen_news(void)
                         MODULE_NAME,  item->site);
 
                 for (cur_line = 0; cur_line < (LINES-1); cur_line++) {
-                    strncpy(linestart, text + cur_line*g_display_width, MAX_LINE_LEN);
+                    char *linestart = line;
 
-                    /* strip leading spaces */
-                    while (*linestart == ' ') {
-                        linestart++;
+                    if (text_start - text < len) {
+                        strncpy(linestart, text_start, MAX_LINE_LEN);
+
+                        /* strip leading spaces */
+                        while (*linestart == ' ') {
+                            linestart++;
+                            text_start++;
+                        }
+
+                        linestart[g_display_width] = 0;
+                        text_start += g_display_width;
+                    } else {
+                        linestart = "";
                     }
 
-                    linestart[g_display_width] = 0;
-                    service_thread_command("widget_set %s line%d 1 %d {%s}\n", 
+                    service_thread_command("widget_set %s line%d 1 %d {%s}\n",
                             MODULE_NAME,  cur_line+1, cur_line+2, linestart);
                 }
                 break;
