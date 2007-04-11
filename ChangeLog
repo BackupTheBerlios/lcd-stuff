@@ -1,3 +1,9 @@
+2007-04-12  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* converted tabs to spaces in README because it assumed 4 characters
+	  and that's broken when viewing with less
+	* added version number for libmpd in README
+
 2007-01-21  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: fixed wrapping
