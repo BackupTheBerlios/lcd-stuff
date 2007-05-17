@@ -119,14 +119,13 @@ static GPtrArray *mpd_get_playlists(void)
             case MPD_DATA_TYPE_PLAYLIST:
                 g_ptr_array_add(array, g_path_get_basename(data->playlist));
                 g_free(data->playlist);
+                data->playlist = NULL;
                 break;
 
             case MPD_DATA_TYPE_DIRECTORY:
-                g_free(data->directory);
-                break;
-
             case MPD_INFO_ENTITY_TYPE_SONG:
                 g_free(data->directory);
+                data->directory = NULL;
                 break;
 
             default:

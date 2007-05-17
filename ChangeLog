@@ -1,3 +1,8 @@
+2007-05-17  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: fixed crash with newer libmpd versions, thanks to
+	  ticho@gentoo.org for the patch
+
 2007-04-12  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* converted tabs to spaces in README because it assumed 4 characters
