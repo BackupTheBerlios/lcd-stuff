@@ -30,7 +30,7 @@
 
 #include <libmpd/libmpd.h>
 
-#include "rss.h"
+#include "mpd.h"
 #include "main.h"
 #include "constants.h"
 #include "global.h"
@@ -51,20 +51,22 @@ struct song {
 };
 
 /* ------------------------variables ---------------------------------------- */
-static MpdObj           *s_mpd;
-static int              s_error          = 0;
-static int              s_current_state  = 0;
-static bool             s_song_displayed = false;
-static struct song      *s_current_song;
-static guint            s_stop_time      = UINT_MAX;
-static GPtrArray        *s_current_list  = NULL;
-static struct client    mpd_client = {
-                           .name            = MODULE_NAME,
-                           .key_callback    = mpd_key_handler,
-                           .listen_callback = NULL,
-                           .ignore_callback = NULL,
-                           .menu_callback   = mpd_menu_handler
-                        };
+static MpdObj *s_mpd;
+static int s_error = 0;
+static int s_current_state  = 0;
+static bool s_song_displayed = false;
+static struct song *s_current_song;
+static guint s_stop_time = UINT_MAX;
+static GPtrArray *s_current_list = NULL;
+static struct connection *s_connection;
+
+static struct client mpd_client = {
+    .name            = MODULE_NAME,
+    .key_callback    = mpd_key_handler,
+    .listen_callback = NULL,
+    .ignore_callback = NULL,
+    .menu_callback   = mpd_menu_handler
+};
 
 
 /* -------------------------------------------------------------------------- */
@@ -373,39 +375,33 @@ static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userda
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mpd_init(void)
+static bool mpd_start_connection(void)
 {
-    char     *host;
-    char     *password;
-    int      port;
-    char     *string;
-
-    /* register client */
-    service_thread_register_client(&mpd_client);
+    char    *server, *password;
+    int     port, err;
 
     /* get config items */
-    host = key_file_get_string_default(MODULE_NAME, "server", "localhost");
+    server = key_file_get_string_default(MODULE_NAME, "server", "localhost");
     password = key_file_get_string_default(MODULE_NAME, "password", "");
     port = key_file_get_integer_default(MODULE_NAME, "port", 6600);
 
-    /* create the object */
-    s_mpd = mpd_new(host, port, password);
-    g_free(host);
-    g_free(password);
-
     /* create the current song */
     s_current_song = mpd_song_new("", "");
+
+    /* set the global connection */
+    s_connection = connection_new(server, password, port);
+    g_free(server);
+    g_free(password);
+    if (!s_connection)
+        return false;
+
+    /* create the object */
+    s_mpd = mpd_new(s_connection->host, s_connection->port, s_connection->password);
 
     /* connect signal handlers */
     mpd_signal_connect_error(s_mpd, mpd_error_handler, NULL);
     mpd_signal_connect_status_changed(s_mpd, mpd_state_changed_handler, NULL);
     mpd_signal_connect_connection_changed(s_mpd, mpd_connection_changed_handler, NULL);
-    
-    /* connect */
-    mpd_connect(s_mpd);
-    if (s_error) {
-        return false;
-    }
 
     /* set timeout */
     mpd_set_connection_timeout(s_mpd, 
@@ -414,6 +410,25 @@ static bool mpd_init(void)
         mpd_disconnect(s_mpd);
         return false;
     }
+
+    /* connect */
+    err = mpd_connect(s_mpd);
+    if (err != MPD_OK || s_error) {
+        report(RPT_ERR, "Failed to connect: %d", err);
+        return false;
+    }
+
+    return true;
+}
+
+/* -------------------------------------------------------------------------- */
+static bool mpd_init(void)
+{
+    char     *string;
+    int      err;
+
+    /* register client */
+    service_thread_register_client(&mpd_client);
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -443,28 +458,55 @@ static bool mpd_init(void)
 }
 
 /* -------------------------------------------------------------------------- */
+static void mpd_deinit(void)
+{
+    service_thread_command("screen_del " MODULE_NAME "\n");
+}
+
+/* -------------------------------------------------------------------------- */
 void *mpd_run(void *cookie)
 {
-    time_t      next_check, current;
+    time_t      next_update, current;
     gboolean    result;
+    int         retry_count = 0;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
         report(RPT_INFO, "mpc disabled");
         conf_dec_count();
-        goto song_free;
+        return NULL;
     }
 
-    if (!mpd_init()) {
+    if (!mpd_init())
         goto out;
-    }
+
+    if (!mpd_start_connection())
+        goto out_screen;
+
+    /* do first update instantly */
+    next_update = time(NULL);
+
     conf_dec_count();
 
-    /* check mails instantly */
-    next_check = time(NULL);
-
     /* dispatcher */
-    while (!g_exit && !s_error) {
+    while (!g_exit) {
+
+        /* if we are in error state, try to retrieve a connection first */
+        if (s_error) {
+            if (retry_count-- <= 0) { /* each minute */
+                if (mpd_start_connection()) {
+                    s_error = false;
+                } else {
+                    retry_count = 60;
+                }
+            }
+
+            if (s_error) {
+                g_usleep(1000000);
+                break;
+            }
+        }
+
         current = time(NULL);
 
         g_usleep(1000000);
@@ -473,9 +515,9 @@ void *mpd_run(void *cookie)
         mpd_update_status_time();
 
         /* check playlists ? */
-        if (current > next_check) {
+        if (current > next_update) {
             mpd_update_playlist_menu();
-            next_check = time(NULL) + 60;
+            next_update = time(NULL) + 60;
         } if (current > s_stop_time) {
             mpd_player_stop(s_mpd);
             s_stop_time = UINT_MAX;
@@ -483,12 +525,14 @@ void *mpd_run(void *cookie)
         }
     }
 
+out_screen:
+    mpd_deinit();
+
 out:
     CALL_IF_VALID(s_mpd, mpd_free);
     CALL_IF_VALID(s_current_list, mpd_free_playlist);
     service_thread_unregister_client(MODULE_NAME);
     mpd_song_delete(s_current_song);
-song_free:
     
     return NULL;
 }

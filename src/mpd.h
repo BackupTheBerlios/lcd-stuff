@@ -18,12 +18,51 @@
 #ifndef MPD_H
 #define MPD_H
 
-#include "mail.h"
+#include <glib.h>
 
 /**
  * Run function of the MPD daemon.
  */
 void *mpd_run(void *cookie);
+
+/**
+ * Connection with host, password and port
+ */
+struct connection {
+    char            *host;
+    char            *password;
+    unsigned short  port;
+};
+
+/**
+ * Allocates a new connection.
+ */
+static inline struct connection *connection_new(const char       *host,
+                                                const char       *password,
+                                                unsigned short   port)
+{
+    struct connection *ret;
+    
+    ret = g_malloc(sizeof(struct connection));
+    if (!ret)
+        return NULL;
+
+    ret->host = g_strdup(host);
+    ret->password = g_strdup(password);
+    ret->port = port;
+
+    return ret;
+}
+
+/**
+ * Frees the memory occupied by the connection
+ */
+static inline void connection_delete(struct connection *connection)
+{
+    g_free(connection->host);
+    g_free(connection->password);
+    g_free(connection);
+}
 
 #endif /* MPD_H */
 

@@ -1,3 +1,7 @@
+2007-06-08  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: improve error handling
+
 2007-05-17  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: fixed crash with newer libmpd versions, thanks to
