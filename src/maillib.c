@@ -59,6 +59,14 @@ int get_driver(char * name)
 }
 
 /* -------------------------------------------------------------------------- */
+bool is_local(const char *driver)
+{
+    return strcmp(driver, "mh") == 0 ||
+        strcmp(driver, "maildir") == 0 ||
+        strcmp(driver, "mbox") == 0;
+}
+
+/* -------------------------------------------------------------------------- */
 int init_storage(struct mailstorage     *storage,
                  int                    driver,
                  char                   *server,

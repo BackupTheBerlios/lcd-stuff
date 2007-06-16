@@ -202,8 +202,10 @@ static void mail_check(void)
             break;
         }
 
-        update_screen(box->name, "", "  Receiving ...", "");
-        box->messages_seen = box->messages_total = box->messages_unseen = 0;
+        if (!is_local(box->type)) {
+            update_screen(box->name, "", "  Receiving ...", "");
+            box->messages_seen = box->messages_total = box->messages_unseen = 0;
+        }
 
         storage = mailstorage_new(NULL);
         if (!storage) {
@@ -274,8 +276,7 @@ static void mail_check(void)
             r = mailmessage_get_flags(message, &flags);
             if (r == MAIL_NO_ERROR) {
                 /* check if message is 'seen' */
-                if (flags->fl_flags & MAIL_FLAG_SEEN)
-                {
+                if (flags->fl_flags & MAIL_FLAG_SEEN) {
                     /* skip this, move to next message */
                     goto end_inner;
                 }
@@ -304,26 +305,36 @@ static void mail_check(void)
                           break;
                 }
             }
-            if (!mail->from) {
+            if (!mail->from)
                 mail->from = g_strdup("");
-            }
-            if (!mail->subject) {
+            if (!mail->subject)
                 mail->subject = g_strdup("");
-            }
 
             mail->message_number_in_box = message_number++;
             mail->box = box;
             s_email = g_list_append(s_email, mail);
 
 end_inner:
-            CALL_IF_VALID(hdr, mailimf_fields_free);
+            if (hdr)
+                mailimf_fields_free(hdr);
         }
 
 end_loop:
-        CALL_IF_VALID(messages, mailmessage_list_free);
-        CALL_IF_VALID(folder, mailfolder_disconnect);
-        CALL_IF_VALID(folder, mailfolder_free);
-        CALL_IF_VALID(storage, mailstorage_free);
+        /* workaround to prevent maildir messages from being marked as 'old' */
+        if (strcmp(box->type, "maildir") == 0) {
+            free(storage->sto_session);
+            storage->sto_session = NULL;
+        }
+
+        if (messages)
+            mailmessage_list_free(messages);
+        if (folder) {
+            mailfolder_disconnect(folder);
+            mailfolder_free(folder);
+        }
+        if (storage)
+            mailstorage_free(storage);
+        ;
     }
 }
 

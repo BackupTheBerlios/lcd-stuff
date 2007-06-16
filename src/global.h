@@ -18,22 +18,6 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
-#define FREE_IF_VALID(ptr)                              \
-        do {                                            \
-            if (ptr)                                    \
-            {                                           \
-               free(ptr);                               \
-            }                                           \
-        } while (0);
-
-#define CALL_IF_VALID(ptr, function)                    \
-        do {                                            \
-            if (ptr)                                    \
-            {                                           \
-               function(ptr);                           \
-            }                                           \
-        } while (0);
-
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 #define max(a, b) (((a) < (b)) ? (b) : (a))
 

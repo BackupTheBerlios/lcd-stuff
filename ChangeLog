@@ -1,3 +1,10 @@
+2007-06-16  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mail: fix problem with maildir that the mail is marked as 'old' by
+	  the plugin which prevents parallel running of lcd-stuff with
+	  other mailcheckers like gkrellm
+	* improve coding style by getting rid of global macros
+
 2007-06-08  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: improve error handling

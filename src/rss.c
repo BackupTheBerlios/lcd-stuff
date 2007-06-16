@@ -223,7 +223,8 @@ static void rss_check(void)
         }
 
 end_loop:
-        CALL_IF_VALID(data_cur, mrss_free);
+        if (data_cur)
+            mrss_free(data_cur);
     }
 }
 

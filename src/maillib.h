@@ -18,6 +18,7 @@
 #ifndef MAILLIB_H
 #define MAILLIB_H
 
+#include <stdbool.h>
 #include <libetpan/libetpan.h>
 
 enum {
@@ -31,6 +32,7 @@ enum {
 
 
 int get_driver(char * name);
+bool is_local(const char *driver);
 
 int init_storage(struct mailstorage * storage,
     int driver, char * server, int port,

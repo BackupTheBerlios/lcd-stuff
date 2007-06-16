@@ -186,7 +186,8 @@ static void mpd_update_playlist_menu(void)
     }
 
     s_current_list = new;
-    CALL_IF_VALID(old, mpd_free_playlist);
+    if (old)
+        mpd_free_playlist(old);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -425,7 +426,6 @@ static bool mpd_start_connection(void)
 static bool mpd_init(void)
 {
     char     *string;
-    int      err;
 
     /* register client */
     service_thread_register_client(&mpd_client);
@@ -529,8 +529,10 @@ out_screen:
     mpd_deinit();
 
 out:
-    CALL_IF_VALID(s_mpd, mpd_free);
-    CALL_IF_VALID(s_current_list, mpd_free_playlist);
+    if (s_mpd)
+        mpd_free(s_mpd);
+    if (s_current_list)
+        mpd_free_playlist(s_current_list);
     service_thread_unregister_client(MODULE_NAME);
     mpd_song_delete(s_current_song);
     

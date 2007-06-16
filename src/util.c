@@ -282,7 +282,8 @@ end_copy:
     if (dest_fd != 0) {
         close(dest_fd);
     }
-    CALL_IF_VALID(dest_path, g_free);
+    if (dest_path)
+        g_free(dest_path);
     if (src_fd != 0) {
         close(src_fd);
     }

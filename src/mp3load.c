@@ -539,15 +539,24 @@ void *mp3load_run(void *cookie)
 
 out:
     service_thread_unregister_client(MODULE_NAME);
-    CALL_IF_VALID(s_mutex, g_mutex_free);
-    CALL_IF_VALID(s_condition, g_cond_free);
-    CALL_IF_VALID(s_source_directory, g_free);
-    CALL_IF_VALID(s_target_directory, g_free);
-    CALL_IF_VALID(s_extensions, g_strfreev);
-    CALL_IF_VALID(s_mount_command, g_free);
-    CALL_IF_VALID(s_umount_command, g_free);
-    CALL_IF_VALID(s_default_subdir, g_free);
-    CALL_IF_VALID(s_size, g_free);
+    if (s_mutex)
+        g_mutex_free(s_mutex);
+    if (s_condition)
+        g_cond_free(s_condition);
+    if (s_source_directory)
+        g_free(s_source_directory);
+    if (s_target_directory)
+        g_free(s_target_directory);
+    if (s_extensions)
+        g_strfreev(s_extensions);
+    if (s_mount_command)
+        g_free(s_mount_command);
+    if (s_umount_command)
+        g_free(s_umount_command);
+    if (s_default_subdir)
+        g_free(s_default_subdir);
+    if (s_size)
+        g_free(s_size);
 out_end:
     return NULL;
 }
