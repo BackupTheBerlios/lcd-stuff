@@ -12,6 +12,7 @@ lcd_stuff_SOURCES       =                               \
     servicethread.h					\
     main.c                                              \
     main.h                                              \
+    mplayer.c						\
     constants.h						\
     global.h
 

@@ -1,3 +1,8 @@
+2007-06-26  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mplayer: add new module to play audio stream with mplayer
+	  (supports more formats than MPD)
+
 2007-06-16  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mail: fix problem with maildir that the mail is marked as 'old' by

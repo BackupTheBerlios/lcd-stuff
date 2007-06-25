@@ -472,7 +472,7 @@ void *mpd_run(void *cookie)
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
-        report(RPT_INFO, "mpc disabled");
+        report(RPT_INFO, "mpd disabled");
         conf_dec_count();
         return NULL;
     }

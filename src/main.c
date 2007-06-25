@@ -34,6 +34,7 @@
 #include "util.h"
 #include "servicethread.h"
 #include "global.h"
+#include "mplayer.h"
 #ifdef HAVE_LCDSTUFF_MAIL
 #  include "mail.h"
 #endif
@@ -60,6 +61,7 @@ GQuark         g_lcdstuff_quark;
 
 /* ========================= thread functions =============================== */
 static GThreadFunc s_thread_funcs[] = {
+    mplayer_run,        /* no library dependencies */
 #ifdef HAVE_LCDSTUFF_RSS
     rss_run,
 #endif
@@ -289,6 +291,12 @@ int main(int argc, char *argv[])
         return 1;
     }
     if (signal(SIGINT, sig_handler) == SIG_ERR) {
+        report(RPT_ERR, "Registering signal handler failed");
+        return 1;
+    }
+
+    /* ignore SIGPIPE */
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         report(RPT_ERR, "Registering signal handler failed");
         return 1;
     }
