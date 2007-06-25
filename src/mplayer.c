@@ -17,6 +17,7 @@
  */
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
@@ -29,12 +30,7 @@
 #include <sys/wait.h>
 
 #include <shared/report.h>
-#include <shared/sockets.h>
-#include <shared/str.h>
 
-#include <libmpd/libmpd.h>
-
-#include "mpd.h"
 #include "main.h"
 #include "constants.h"
 #include "global.h"
