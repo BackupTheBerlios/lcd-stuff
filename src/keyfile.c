@@ -42,6 +42,12 @@ gboolean key_file_has_group(const gchar *group_name)
 }
 
 /* -------------------------------------------------------------------------- */
+gchar **key_file_get_keys(const gchar *group_name, int *number)
+{
+    return g_key_file_get_keys(s_key_file, group_name, number, NULL);
+}
+
+/* -------------------------------------------------------------------------- */
 gchar *key_file_get_string_default_l1(const gchar      *group_name,
                                       const gchar      *key,
                                       const gchar      *default_value)

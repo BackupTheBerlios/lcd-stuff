@@ -16,6 +16,9 @@ Features
     * display of news items using RSS
     * display of the weather from weather.com
     * fill your USB-Storage based MP3 player with music
+    * play web radio with MPlayer
+      (because it has support for almost every format, especially
+      RealAudio, which MPD hasn't)
 
 
 Requirements
@@ -38,6 +41,7 @@ Requirements
       - mrss
       - nxml
       - curl (required by nxml)
+    * mplayer (optional, only at runtime)
 
 
 Installation
@@ -64,6 +68,19 @@ Usage
 Just as every lcdproc client. Type "lcd-stuff -h" for more information. An 
 example configuration file is supplied with lcd-stuff (lcd-stuff.conf). The
 documentation for all the various parameters is contained below.
+
+
+Keys
+----
+
+mail, rss:      Up and Down select previous or next item
+
+mpd:            Up: when playing (i.e. not pause), selects the next tile
+                    when pausing, then stops playback
+                Down: toggles between play and pause
+
+mplayer:        Up: toggle between play and pause
+                Down: Stop
 
 
 Configuration file
@@ -236,6 +253,26 @@ in the configuration file which means that this client doesn't get displayed.
                             Depends on your player hardware which files you
                             want here.
                             Default: .mp3
+
+    [mplayer]
+
+    name=<str>              The title for the mplayer screen that is displayed
+                            if you select a station from the lcdproc menu.
+                            Default: Webradio
+
+    <str>=<str>             For each stream, a key value pair with station=url
+                            must be used. This should save typing instead of the
+                            scheme which is used for E-Mail and RSS feeds [1].
+                            If the URL is a play list, then the prefix
+                            "playlist " has to be used. This is simply because
+                            mplayer cannot determine if it's a playlist
+                            automatically but the starter has to give the 
+                            "-playlist" parameter.
+                            Examples: 
+                            DLF=http://dradio-ogg.t-bn.de/dlf_high.ogg
+                            Bayern2=playlist http://www.br-online.de/streaming/...
+                                    ...bayern2radio/bayern2radio_m20.red.smil
+
 
 License, Author
 ---------------

@@ -283,7 +283,8 @@ static void mplayer_menu_handler(const char *event, const char *id, const char *
 static bool mplayer_init(void)
 {
     char     *string;
-    int      i;
+    int      i, j;
+    char     **channels;
 
     /* register client */
     service_thread_register_client(&mpd_client);
@@ -310,8 +311,7 @@ static bool mplayer_init(void)
     g_free(string);
 
     /* get number of channels in the file */
-    s_channel_number = key_file_get_integer_default(MODULE_NAME,
-            "number_of_channels", 0);
+    channels = key_file_get_keys(MODULE_NAME, &s_channel_number);
 
     s_channels = g_new(struct channel, s_channel_number);
     if (!s_channels) {
@@ -321,38 +321,40 @@ static bool mplayer_init(void)
 
     service_thread_command("menu_add_item \"\" mplayer_ch menu {Web-Channels}\n");
 
-    for (i = 1; i <= s_channel_number; i++) {
-        char *url, *playlist, *name;
-        bool is_playlist;
-        char *name_value, *url_value;
+    for (i = 0, j = 0; channels[i]; i++, j++) {
+        char *value;
 
-        url = g_strdup_printf("url%d", i);
-        name = g_strdup_printf("name%d", i);
-        playlist = g_strdup_printf("playlist%d", i);
-
-        url_value = key_file_get_string(MODULE_NAME, url);
-        if (!url_value) {
-            report(RPT_ERR, "Key %s missing", url);
-            return false;
+        /* keys that are no channels */
+        if (strcmp(channels[i], "name") == 0) {
+            s_channel_number--;
+            j--;
+            continue;
         }
 
-        name_value = key_file_get_string(MODULE_NAME, name);
-        if (!name_value) {
-            report(RPT_ERR, "Key %s missing", name);
-            return false;
+        s_channels[j].name = g_strdup(channels[i]);
+
+        value = key_file_get_string(MODULE_NAME, s_channels[j].name);
+        if (!value) {
+            report(RPT_ERR, "Value %s missing", value);
+            continue;
         }
 
-        is_playlist = key_file_get_boolean_default(MODULE_NAME, playlist, false);
+        s_channels[j].playlist = g_str_has_prefix(value, "playlist");
+        if (s_channels[j].playlist) {
+            s_channels[j].url = g_strdup(value + strlen("playlist"));
+            g_free(value);
+        } else
+            s_channels[j].url = value;
 
-        s_channels[i-1].url = url_value;
-        s_channels[i-1].name = name_value;
-        s_channels[i-1].playlist = is_playlist;
+        g_strchug(s_channels[j].url);
 
         service_thread_command("menu_add_item mplayer_ch mplayer_ch_%d action {%s}\n",
-                i, s_channels[i-1].name);
+                j+1, s_channels[j].name);
         service_thread_command("menu_set_item mplayer_ch mplayer_ch_%d "
-                "-menu_result quit\n", i);
+                "-menu_result quit\n", j+1);
     }
+
+    g_strfreev(channels);
 
     return true;
 }

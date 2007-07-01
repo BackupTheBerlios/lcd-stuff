@@ -1,3 +1,8 @@
+2007-07-01  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mplayer: change configuration file syntax
+	* added key handling to documentation
+
 2007-06-26  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mplayer: add new module to play audio stream with mplayer
