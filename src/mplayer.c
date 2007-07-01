@@ -96,10 +96,12 @@ static void mplayer_check_child(void)
 {
     pid_t ret;
     int   status;
-    
+
     ret = waitpid(s_current_mplayer.pid, &status, WNOHANG);
-    if (ret != s_current_mplayer.pid || !WIFEXITED(status))
+    if (ret != s_current_mplayer.pid || 
+            !(WIFEXITED(status) || WIFSIGNALED(status))) {
         return;
+    }
 
     /* process has exited */
     s_current_mplayer.pid = 0;
@@ -129,6 +131,13 @@ static void mplayer_update_metainfo(void)
     char buffer[BUFSIZ];
     char *artist = NULL, *title = NULL;
     int ret;
+
+    /*
+     * mplayer_kill() was issued but the child has not been handled
+     * by waitpid()
+     */
+    if (!s_current_mplayer.input_stream || !s_current_mplayer.output_stream)
+        return;
 
     /*
      * artist
@@ -193,7 +202,6 @@ static void mplayer_kill(void)
     }
 
     kill(s_current_mplayer.pid, SIGTERM);
-    s_current_mplayer.pid = 0;
 }
 
 /* -------------------------------------------------------------------------- */
