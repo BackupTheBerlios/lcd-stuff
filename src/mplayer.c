@@ -252,7 +252,7 @@ static void mplayer_start_program(int no)
     setlinebuf(s_current_mplayer.output_stream);
 
     /* show screen */
-    service_thread_command("screen_set " MODULE_NAME " -priority foreground\n");
+    service_thread_command("screen_set " MODULE_NAME " -priority info\n");
 
     mplayer_wait_for_playback();
 
