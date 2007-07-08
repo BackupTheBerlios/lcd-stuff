@@ -1,3 +1,8 @@
+2007-07-08  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* servicethread: use g_async_queue_timed_pop() instead of
+	  g_async_queue_try_pop() and sleep()
+
 2007-07-01  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mplayer: change configuration file syntax

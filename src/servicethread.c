@@ -282,17 +282,19 @@ void service_thread_init(void)
 gpointer service_thread_run(gpointer data)
 {
     int count = 0;
+    GTimeVal timeout;
+
 
     while (!g_exit) {
         gchar *command;
+        g_get_current_time(&timeout);
+        g_time_val_add(&timeout, 100000);
 
-        command = g_async_queue_try_pop(s_command_queue);
+        command = g_async_queue_timed_pop(s_command_queue, &timeout);
         if (command) {
             send_command_succ(command);
             g_free(command);
         } else {
-            g_usleep(100000);
-
             if (count++ == 30) {
                 /* still alive? */
                 if (send_command_succ("noop\n") < 0) {
