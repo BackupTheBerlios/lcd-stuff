@@ -412,15 +412,17 @@ gpointer service_thread_run(gpointer data)
         }
 
         /* check for incoming network connections */
-        if (s_current_socket <= 0) {
-            s_current_socket = accept(s_listen_fd, NULL, 0);
-            if (s_current_socket > 0)
-                set_nonblocking(s_current_socket);
-        } else {
-            ret = check_for_net_input(s_current_socket);
-            if (ret < 0 && ret != EAGAIN) {
-                close(s_current_socket);
-                s_current_socket = 0;
+        if (s_listen_fd > 0) {
+            if (s_current_socket <= 0) {
+                s_current_socket = accept(s_listen_fd, NULL, 0);
+                if (s_current_socket > 0)
+                    set_nonblocking(s_current_socket);
+            } else {
+                ret = check_for_net_input(s_current_socket);
+                if (ret < 0 && ret != EAGAIN) {
+                    close(s_current_socket);
+                    s_current_socket = 0;
+                }
             }
         }
     }

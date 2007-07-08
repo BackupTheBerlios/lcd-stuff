@@ -86,6 +86,28 @@ mplayer:        Up: toggle between play and pause
 Remote Interface
 ----------------
 
+This program itself has a remote interface to be controlled from another computer.
+See the [network] entry of the configuration file below. By default, the network
+interface is disabled for security reasons!
+
+The only client that implements the interface is the mplayer client.
+
+It's a simple text protocol:
+
+    mplayer command args
+
+And command can be one of:
+
+    streams                 Returns a list of stream names, the same as
+                            shown in the menu.
+    play <number>           Plays stream <number>. Counting starts with 0.
+    pause_play              Toggles playback and pause of the current stream.
+    stop                    Stops playing the current stream.
+
+In the scripts directory of the source distribution, there's a sample client
+written in Python that implements these commands. It's both meant as usable
+client and as example.
+
 
 Configuration file
 ------------------
@@ -236,7 +258,7 @@ in the configuration file which means that this client doesn't get displayed.
                             the music can be in subdirectories of this directory.
                             Default: no default
 
-    size=<string>           The amount of music you want to have on your player.
+    size=<str>              The amount of music you want to have on your player.
                             Following are legal size specifications:
                                  - 30m      => 30 megabytes
                                  - 10k      => 10 kilobytes
@@ -276,6 +298,18 @@ in the configuration file which means that this client doesn't get displayed.
                             DLF=http://dradio-ogg.t-bn.de/dlf_high.ogg
                             Bayern2=playlist http://www.br-online.de/streaming/...
                                     ...bayern2radio/bayern2radio_m20.red.smil
+
+
+    [network]
+
+    Adding this entry without any key/values enables the network interface.
+    By default, the network interface is disabled.
+
+    DON'T USE THIS OPTION IF YOUR COMPUTER IS DIRECTLY CONNECTED TO THE
+    INTERNET. IT'S DESIGNED FOR SMALL HOME NETWORKS ONLY!
+
+    port=<int>              The port where a remote client can connect to.
+                            Default: 12454
 
 
 License, Author
