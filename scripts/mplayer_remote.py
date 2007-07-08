@@ -36,11 +36,11 @@ def parse_commandline():
     
     # actions
     parser.add_option("-s", "--show", dest="show", action="store_true",
-            help="Shows a list ofed if a new job should be added")
+            help="Shows a list of channels")
     parser.add_option("-P", "--playpause", dest="playpause", action="store_true",
             help="Toggle between play and pause")
     parser.add_option("-S", "--playstream", dest="playstream", metavar="NUMBER",
-            help="Plays stream NUMBER")
+            help="Plays stream NUMBER (see the -s option to get the number)")
     parser.add_option("-O", "--stop", dest="stop", action="store_true",
             help="Stops playback")
 
