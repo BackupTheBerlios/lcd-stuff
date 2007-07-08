@@ -64,6 +64,7 @@ struct program {
     bool            stop_request;
     bool            pause_play_request;
     bool            paused;
+    int             channel_number;
 };
 
 /* ------------------------variables ---------------------------------------- */
@@ -173,9 +174,13 @@ static void mplayer_update_metainfo(void)
         }
     }
 
-    service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
+    if (s_current_mplayer.channel_number >= 0 &&
+            s_current_mplayer.channel_number < s_channel_number)
+        service_thread_command("widget_set %s line2 1 2 {%s}\n", MODULE_NAME,
+                s_channels[s_current_mplayer.channel_number]);
+    service_thread_command("widget_set %s line2 1 2 {%s}\n", MODULE_NAME,
             artist ? artist : "");
-    service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
+    service_thread_command("widget_set %s line3 1 3 {%s}\n", MODULE_NAME,
             title ? title : "");
 
     if (artist)
@@ -272,6 +277,7 @@ static void mplayer_start_program(int no)
     mplayer_wait_for_playback();
 
     s_current_mplayer.pid = pid;
+    s_current_mplayer.channel_number = no;
 }
 
 /* -------------------------------------------------------------------------- */
