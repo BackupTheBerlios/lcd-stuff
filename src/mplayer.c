@@ -176,11 +176,11 @@ static void mplayer_update_metainfo(void)
 
     if (s_current_mplayer.channel_number >= 0 &&
             s_current_mplayer.channel_number < s_channel_number)
-        service_thread_command("widget_set %s line2 1 2 {%s}\n", MODULE_NAME,
-                s_channels[s_current_mplayer.channel_number]);
-    service_thread_command("widget_set %s line2 1 2 {%s}\n", MODULE_NAME,
+        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
+                s_channels[s_current_mplayer.channel_number].name);
+    service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
             artist ? artist : "");
-    service_thread_command("widget_set %s line3 1 3 {%s}\n", MODULE_NAME,
+    service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME,
             title ? title : "");
 
     if (artist)
