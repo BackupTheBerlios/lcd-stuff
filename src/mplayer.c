@@ -42,6 +42,7 @@
 /* ---------------------- forward declarations ------------------------------ */
 static void mplayer_key_handler(const char *str);
 static void mplayer_menu_handler(const char *event, const char *id, const char *arg);
+static void mplayer_net_handler(char **args, int fd);
 
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mplayer"
@@ -75,7 +76,8 @@ static struct client mpd_client = {
     .key_callback    = mplayer_key_handler,
     .listen_callback = NULL,
     .ignore_callback = NULL,
-    .menu_callback   = mplayer_menu_handler
+    .menu_callback   = mplayer_menu_handler,
+    .net_callback    = mplayer_net_handler
 };
 
 
@@ -207,11 +209,16 @@ static void mplayer_kill(void)
 /* -------------------------------------------------------------------------- */
 static void mplayer_start_program(int no)
 {
-    struct channel *channel = &s_channels[no];
+    struct channel *channel;
     bool           ret;
     char           *args[MAX_ARGS];
     int            i = 0;
     int            pid;
+
+    if (no >= s_channel_number)
+        return;
+
+    channel = &s_channels[no];
 
     args[i++] = "mplayer";
     args[i++] = "-quiet";
@@ -285,6 +292,32 @@ static void mplayer_menu_handler(const char *event, const char *id, const char *
     }
 
     g_strfreev(ids);
+}
+
+/* -------------------------------------------------------------------------- */
+static void mplayer_net_handler(char **args, int fd)
+{
+    int i;
+
+    if (!args[0])
+        return;
+
+    if (strncmp(args[0], "streams", strlen("streams")) == 0) {
+        char buffer[1024];
+
+        for (i = 0; i < s_channel_number; i++) {
+            snprintf(buffer, 1024, "%s\n", s_channels[i].name);
+            write(fd, buffer, strlen(buffer));
+        }
+        write(fd, "__END__", strlen("__END__"));
+    } else if ((strncmp(args[0], "play", strlen("play")) == 0) && args[1]) {
+        int no = atoi(args[1]);
+
+        mplayer_start_program(no);
+    } else if ((strncmp(args[0], "stop", strlen("stop")) == 0))
+        s_current_mplayer.stop_request = true;
+    else if ((strncmp(args[0], "pause_play", strlen("stop")) == 0))
+        s_current_mplayer.pause_play_request = true;
 }
 
 /* -------------------------------------------------------------------------- */

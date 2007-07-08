@@ -85,7 +85,7 @@ static char s_config_file[PATH_MAX] = DEFAULT_CONFIG_FILE;
 static int s_report_level           = RPT_ERR;
 static int s_report_dest            = RPT_DEST_STDERR;
 static int s_foreground_mode        = -1;
-static int s_refcount_conf          = THREAD_NUMBER;
+static int s_refcount_conf          = THREAD_NUMBER + 1; /* + service thread */
 static char g_help_text[] =
      "lcd-stuff - Mail, RSS on a display\n"
      "Copyright (c) 2006-07 Bernhard Walle <bernhard.walle@gmx.de>\n"

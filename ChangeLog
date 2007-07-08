@@ -2,6 +2,8 @@
 
 	* servicethread: use g_async_queue_timed_pop() instead of
 	  g_async_queue_try_pop() and sleep()
+	* servicethread: added remote interface
+	* mplayer: implemented remote interface
 
 2007-07-01  Bernhard Walle <bernhard.walle@gmx.de>
 

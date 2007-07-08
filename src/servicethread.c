@@ -20,6 +20,11 @@
 #include <limits.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 #include <glib.h>
 
@@ -28,6 +33,7 @@
 #include <shared/sockets.h>
 
 #include "servicethread.h"
+#include "keyfile.h"
 #include "main.h"
 
 static GAsyncQueue   *s_command_queue = NULL;
@@ -35,6 +41,8 @@ static GHashTable    *s_clients       = NULL;
 static struct client *s_current       = NULL;
 static GStaticMutex  s_mutex          = G_STATIC_MUTEX_INIT;
 static int           s_client_number  = 0;
+static int           s_listen_fd      = 0;
+static int           s_current_socket = 0;
 
 /* -------------------------------------------------------------------------- */
 void service_thread_register_client(struct client *client)
@@ -272,18 +280,111 @@ static int check_for_input(void)
 }
 
 /* -------------------------------------------------------------------------- */
+static bool set_nonblocking(int fd)
+{
+    int flags, result;
+
+    /* use non-blocking IO */
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        report(RPT_ERR, "fcntl() failed");
+        return false;
+    }
+
+    result = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    if (flags < 0) {
+        report(RPT_ERR, "2nd fcntl() failed");
+        return false;
+    }
+
+    return true;
+}
+
+/* -------------------------------------------------------------------------- */
 void service_thread_init(void)
 {
+    int                 result;
+    struct sockaddr_in  addr;
+    int                 port;
+
     s_command_queue = g_async_queue_new();
     s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
+
+    /*
+     * init network connection 
+     */
+
+    /* read port */
+    result = key_file_has_group("network");
+    if (!result)
+        return;
+
+    port = key_file_get_integer_default("network", "port", 12454);
+    conf_dec_count();
+
+    s_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (s_listen_fd < 0) {
+        report(RPT_ERR, "socket() failed");
+        return;
+    }
+
+    /* fill the address structure */
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(port);
+
+    result = bind(s_listen_fd, (struct sockaddr*)&addr, sizeof(addr));
+    if (result < 0) {
+        report(RPT_ERR, "bind() failed");
+        return;
+    }
+
+    /* set into listening state */
+    result = listen(s_listen_fd, 5);
+    if (result < 0)
+        report(RPT_ERR, "listen() failed");
+
+    set_nonblocking(s_listen_fd);
+}
+
+/* -------------------------------------------------------------------------- */
+int check_for_net_input(int fd)
+{
+    char          **input;
+    char          buffer[1025];
+    int           ret;
+    struct client *client;
+
+    ret = read(fd, buffer, 1024);
+    if (ret < 0)
+        return errno;
+    else if (ret == 0)
+        return -1;
+    buffer[ret] = 0;
+
+    input = g_strsplit(buffer, " ", 0);
+    if (!input[0])
+        return 0;
+
+    g_static_mutex_lock(&s_mutex);
+    client = g_hash_table_lookup(s_clients, input[0]);
+    g_static_mutex_unlock(&s_mutex);
+
+    if (client && client->net_callback)
+        client->net_callback(input + 1, fd);
+
+    g_strfreev(input);
+
+    return 0;
 }
 
 /* -------------------------------------------------------------------------- */
 gpointer service_thread_run(gpointer data)
 {
     int count = 0;
+    int ret;
     GTimeVal timeout;
-
 
     while (!g_exit) {
         gchar *command;
@@ -309,8 +410,25 @@ gpointer service_thread_run(gpointer data)
                 }
             }
         }
+
+        /* check for incoming network connections */
+        if (s_current_socket <= 0) {
+            s_current_socket = accept(s_listen_fd, NULL, 0);
+            if (s_current_socket > 0)
+                set_nonblocking(s_current_socket);
+        } else {
+            ret = check_for_net_input(s_current_socket);
+            if (ret < 0 && ret != EAGAIN) {
+                close(s_current_socket);
+                s_current_socket = 0;
+            }
+        }
     }
     
+    if (s_current_socket > 0)
+        close(s_current_socket);
+    if (s_listen_fd > 0)
+        close(s_listen_fd);
     g_async_queue_unref(s_command_queue);
     g_hash_table_destroy(s_clients);
 

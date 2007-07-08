@@ -24,6 +24,7 @@ typedef void (*key_callback_fun) (const char *);
 typedef void (*listen_callback_fun) (void);
 typedef void (*ignore_callback_fun) (void);
 typedef void (*menu_callback_fun) (const char *, const char *, const char *);
+typedef void (*net_callback_fun) (char **args, int fd);
 
 
 /**
@@ -41,6 +42,7 @@ struct client
                                                   client gets hidden on the display */
     menu_callback_fun    menu_callback;      /**< the callback function for menu 
                                                   events */
+    net_callback_fun     net_callback;       /**< callback for network commands */
 };
 
 /**
