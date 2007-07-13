@@ -68,7 +68,7 @@ struct program {
 };
 
 /* ------------------------variables ---------------------------------------- */
-static int s_channel_number = 0;
+static gsize s_channel_number = 0;
 static struct program s_current_mplayer;
 static struct channel *s_channels;
 
@@ -221,6 +221,10 @@ static void mplayer_start_program(int no)
     int            pid;
 
     if (no >= s_channel_number)
+        return;
+
+    /* check if mplayer is running -- if so, don't start a new one */
+    if (s_current_mplayer.pid > 0)
         return;
 
     channel = &s_channels[no];

@@ -1,3 +1,8 @@
+2007-07-13  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* fix build warnings
+	* don't start a new mplayer if an old mplayer is already running
+
 2007-07-08  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* servicethread: use g_async_queue_timed_pop() instead of
