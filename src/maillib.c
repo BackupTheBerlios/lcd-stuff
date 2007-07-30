@@ -152,27 +152,28 @@ char *mail_decode(const char *string)
 {
     size_t cur_token;
     char *decoded_subject;
+    int err = MAILIMF_NO_ERROR;
 
     if (!string)
-    {
         return g_strdup("");
-    }
 
     cur_token = 0;
-    mailmime_encoded_phrase_parse("iso-8859-1",
+    err = mailmime_encoded_phrase_parse("iso-8859-1",
             string, strlen(string),
             &cur_token, "iso-8859-1", &decoded_subject);
+    if (err == MAILIMF_NO_ERROR && decoded_subject)
+        return decoded_subject;
 
-    return decoded_subject;
+    return g_strdup("");
 }
 
 /* -------------------------------------------------------------------------- */
-char *display_from(struct mailimf_from * from)
+char *display_from(struct mailimf_from *from)
 {
-    clistiter * cur;
+    clistiter *cur;
 
-    for (cur = clist_begin(from->frm_mb_list->mb_list) ; cur != NULL ; cur = clist_next(cur)) 
-    {
+    for (cur = clist_begin(from->frm_mb_list->mb_list); cur;
+            cur = clist_next(cur)) {
         struct mailimf_mailbox * mb;
 
         mb = clist_content(cur);

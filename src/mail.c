@@ -283,7 +283,7 @@ static void mail_check(void)
             }
 
             /* allocate the email */
-            mail = (struct email *)malloc(sizeof(struct email));
+            mail = malloc(sizeof(struct email));
             if (!mail) {
                 report(RPT_ERR, MODULE_NAME ": Out of memory");
                 goto end_loop;
@@ -305,10 +305,6 @@ static void mail_check(void)
                           break;
                 }
             }
-            if (!mail->from)
-                mail->from = g_strdup("");
-            if (!mail->subject)
-                mail->subject = g_strdup("");
 
             mail->message_number_in_box = message_number++;
             mail->box = box;
