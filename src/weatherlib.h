@@ -21,13 +21,13 @@
 #define MAX_WEATHER_LEN       1024
 #define MAX_WIND_LEN          32
 #define MAX_CITYCODE_LEN      10
+#define UNIT_MAX              5
 
 
 /**
  * Structure which gets filled by the function following.
  */
-struct weather_data
-{
+struct weather_data {
     int         temp_c;
     int         temp_fl_c;
     int         humid;
@@ -38,12 +38,39 @@ struct weather_data
 };
 
 /**
+ * Enumeration type for the unit.
+ */
+enum unit {
+    UNIT_METRIC,
+    UNIT_IMPERIAL,
+    UNIT_MAXLEN
+};
+
+/**
+ * Type of weather data.
+ */
+enum type {
+    TYPE_TEMPERATURE,
+    TYPE_PRESSURE,
+    TYPE_WINDSPEED,
+    TYPE_HUMIDITY,
+    TYPE_MAXLEN
+};
+
+/**
  * Retrieves the weather data
  *
  * @param code the city code
  * @param data gets filled with the current data
  */
-int retrieve_weather_data(const char *code, struct weather_data *data);
+int retrieve_weather_data(const char            *code,
+                          struct weather_data   *data, 
+                          enum unit             unit);
+
+/**
+ * Returns a static (!) char pointer to the unit for a specific type.
+ */ 
+char *get_unit_for_type(enum unit unit, enum type type);
 
 #endif /* WEATHERLIB_H */
 

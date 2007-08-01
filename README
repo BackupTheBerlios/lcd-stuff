@@ -226,6 +226,11 @@ in the configuration file which means that this client doesn't get displayed.
                             GMXX0096 stands for Nürnberg in Germany.
                             Default: no default
 
+    unit=<str>              Switches between metric units like Celsius
+                            ("metric") and imperial units like Fahrenheit 
+                            ("imperial").
+                            Default: metric
+
     [mpd]
 
     name=<str>              The title for the MPD screen.

@@ -45,23 +45,19 @@ static struct client    weather_client = {
                             .listen_callback = NULL,
                             .ignore_callback = NULL
                         };
+static enum unit        s_unit = UNIT_METRIC;
 
 /* -------------------------------------------------------------------------- */
 static void update_screen(const char    *line1,
                           const char    *line2,
                           const char    *line3)
 {
-    if (line1) {
+    if (line1)
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-    }
-
-    if (line2) {
+    if (line2)
         service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-    }
-
-    if (line3) {
+    if (line3)
         service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
-    }
 }
 
 /* -------------------------------------------------------------------------- */
@@ -70,12 +66,16 @@ static void weather_update(void)
     char *line1, *line2, *line3;
     struct weather_data data;
 
-    if (retrieve_weather_data(s_city, &data) == 0) {
+    if (retrieve_weather_data(s_city, &data, s_unit) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
-        line2 = g_strdup_printf("%dC (%dC)  %.1fhPa", 
-                data.temp_c, data.temp_fl_c, data.pressure_hPa);
-        line3 = g_strdup_printf("%d%%  %dkm/h %s", 
-                data.humid, data.wind_speed, data.wind_dir);
+        line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s", 
+                data.temp_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
+                data.temp_fl_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
+                data.pressure_hPa, get_unit_for_type(s_unit, TYPE_PRESSURE));
+        line3 = g_strdup_printf("%d%s  %d%s %s", 
+                data.humid, get_unit_for_type(s_unit, TYPE_HUMIDITY),
+                data.wind_speed, get_unit_for_type(s_unit, TYPE_WINDSPEED),
+                data.wind_dir);
         update_screen(line1, line2, line3);
         g_free(line1);
         g_free(line2);
@@ -114,6 +114,12 @@ static bool weather_init(void)
     strncpy(s_city, tmp, MAX_CITYCODE_LEN);
     g_free(tmp);
     s_city[MAX_CITYCODE_LEN-1] = 0;
+
+    /* unit -- metric vs. imperial */
+    tmp = key_file_get_string_default(MODULE_NAME, "units", "metric");
+    if (strcmp(tmp, "imperial") == 0)
+        s_unit = UNIT_IMPERIAL;
+    g_free(tmp);
 
     return true;
 }

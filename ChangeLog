@@ -1,3 +1,8 @@
+2007-08-01  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* weather: implemented imperial units (new option which defaults to
+	  metric)
+
 2007-07-13  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* fix build warnings
