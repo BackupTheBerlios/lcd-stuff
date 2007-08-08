@@ -1,0 +1,8 @@
+0.1.3
+=====
+- added possibility to show imperial units instead of metric unitcs
+  on the weather screen
+- added mplayer screen to play radio streams (including a remote
+  interface)
+- improvements in the mail screen (fixed possible crash, don't update
+  time stamps for local mailboxes)
