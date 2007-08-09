@@ -43,6 +43,7 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mpd"
+#define RETRY_INTERVAL        5
 
 /* ---------------------- types --------------------------------------------- */
 struct song {
@@ -59,6 +60,7 @@ static struct song *s_current_song;
 static guint s_stop_time = UINT_MAX;
 static GPtrArray *s_current_list = NULL;
 static struct connection *s_connection;
+static int s_timeout;
 
 static struct client mpd_client = {
     .name            = MODULE_NAME,
@@ -368,26 +370,24 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
 static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userdata)
 {
     if (connect) {
-        report(RPT_DEBUG, "Connected\n");
+        report(RPT_DEBUG, "Connected");
     } else {
         s_error = true;
-        report(RPT_ERR, "Disconnected\n");
+        report(RPT_ERR, "Disconnected");
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mpd_start_connection(void)
+static bool mpd_init_connection(void)
 {
-    char    *server, *password;
-    int     port, err;
+    char    *server = NULL, *password = NULL;
+    int     port;
 
     /* get config items */
     server = key_file_get_string_default(MODULE_NAME, "server", "localhost");
     password = key_file_get_string_default(MODULE_NAME, "password", "");
     port = key_file_get_integer_default(MODULE_NAME, "port", 6600);
-
-    /* create the current song */
-    s_current_song = mpd_song_new("", "");
+    s_timeout = key_file_get_integer_default(MODULE_NAME, "timeout", 10);
 
     /* set the global connection */
     s_connection = connection_new(server, password, port);
@@ -395,8 +395,26 @@ static bool mpd_start_connection(void)
     g_free(password);
     if (!s_connection)
         return false;
+    
+    return true;
+}
+
+/* -------------------------------------------------------------------------- */
+static bool mpd_start_connection(void)
+{
+    int     err;
+
+    s_error = false;
+
+    /* create the current song */
+    mpd_song_delete(s_current_song);
+    s_current_song = mpd_song_new("", "");
 
     /* create the object */
+    if (s_mpd) {
+        mpd_free(s_mpd);
+        s_mpd = NULL;
+    }
     s_mpd = mpd_new(s_connection->host, s_connection->port, s_connection->password);
 
     /* connect signal handlers */
@@ -405,8 +423,7 @@ static bool mpd_start_connection(void)
     mpd_signal_connect_connection_changed(s_mpd, mpd_connection_changed_handler, NULL);
 
     /* set timeout */
-    mpd_set_connection_timeout(s_mpd, 
-            key_file_get_integer_default(MODULE_NAME, "timeout", 10));
+    mpd_set_connection_timeout(s_mpd, s_timeout);
     if (s_error) {
         mpd_disconnect(s_mpd);
         return false;
@@ -468,7 +485,7 @@ void *mpd_run(void *cookie)
 {
     time_t      next_update, current;
     gboolean    result;
-    int         retry_count = 0;
+    int         retry_count = RETRY_INTERVAL;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -480,6 +497,8 @@ void *mpd_run(void *cookie)
     if (!mpd_init())
         goto out;
 
+    if (!mpd_init_connection())
+        goto out_screen;
     if (!mpd_start_connection())
         goto out_screen;
 
@@ -497,13 +516,13 @@ void *mpd_run(void *cookie)
                 if (mpd_start_connection()) {
                     s_error = false;
                 } else {
-                    retry_count = 60;
+                    retry_count = RETRY_INTERVAL;
                 }
             }
 
             if (s_error) {
                 g_usleep(1000000);
-                break;
+                continue;
             }
         }
 
@@ -535,6 +554,7 @@ out:
         mpd_free_playlist(s_current_list);
     service_thread_unregister_client(MODULE_NAME);
     mpd_song_delete(s_current_song);
+    connection_delete(s_connection);
     
     return NULL;
 }

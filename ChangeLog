@@ -2,6 +2,7 @@
 
 	* fix build with mrss 0.18.0, thanks to
 	  Robert Buchholz <rbu@gentoo.org> for the patch
+	* mpd: fixed reconnect procedure if the server disconnects
 
 2007-08-01  Bernhard Walle <bernhard.walle@gmx.de>
 

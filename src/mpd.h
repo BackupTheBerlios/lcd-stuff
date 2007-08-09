@@ -59,9 +59,11 @@ static inline struct connection *connection_new(const char       *host,
  */
 static inline void connection_delete(struct connection *connection)
 {
-    g_free(connection->host);
-    g_free(connection->password);
-    g_free(connection);
+    if (connection) {
+        g_free(connection->host);
+        g_free(connection->password);
+        g_free(connection);
+    }
 }
 
 #endif /* MPD_H */
