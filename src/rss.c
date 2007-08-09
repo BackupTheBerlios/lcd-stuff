@@ -24,11 +24,11 @@
 #include <string.h>
 #include <errno.h>
 
+#include <mrss.h>
+
 #include <shared/report.h>
 #include <shared/sockets.h>
 #include <shared/str.h>
-
-#include <mrss.h>
 
 #include "rss.h"
 #include "main.h"
