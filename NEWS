@@ -1,3 +1,8 @@
+0.1.4
+=====
+- fixed compile error with mrss 0.18.0
+- fixed reconnect procedure of mpd client if the server disconnects
+
 0.1.3
 =====
 - added possibility to show imperial units instead of metric units
