@@ -1,3 +1,9 @@
+2007-08-13  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* rss: use all available lines of the display, not only 4
+	* rss: implement more intelligent wrap algorithm (wrap at
+	  spaces if possible)
+
 2007-08-09  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* fix build with mrss 0.18.0, thanks to

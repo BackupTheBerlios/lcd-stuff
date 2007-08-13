@@ -27,6 +27,7 @@ extern int           g_lcdproc_port;
 extern volatile bool g_exit;
 extern int           g_socket;
 extern int           g_display_width;
+extern int           g_display_height;
 extern char          g_valid_chars[256];
 
 void conf_dec_count(void);

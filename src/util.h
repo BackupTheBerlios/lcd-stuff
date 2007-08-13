@@ -19,6 +19,7 @@
 #define UTIL_H
 
 #include <stdbool.h>
+#include <glib.h>
 
 /*
  * string functions ------------------------------------------------------------
@@ -29,6 +30,9 @@ char *string_canon(char *string);
 char *format_time(unsigned long seconds);
 char *format_bytes(unsigned long long bytes);
 void string_replace(char *string, char from, char to);
+GString *stringbuffer_wrap(GString *buffer, int length, int maxlines);
+char *stringbuffer_get_line(GString *buffer, int line);
+int stringbuffer_get_lines(GString *buffer);
 
 /*
  * file walking functions, replacement for ftw ---------------------------------

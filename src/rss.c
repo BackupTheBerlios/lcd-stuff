@@ -36,6 +36,7 @@
 #include "global.h"
 #include "servicethread.h"
 #include "keyfile.h"
+#include "util.h"
 
 /* ---------------------- forward declarations ------------------------------ */
 static void rss_ignore_handler(void);
@@ -69,25 +70,40 @@ static struct client    rss_client = {
                         };
 
 /* -------------------------------------------------------------------------- */
-static void update_screen(const char *title, 
-                          const char *line1, 
-                          const char *line2, 
-                          const char *line3)
+static void update_screen_receiving(const char *title)
 {
-    if (title) {
+    int i;
+
+    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
+
+    for (i = 0; i < (g_display_height - 1); i++) {
+        char *text = "";
+
+        if (i == 1)
+            text = "  Receiving ...";
+
+        service_thread_command("widget_set %s line%d 1 %d {%s}\n",
+                MODULE_NAME, i+1, i+2, text);
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+static void update_screen_text(const char *title, GString *text)
+{
+    int i;
+
+    if (title)
         service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
-    }
 
-    if (line1) {
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-    }
+    for (i = 0; i < (g_display_height - 1); i++) {
+        char *line;
 
-    if (line2) {
-        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-    }
+        line = stringbuffer_get_line(text, i);
+        if (!line)
+            line = "";
 
-    if (line3) {
-        service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
+        service_thread_command("widget_set %s line%d 1 %d {%s}\n",
+                MODULE_NAME, i+1, i+2, line);
     }
 }
 
@@ -109,45 +125,25 @@ static void update_screen_news(void)
 
         while (cur) {
             struct newsitem *item = (struct newsitem *)cur->data;
-            if (!item) {
+            if (!item)
                 break;
-            }
 
             if (i++ == s_current_screen) {
-                int     cur_line;
-                char    line[MAX_LINE_LEN];
-                char    text[MAX_LINE_LEN * LINES];
-                char    *text_start = text;
-                int     len = strlen(item->headline);
+                GString *newsitem;
 
-                memset(text, 0, MAX_LINE_LEN);
-                snprintf(text, MAX_LINE_LEN * LINES, "%s", item->headline);
-                text[MAX_LINE_LEN * LINES - 1] = 0;
+                newsitem = g_string_new(item->headline);
+                if (newsitem) {
+                    GString *wrapped;
 
-                service_thread_command("widget_set %s title {%s}\n", 
-                        MODULE_NAME,  item->site);
-
-                for (cur_line = 0; cur_line < (LINES-1); cur_line++) {
-                    char *linestart = line;
-
-                    if (text_start - text < len) {
-                        strncpy(linestart, text_start, MAX_LINE_LEN);
-
-                        /* strip leading spaces */
-                        while (*linestart == ' ') {
-                            linestart++;
-                            text_start++;
-                        }
-
-                        linestart[g_display_width] = 0;
-                        text_start += g_display_width;
-                    } else {
-                        linestart = "";
+                    wrapped = stringbuffer_wrap(newsitem,
+                            g_display_width, g_display_height-1);
+                    if (wrapped) {
+                        update_screen_text(item->site, wrapped);
+                        g_string_free(wrapped, true);
                     }
-
-                    service_thread_command("widget_set %s line%d 1 %d {%s}\n",
-                            MODULE_NAME,  cur_line+1, cur_line+2, linestart);
+                    g_string_free(newsitem, true);
                 }
+
                 break;
             }
 
@@ -191,7 +187,7 @@ static void rss_check(void)
             break;
         }
 
-        update_screen(feed->name, "", "  Receiving ...", "");
+        update_screen_receiving(feed->name);
         
         err_read = mrss_parse_url(feed->url, &data_cur);
 		if (err_read != MRSS_OK) {
@@ -262,10 +258,10 @@ static bool rss_init(void)
     /* add the title */
     service_thread_command("widget_add " MODULE_NAME " title title\n");
 
-    /* add three lines */
-    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
+    /* add lines */
+    for (i = 1; i < g_display_height; i++)
+        service_thread_command("widget_add %s line%d string\n",
+                MODULE_NAME, i);
 
     /* register keys */
     service_thread_command("client_add_key Up\n");

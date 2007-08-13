@@ -24,6 +24,7 @@
 
 #define PRG_NAME            "lcd-stuff"
 #define MAX_LINE_LEN        80
+#define MAX_DISPLAY_HEIGHT  15
 
 /* this is really a CONSTANT */
 #define LINES               4

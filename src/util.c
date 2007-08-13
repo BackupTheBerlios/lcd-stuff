@@ -98,6 +98,160 @@ void string_replace(char *string, char from, char to)
 }
 
 /* -------------------------------------------------------------------------- */
+static GString *stringbuffer_wrap_simple(GString     *buffer,
+                                        int         length,
+                                        int         maxlines)
+{
+    GString *new_str;
+    char    *remainder;
+    int     cur_line = 0;
+
+    if (!buffer)
+        return NULL;
+
+    new_str = g_string_new(buffer->str);
+    if (!new_str)
+        return NULL;
+
+    remainder = new_str->str;
+
+    while (strlen(remainder) > length) {
+        int pos = length * (cur_line+1) + cur_line;
+        g_string_insert_c(new_str, pos, '\n');
+        remainder += length + 1;
+
+        if (remainder[0] == ' ')
+            g_string_erase(new_str, pos+1, 1);
+
+        cur_line++;
+    }
+
+    return new_str;
+}
+
+/* -------------------------------------------------------------------------- */
+GString *stringbuffer_wrap_spaces(GString     *buffer,
+                                        int         length,
+                                        int         maxlines)
+{
+    GString *new_str;
+    char    *remainder;
+    int     cur_line = 0;
+
+    if (!buffer)
+        return NULL;
+
+    new_str = g_string_new(buffer->str);
+    if (!new_str)
+        return NULL;
+
+    remainder = new_str->str;
+
+    while (strlen(remainder) > length) {
+
+        char *new = remainder, *old = remainder;
+
+        while (new && (new - remainder <= length)) {
+            old = new;
+            new = strchr(new + 1, ' ');
+        }
+
+        /* for the very rare case that there's no space */
+        if (old == remainder) {
+            g_string_insert_c(new_str, remainder - new_str->str + length, '\n');
+            remainder += length + 1;
+        } else {
+            *old = '\n';
+            remainder += old - remainder + 1;
+        }
+
+        cur_line++;
+    }
+
+    return new_str;
+}
+
+/* -------------------------------------------------------------------------- */
+GString *stringbuffer_wrap(GString *buffer, int length, int maxlines)
+{
+    if (length * maxlines < buffer->len)
+        return stringbuffer_wrap_simple(buffer, length, maxlines);
+    else {
+        GString *try = NULL;
+
+        try = stringbuffer_wrap_spaces(buffer, length, maxlines);
+        if (stringbuffer_get_lines(try) <= maxlines) {
+            return try;
+        } else {
+            g_string_free(try, true);
+            return stringbuffer_wrap_simple(buffer, length, maxlines);
+        }
+    }
+}
+
+/* -------------------------------------------------------------------------- */
+char *stringbuffer_get_line(GString *buffer, int line)
+{
+    char *ret = buffer->str;
+    char *next_line = ret;
+
+    /* 0 = first line */
+
+    while (line >= 0 && next_line) {
+        line--;
+        ret = next_line;
+        next_line = strchr(ret, '\n');
+
+        /* strip the newline itself */
+        if (next_line) {
+            next_line++;
+
+            if (*next_line == '\0')
+                break;
+        }
+    }
+
+    if (line == -1) {
+        if (next_line)
+            ret = strndup(ret, next_line - ret - 1);
+        else
+            ret = strdup(ret);
+
+        return ret;
+    }
+
+    return NULL;
+}
+
+/* -------------------------------------------------------------------------- */
+int stringbuffer_get_lines(GString *buffer)
+{
+    char *tmp;
+    int count = 0;
+
+    if (!buffer)
+        return -EINVAL;
+
+    tmp = buffer->str;
+
+    while (tmp) {
+        tmp = strchr(tmp, '\n');
+
+        /* strip the newline itself */
+        if (tmp) {
+            tmp++;
+            if (*tmp == '\0')
+                count--;
+        }
+
+        count++;
+    }
+
+    return count;
+}
+
+
+/* -------------------------------------------------------------------------- */
 bool filewalk(const char            *basedir, 
               filewalk_function     fn,
               void                  *cookie, 
