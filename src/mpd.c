@@ -207,7 +207,7 @@ static struct song *mpd_get_current_song(void)
     struct song     *ret;
 
     current = mpd_playlist_get_current_song(s_mpd);
-    if (s_current_state != MPD_PLAYER_PLAY || !current) {
+    if (!current || s_current_state != MPD_PLAYER_PLAY || !current) {
         ret = mpd_song_new("", "");
     }
 

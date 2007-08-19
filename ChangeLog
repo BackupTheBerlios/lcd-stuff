@@ -1,3 +1,7 @@
+2007-08-19  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mpd: fix crash when mpd_playlist_get_current_song() returns NULL
+
 2007-08-13  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* rss: use all available lines of the display, not only 4
