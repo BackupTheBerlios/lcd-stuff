@@ -1,6 +1,7 @@
 2007-08-19  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mpd: fix crash when mpd_playlist_get_current_song() returns NULL
+	* mpd: fix title/artist for non-ASCII strings
 
 2007-08-13  Bernhard Walle <bernhard.walle@gmx.de>
 

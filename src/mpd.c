@@ -72,17 +72,34 @@ static struct client mpd_client = {
 
 
 /* -------------------------------------------------------------------------- */
+static void mpd_song_set_title(struct song *song, const char *title)
+{
+    song->title = g_convert_with_fallback(title, -1,
+            "iso-8859-1", "utf-8", "?", NULL, NULL, NULL);
+    if (!song->title)
+        song->title = g_strdup("(Unknown)");
+}
+
+/* -------------------------------------------------------------------------- */
+static void mpd_song_set_artist(struct song *song, const char *artist)
+{
+    song->artist = g_convert_with_fallback(artist, -1,
+            "iso-8859-1", "utf-8", "?", NULL, NULL, NULL);
+    if (!song->artist)
+        song->artist = g_strdup("(Unknown)");
+}
+
+/* -------------------------------------------------------------------------- */
 static struct song *mpd_song_new(const char *title, const char *artist)
 {
-    struct song     *song;
+    struct song *song;
 
     song = g_malloc(sizeof(struct song));
-    if (!song) {
+    if (!song)
         return NULL;
-    }
 
-    song->title = g_strdup(title);
-    song->artist = g_strdup(artist);
+    mpd_song_set_title(song, title);
+    mpd_song_set_artist(song, artist);
 
     return song;
 }
