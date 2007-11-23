@@ -130,9 +130,26 @@ static GString *stringbuffer_wrap_simple(GString     *buffer,
 }
 
 /* -------------------------------------------------------------------------- */
+static inline char *strchr2(const char *string, char a, char b)
+{
+    char *tmp1, *tmp2;
+    tmp1 = strchr(string, a);
+    tmp2 = strchr(string, b);
+
+    if (tmp1 == NULL && tmp2 == NULL)
+        return NULL;
+    else if (tmp1 == NULL)
+        return tmp2;
+    else if (tmp2 == NULL)
+        return tmp1;
+    else
+        return min(tmp1, tmp2);
+}
+
+/* -------------------------------------------------------------------------- */
 GString *stringbuffer_wrap_spaces(GString     *buffer,
-                                        int         length,
-                                        int         maxlines)
+                                  int         length,
+                                  int         maxlines)
 {
     GString *new_str;
     char    *remainder;
@@ -148,12 +165,13 @@ GString *stringbuffer_wrap_spaces(GString     *buffer,
     remainder = new_str->str;
 
     while (strlen(remainder) > length) {
-
         char *new = remainder, *old = remainder;
 
         while (new && (new - remainder <= length)) {
             old = new;
-            new = strchr(new + 1, ' ');
+            new = strchr2(new + 1, ' ', '-');
+            if (new && *new == '-')
+                new++;
         }
 
         /* for the very rare case that there's no space */
@@ -161,7 +179,10 @@ GString *stringbuffer_wrap_spaces(GString     *buffer,
             g_string_insert_c(new_str, remainder - new_str->str + length, '\n');
             remainder += length + 1;
         } else {
-            *old = '\n';
+            if (*(old-1) == '-')
+                g_string_insert_c(new_str, old - new_str->str, '\n');
+            else
+                *old = '\n';
             remainder += old - remainder + 1;
         }
 
