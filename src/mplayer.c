@@ -36,6 +36,7 @@
 #include "global.h"
 #include "servicethread.h"
 #include "keyfile.h"
+#include "util.h"
 
 #define MAX_ARGS  20
 
@@ -122,8 +123,7 @@ static void mplayer_wait_for_playback(void)
     char buffer[BUFSIZ];
 
     while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
-        if (strncmp(buffer, "Starting playback...", 
-                    strlen("Starting playback...")) == 0)
+        if (starts_with(buffer, "Starting playback..."))
             break;
     }
 }
@@ -147,14 +147,13 @@ static void mplayer_update_metainfo(void)
      */
 
     ret = fprintf(s_current_mplayer.input_stream, "get_meta_artist\n");
-    if (ret < 0)
-        return;
-
-    while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
-        if (strncmp(buffer, "ANS_META_ARTIST=", strlen("ANS_META_ARTIST=")) == 0) {
-            artist = g_strdup(buffer + strlen("ANS_META_ARTIST=") + 1);
-            artist[strlen(artist)-2] = 0;
-            break;
+    if (ret >= 0) {
+        while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
+            if (starts_with(buffer, "ANS_META_ARTIST=")) {
+                artist = g_strdup(buffer + strlen("ANS_META_ARTIST=") + 1);
+                artist[strlen(artist)-2] = 0;
+                break;
+            }
         }
     }
 
@@ -163,21 +162,21 @@ static void mplayer_update_metainfo(void)
      */
 
     fprintf(s_current_mplayer.input_stream, "get_meta_title\n");
-    if (ret < 0)
-        return;
-
-    while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
-        if (strncmp(buffer, "ANS_META_TITLE=", strlen("ANS_META_TITLE=")) == 0) {
-            title = g_strdup(buffer + strlen("ANS_META_TITLE=") + 1);
-            title[strlen(title)-2] = 0;
-            break;
+    if (ret >= 0) {
+        while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
+            if (starts_with(buffer, "ANS_META_TITLE=")) {
+                title = g_strdup(buffer + strlen("ANS_META_TITLE=") + 1);
+                title[strlen(title)-2] = 0;
+                break;
+            }
         }
     }
 
     if (s_current_mplayer.channel_number >= 0 &&
-            s_current_mplayer.channel_number < s_channel_number)
+                        s_current_mplayer.channel_number < s_channel_number) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
                 s_channels[s_current_mplayer.channel_number].name);
+    }
     service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
             artist ? artist : "");
     service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME,
@@ -312,7 +311,7 @@ static void mplayer_net_handler(char **args, int fd)
     if (!args[0])
         return;
 
-    if (strncmp(args[0], "streams", strlen("streams")) == 0) {
+    if (starts_with(args[0], "streams")) {
         char buffer[1024];
 
         for (i = 0; i < s_channel_number; i++) {
@@ -320,13 +319,13 @@ static void mplayer_net_handler(char **args, int fd)
             write(fd, buffer, strlen(buffer));
         }
         write(fd, "__END__", strlen("__END__"));
-    } else if ((strncmp(args[0], "play", strlen("play")) == 0) && args[1]) {
+    } else if (starts_with(args[0], "play") && args[1]) {
         int no = atoi(args[1]);
 
         mplayer_start_program(no);
-    } else if ((strncmp(args[0], "stop", strlen("stop")) == 0))
+    } else if (starts_with(args[0], "stop"))
         s_current_mplayer.stop_request = true;
-    else if ((strncmp(args[0], "pause_play", strlen("stop")) == 0))
+    else if (starts_with(args[0], "pause_play"))
         s_current_mplayer.pause_play_request = true;
 }
 

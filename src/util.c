@@ -271,6 +271,14 @@ int stringbuffer_get_lines(GString *buffer)
     return count;
 }
 
+/* -------------------------------------------------------------------------- */
+bool starts_with(const char *string, const char *start)
+{
+    if (!string || !start)
+        return false;
+    else
+        return strncmp(string, start, strlen(start)) == 0;
+}
 
 /* -------------------------------------------------------------------------- */
 bool filewalk(const char            *basedir, 

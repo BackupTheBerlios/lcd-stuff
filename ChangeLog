@@ -1,3 +1,7 @@
+2008-03-15  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* mplayer: improve code readability
+
 2007-11-23  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* rss: Implement wrapping on '-'

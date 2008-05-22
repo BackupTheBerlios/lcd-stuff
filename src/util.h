@@ -33,6 +33,7 @@ void string_replace(char *string, char from, char to);
 GString *stringbuffer_wrap(GString *buffer, int length, int maxlines);
 char *stringbuffer_get_line(GString *buffer, int line);
 int stringbuffer_get_lines(GString *buffer);
+bool starts_with(const char *string, const char *start);
 
 /*
  * file walking functions, replacement for ftw ---------------------------------
