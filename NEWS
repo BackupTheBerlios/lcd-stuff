@@ -1,3 +1,10 @@
+0.1.5
+=====
+- fix problem that weather is not working any more after API changes of
+  weather.com
+- fix crash in MPD module
+- improve wrapping in the RSS reader
+
 0.1.4
 =====
 - fixed compile error with mrss 0.18.0

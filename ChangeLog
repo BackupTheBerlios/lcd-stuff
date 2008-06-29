@@ -2,11 +2,12 @@
 
 	* remove trailing whitespace from source files (cleanup)
 	* fix WEATHER_URL (API changes from weather.com)
+	* fix trailing whitespaces in stringbuffer_wrap_spaces()
 
 2008-22-05  Bernhard Walle <bernhard.walle@gmx.de>
 
-	* fix crash in mpd_get_current_song() when mpd_playlist_get_current_song()
-	  returns NULL
+	* fix crash in mpd_get_current_song() when
+	  mpd_playlist_get_current_song() returns NULL
 
 2008-03-15  Bernhard Walle <bernhard.walle@gmx.de>
 

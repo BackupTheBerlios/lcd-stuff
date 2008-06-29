@@ -183,7 +183,11 @@ GString *stringbuffer_wrap_spaces(GString     *buffer,
                 g_string_insert_c(new_str, old - new_str->str, '\n');
             else
                 *old = '\n';
+
             remainder += old - remainder + 1;
+
+            if (remainder[0] == ' ')
+                g_string_erase(new_str, old - new_str->str + 1, 1);
         }
 
         cur_line++;
