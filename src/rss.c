@@ -188,7 +188,7 @@ static void rss_check(void)
         }
 
         update_screen_receiving(feed->name);
-        
+
         err_read = mrss_parse_url(feed->url, &data_cur);
 		if (err_read != MRSS_OK) {
 			report(RPT_ERR, "Error reading RSS feed: %s", mrss_strerror(err_read));
@@ -211,7 +211,7 @@ static void rss_check(void)
             if (!newsitem->headline) {
                 newsitem->headline = g_strdup("");
             }
-            
+
             newsitem->site = feed->name;
 
             s_news = g_list_append(s_news, newsitem);
@@ -349,7 +349,7 @@ void *rss_run(void *cookie)
         free(cur);
     }
     g_ptr_array_free(s_feeds, true);
-    
+
     free_news();
 
     return NULL;

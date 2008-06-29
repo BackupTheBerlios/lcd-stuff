@@ -64,7 +64,7 @@ void service_thread_unregister_client(const char *name)
     if (g_exit) {
         return;
     }
-        
+
     g_static_mutex_lock(&s_mutex);
     g_hash_table_remove(s_clients, name);
     g_static_mutex_unlock(&s_mutex);
@@ -78,7 +78,7 @@ void service_thread_unregister_client(const char *name)
 static void key_handler(const char *key)
 {
     report(RPT_DEBUG, "Key received, %s", key);
-    
+
     if (s_current && s_current->key_callback) {
         s_current->key_callback(key);
     }
@@ -114,7 +114,7 @@ void service_thread_command(const char *string, ...)
 {
     gchar   *result;
     va_list ap;
-    
+
     if (g_exit) {
         return;
     }
@@ -205,7 +205,7 @@ static int send_command_succ(gchar *command)
     int                     num_bytes = 0;
     int                     loopcount;
     char                    buffer[BUFSIZ];
-    
+
     err = sock_send_string(g_socket, command);
     if (err < 0) {
         report(RPT_ERR, "Could not send '%s': %d", command, err);
@@ -249,7 +249,7 @@ static int check_for_input(void)
     int                     num_bytes = 1;
     char                    buffer[BUFSIZ];
     enum ProcessResponse    err;
-        
+
     while (num_bytes != 0) {
         num_bytes = sock_recv_string(g_socket, buffer, BUFSIZ - 1);
 
@@ -311,7 +311,7 @@ void service_thread_init(void)
     s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
 
     /*
-     * init network connection 
+     * init network connection
      */
 
     /* read port */
@@ -426,7 +426,7 @@ gpointer service_thread_run(gpointer data)
             }
         }
     }
-    
+
     if (s_current_socket > 0)
         close(s_current_socket);
     if (s_listen_fd > 0)

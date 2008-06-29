@@ -42,7 +42,7 @@ static inline struct connection *connection_new(const char       *host,
                                                 unsigned short   port)
 {
     struct connection *ret;
-    
+
     ret = g_malloc(sizeof(struct connection));
     if (!ret)
         return NULL;

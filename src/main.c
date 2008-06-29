@@ -42,7 +42,7 @@
 #  include "weather.h"
 #endif
 #ifdef HAVE_LCDSTUFF_MPD
-#  include "mpd.h" 
+#  include "mpd.h"
 #endif
 #ifdef HAVE_LCDSTUFF_RSS
 #  include "rss.h"
@@ -213,13 +213,13 @@ static int send_command(char *result, int size, char *command)
     char        buffer[BUFSIZ];
     int         err;
     int         num_bytes        = 0;
-    
+
     err = sock_send_string(g_socket, command);
     if (err < 0) {
         report(RPT_ERR, "Could not send '%s': %d", buffer, err);
         return err;
     }
-    
+
     if (result) {
         while (num_bytes == 0) {
             num_bytes = sock_recv_string(g_socket, result, size - 1);
@@ -246,10 +246,10 @@ static bool communication_init(void)
         report(RPT_ERR, "Could not create socket: %s", strerror(errno));
         return false;
     }
-    
+
     /* handshake */
     send_command(buffer, BUFSIZ, "hello\n");
-    
+
     argc = get_args(argv, buffer, 10);
     if (argc < 8) {
         report(RPT_ERR, "rss: Error received: %s", buffer);
@@ -309,13 +309,13 @@ int main(int argc, char *argv[])
         report(RPT_ERR, "Loading key file failed");
         return 1;
     }
-    
+
     /* open socket */
     if (!communication_init()) {
         report(RPT_ERR, "Error: communication init");
         return 1;
     }
-        
+
     /* daemonize */
     if (!s_foreground_mode) {
         if (daemon(1, 1) != 0) {

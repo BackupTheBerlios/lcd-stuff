@@ -43,8 +43,8 @@ void string_canon_init(void)
 {
     int i, character;
 
-    /* 
-     * init the list of valid chars, we don't use utf-8 or any other 
+    /*
+     * init the list of valid chars, we don't use utf-8 or any other
      * multibyte encoding
      */
     for (character = (int)' ', i = 0; character <= 255; character++) {
@@ -281,9 +281,9 @@ bool starts_with(const char *string, const char *start)
 }
 
 /* -------------------------------------------------------------------------- */
-bool filewalk(const char            *basedir, 
+bool filewalk(const char            *basedir,
               filewalk_function     fn,
-              void                  *cookie, 
+              void                  *cookie,
               FilewalkFlags         flags,
               GError                **gerr)
 {
@@ -309,7 +309,7 @@ bool filewalk(const char            *basedir,
         }
 
         if (g_file_test(path, G_FILE_TEST_IS_DIR) &&
-                !(g_file_test(path, G_FILE_TEST_IS_SYMLINK) && 
+                !(g_file_test(path, G_FILE_TEST_IS_SYMLINK) &&
                     (flags & FWF_NO_SYMLINK_FOLLOW))) {
             if (!(flags & FWF_NO_RECURSION)) {
                 if (!filewalk(path, fn, cookie, flags, gerr)) {
@@ -346,8 +346,8 @@ endloop:
 }
 
 /* -------------------------------------------------------------------------- */
-static bool directory_delete_function(const char    *filename, 
-                                      void          *cookie, 
+static bool directory_delete_function(const char    *filename,
+                                      void          *cookie,
                                       GError        **gerr)
 {
     UNUSED(cookie);
@@ -380,9 +380,9 @@ bool delete_directory_recursively(const char *directory, GError **gerr)
 {
     GError *gerr_result = NULL;
 
-    if (!filewalk(directory, directory_delete_function, 
-            NULL, FWF_INCLUDE_DIRS | FWF_INCLUDE_DEAD_LINK | 
-                  FWF_NO_SYMLINK_FOLLOW, 
+    if (!filewalk(directory, directory_delete_function,
+            NULL, FWF_INCLUDE_DIRS | FWF_INCLUDE_DEAD_LINK |
+                  FWF_NO_SYMLINK_FOLLOW,
             &gerr_result))
     {
         g_propagate_error(gerr, gerr_result);
@@ -414,7 +414,7 @@ long copy_file(const char       *src_name,
         goto end_copy;
     }
 
-    filename = dest_name 
+    filename = dest_name
         ? g_strdup(dest_name)
         : g_path_get_basename(src_name);
 

@@ -134,7 +134,7 @@ static GPtrArray *mpd_get_playlists(void)
 
     array = g_ptr_array_new();
 
-    for (data = mpd_database_get_directory(s_mpd, "/"); 
+    for (data = mpd_database_get_directory(s_mpd, "/");
             data != NULL; data = mpd_data_get_next(data)) {
         switch (data->type) {
             case MPD_DATA_TYPE_PLAYLIST:
@@ -181,7 +181,7 @@ static void mpd_update_playlist_menu(void)
     bool        add = false;
     int         i;
     GPtrArray   *old, *new;
-    
+
     old = s_current_list;
     new = mpd_get_playlists();
 
@@ -224,11 +224,9 @@ static struct song *mpd_get_current_song(void)
     struct song     *ret;
 
     current = mpd_playlist_get_current_song(s_mpd);
-    if (!current || s_current_state != MPD_PLAYER_PLAY || !current) {
+    if (!current || s_current_state != MPD_PLAYER_PLAY) {
         ret = mpd_song_new("", "");
-    }
-
-    if (!current->title) {
+    } else if (!current->title) {
         ret = mpd_song_new("(unknown)", "");
     } else {
         strings = g_strsplit(current->title, " - ", 2);
@@ -289,7 +287,7 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
             if (s_current_state != MPD_PLAYER_PLAY) {
                 mpd_player_play(s_mpd);
             }
-            
+
             g_free(list);
         }
     } else if ((g_ascii_strcasecmp(ids[0], "standby") == 0)) {
@@ -341,7 +339,7 @@ static void mpd_update_status_time(void)
     elapsed = mpd_status_get_elapsed_song_time(s_mpd);
     total = mpd_status_get_total_song_time(s_mpd);
 
-    line3 = g_strdup_printf("%d:%2.2d/%d:%2.2d     %s%s", 
+    line3 = g_strdup_printf("%d:%2.2d/%d:%2.2d     %s%s",
                             elapsed / 60, elapsed % 60,
                             total / 60,   total   % 60,
                             mpd_player_get_repeat(s_mpd) ? "R" : "_",
@@ -412,7 +410,7 @@ static bool mpd_init_connection(void)
     g_free(password);
     if (!s_connection)
         return false;
-    
+
     return true;
 }
 
@@ -572,7 +570,7 @@ out:
     service_thread_unregister_client(MODULE_NAME);
     mpd_song_delete(s_current_song);
     connection_delete(s_connection);
-    
+
     return NULL;
 }
 

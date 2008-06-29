@@ -40,7 +40,7 @@ struct client
                                                   display */
     ignore_callback_fun  ignore_callback;    /**< the callback function if the
                                                   client gets hidden on the display */
-    menu_callback_fun    menu_callback;      /**< the callback function for menu 
+    menu_callback_fun    menu_callback;      /**< the callback function for menu
                                                   events */
     net_callback_fun     net_callback;       /**< callback for network commands */
 };

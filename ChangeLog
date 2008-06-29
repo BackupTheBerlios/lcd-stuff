@@ -1,3 +1,13 @@
+2008-06-29  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* remove trailing whitespace from source files (cleanup)
+	* fix WEATHER_URL (API changes from weather.com)
+
+2008-22-05  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* fix crash in mpd_get_current_song() when mpd_playlist_get_current_song()
+	  returns NULL
+
 2008-03-15  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* mplayer: improve code readability
@@ -88,9 +98,9 @@
 
 	* added configure flags to disable features if the libraries are not
 	  installed
-	* implemented "hidden" option for mails so that only the number 
+	* implemented "hidden" option for mails so that only the number
 	  gets shown in the first line of the mail screen but not
-	  the author/subject of the mails (makes sense for large mail accounts 
+	  the author/subject of the mails (makes sense for large mail accounts
 	  where you receive mails from various mailing lists)
 	* added local mailboxes (the documentation, it already worked :))
 
@@ -194,3 +204,4 @@
 	* mail: decoding also with subject
 	* mail: restructuring, added lcdlib
 
+# vim: set noet sw=8 ts=8:

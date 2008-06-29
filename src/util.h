@@ -47,13 +47,13 @@ typedef enum {
     FWF_NO_SYMLINK_FOLLOW   = 1 << 3
 } FilewalkFlags;
 
-typedef bool (*filewalk_function)(const char    *filename, 
+typedef bool (*filewalk_function)(const char    *filename,
                                   void          *cookie,
                                   GError        **err);
 
-bool filewalk(const char            *basedir, 
+bool filewalk(const char            *basedir,
               filewalk_function     fn,
-              void                  *cookie, 
+              void                  *cookie,
               FilewalkFlags         flags,
               GError                **err);
 

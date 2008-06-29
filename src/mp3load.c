@@ -97,8 +97,8 @@ static void mp3load_key_handler(const char *str)
 }
 
 /* -------------------------------------------------------------------------- */
-static unsigned long long bytes_to_copy(const char      *path, 
-                                        const char      *size_desc, 
+static unsigned long long bytes_to_copy(const char      *path,
+                                        const char      *size_desc,
                                         GError          **gerr)
 {
     GError              *gerr_result;
@@ -145,8 +145,8 @@ static unsigned long long bytes_to_copy(const char      *path,
 }
 
 /* -------------------------------------------------------------------------- */
-static bool file_collect_function(const char    *filename, 
-                                  void          *cookie, 
+static bool file_collect_function(const char    *filename,
+                                  void          *cookie,
                                   GError        **gerr)
 {
     GPtrArray   *array = (GPtrArray *)cookie;
@@ -273,7 +273,7 @@ static void mp3load_fill_player(void)
     /*
      * up pressed, continue to fill the stick  ---------------------------------
      */
-    
+
     /* delete the files on the stick */
     ret = delete_directory_recursively(s_target_directory, &gerr_result);
     if (!ret) {
@@ -300,7 +300,7 @@ static void mp3load_fill_player(void)
     /* collect the files */
     update_screen("Collecting files", "Please be patient", "");
     files = g_ptr_array_new();
-    if (!filewalk(s_source_directory, file_collect_function, files, 
+    if (!filewalk(s_source_directory, file_collect_function, files,
                 FWF_NO_FLAGS, &gerr_result))
     {
         update_screen("Error while", "collecting files,", "aborted");
@@ -333,7 +333,7 @@ static void mp3load_fill_player(void)
         /* get out the artist name */
         artisttitle = get_artist_title(file_name);
 
-        target_directory_with_artist = g_build_filename(s_target_directory, 
+        target_directory_with_artist = g_build_filename(s_target_directory,
                 artisttitle.artist, NULL);
         g_free(artisttitle.artist);
 
@@ -349,9 +349,9 @@ static void mp3load_fill_player(void)
         dest_file = g_strconcat(artisttitle.title, strrchr(file_name, '.'), NULL);
         g_free(artisttitle.title);
 
-        report(RPT_DEBUG, "Copy: %s to %s/%s\n", file_name, 
+        report(RPT_DEBUG, "Copy: %s to %s/%s\n", file_name,
                 target_directory_with_artist, dest_file);
-        bytes_copied = copy_file(file_name, target_directory_with_artist, 
+        bytes_copied = copy_file(file_name, target_directory_with_artist,
                 dest_file, &gerr_result);
         g_free(dest_file);
         if (bytes_copied < 0) {
@@ -449,18 +449,18 @@ static bool mp3load_init(void)
     /* get config items */
     s_source_directory = key_file_get_string(MODULE_NAME, "source_directory");
     s_target_directory = key_file_get_string(MODULE_NAME, "target_directory");
-    s_extensions = key_file_get_string_list_default(MODULE_NAME, "extensions", 
+    s_extensions = key_file_get_string_list_default(MODULE_NAME, "extensions",
             ".mp3", &s_extension_len);
-    s_mount_command = key_file_get_string_default(MODULE_NAME, 
+    s_mount_command = key_file_get_string_default(MODULE_NAME,
             "mount_command", "");
-    s_umount_command = key_file_get_string_default(MODULE_NAME, 
+    s_umount_command = key_file_get_string_default(MODULE_NAME,
             "umount_command", "");
-    s_default_subdir = key_file_get_string_default(MODULE_NAME, 
+    s_default_subdir = key_file_get_string_default(MODULE_NAME,
             "default_subdir", "misc");
     s_size = key_file_get_string_default(MODULE_NAME, "size", "90%");
 
     /* check if necessary config items are available */
-    if (!s_source_directory || strlen(s_target_directory) <= 0 || 
+    if (!s_source_directory || strlen(s_target_directory) <= 0 ||
             !s_target_directory || strlen(s_source_directory) <= 0) {
         report(RPT_ERR, MODULE_NAME ": `source_directory' and "
                 "`target_directory' are necessary configuration variables");
@@ -519,8 +519,8 @@ void *mp3load_run(void *cookie)
     conf_dec_count();
 
     /*
-     * dispatcher, wait until we can exit and execute the main function if 
-     * triggered from the menu 
+     * dispatcher, wait until we can exit and execute the main function if
+     * triggered from the menu
      */
     while (!g_exit) {
         GTimeVal next_timeout;

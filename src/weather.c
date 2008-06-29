@@ -30,7 +30,7 @@
 #include "constants.h"
 #include "global.h"
 #include "servicethread.h"
-#include "weatherlib.h" 
+#include "weatherlib.h"
 #include "keyfile.h"
 
 /* ---------------------- constants ----------------------------------------- */
@@ -68,11 +68,11 @@ static void weather_update(void)
 
     if (retrieve_weather_data(s_city, &data, s_unit) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
-        line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s", 
+        line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s",
                 data.temp_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
                 data.temp_fl_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
                 data.pressure_hPa, get_unit_for_type(s_unit, TYPE_PRESSURE));
-        line3 = g_strdup_printf("%d%s  %d%s %s", 
+        line3 = g_strdup_printf("%d%s  %d%s %s",
                 data.humid, get_unit_for_type(s_unit, TYPE_HUMIDITY),
                 data.wind_speed, get_unit_for_type(s_unit, TYPE_WINDSPEED),
                 data.wind_dir);

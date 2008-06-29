@@ -179,7 +179,7 @@ char *display_from(struct mailimf_from *from)
         mb = clist_content(cur);
 
         return mail_decode(mb->mb_display_name);
-    } 
+    }
     return g_strdup("");
 }
 

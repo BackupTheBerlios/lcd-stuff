@@ -20,11 +20,11 @@
 #include <glib.h>
 #include <nxml.h>
 
-#define WEATHER_URL "http://xoap.weather.com/weather/local/%s?prod=xoap&par=1003832479&key=bb12936706a2d601&cc=*&dayf=0&unit=%c"
+#define WEATHER_URL "http://xoap.weather.com/weather/local/%s?unit=%c&cc=*"
 
 /* -------------------------------------------------------------------------- */
 int retrieve_weather_data(const char            *code,
-                          struct weather_data   *data, 
+                          struct weather_data   *data,
                           enum unit             unit)
 {
      nxml_t *nxml;
@@ -35,7 +35,7 @@ int retrieve_weather_data(const char            *code,
 
      if (!data)
          return -EINVAL;
-     
+
      url = g_strdup_printf(WEATHER_URL, code, unit == UNIT_IMPERIAL ? 'i' : 'm');
 
      nxml_new(&nxml);
@@ -112,7 +112,7 @@ int retrieve_weather_data(const char            *code,
              }
          }
      }
-     
+
      nxml_free(nxml);
      g_free(url);
 

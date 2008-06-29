@@ -64,12 +64,12 @@ enum type {
  * @param data gets filled with the current data
  */
 int retrieve_weather_data(const char            *code,
-                          struct weather_data   *data, 
+                          struct weather_data   *data,
                           enum unit             unit);
 
 /**
  * Returns a static (!) char pointer to the unit for a specific type.
- */ 
+ */
 char *get_unit_for_type(enum unit unit, enum type type);
 
 #endif /* WEATHERLIB_H */

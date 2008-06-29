@@ -102,7 +102,7 @@ static void mplayer_check_child(void)
     int   status;
 
     ret = waitpid(s_current_mplayer.pid, &status, WNOHANG);
-    if (ret != s_current_mplayer.pid || 
+    if (ret != s_current_mplayer.pid ||
             !(WIFEXITED(status) || WIFSIGNALED(status))) {
         return;
     }
@@ -457,7 +457,7 @@ void *mplayer_run(void *cookie)
 
 out:
     service_thread_unregister_client(MODULE_NAME);
-    
+
     return NULL;
 }
 

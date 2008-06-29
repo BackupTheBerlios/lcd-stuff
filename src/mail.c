@@ -70,13 +70,13 @@ static GPtrArray        *s_mailboxes;
 static GList            *s_email         = NULL;
 static int              s_current_screen = 0;
 static char             *s_title_prefix  = NULL;
-struct client           mail_client = 
+struct client           mail_client =
                         {
                             .name            = MODULE_NAME,
                             .key_callback    = mail_key_handler,
                             .listen_callback = NULL,
                             .ignore_callback = mail_ignore_handler
-                        }; 
+                        };
 
 /* -------------------------------------------------------------------------- */
 static void update_screen(const char    *title,
@@ -86,10 +86,10 @@ static void update_screen(const char    *title,
 {
     if (title) {
         if (strlen(title) > 0) {
-            service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME, 
+            service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME,
                     s_title_prefix, title);
         } else {
-            service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, 
+            service_thread_command("widget_set %s title {%s}\n", MODULE_NAME,
                     s_title_prefix);
         }
     }
@@ -123,7 +123,7 @@ static void show_screen(void)
         struct mailbox *box = g_ptr_array_index(s_mailboxes, i);
 
         line1_old = line1 ? line1 : g_strdup("");
-        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name, 
+        line1 = g_strdup_printf("%s%s:%d ", line1_old, box->name,
                 box->messages_unseen);
         g_free(line1_old);
     }
@@ -292,7 +292,7 @@ static void mail_check(void)
 
             for (cur = clist_begin(hdr->fld_list) ; cur != NULL; cur = clist_next(cur)) {
                 struct mailimf_field *field = (struct mailimf_field *)clist_content(cur);
-    
+
                 switch (field->fld_type) {
                       case MAILIMF_FIELD_FROM:
                           mail->from = display_from(field->fld_data.fld_from);
