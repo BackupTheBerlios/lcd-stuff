@@ -86,9 +86,9 @@ mplayer:        Up: toggle between play and pause
 Remote Interface
 ----------------
 
-This program itself has a remote interface to be controlled from another computer.
-See the [network] entry of the configuration file below. By default, the network
-interface is disabled for security reasons!
+This program itself has a remote interface to be controlled from another
+computer. See the [network] entry of the configuration file below. By default,
+the network interface is disabled for security reasons!
 
 The only client that implements the interface is the mplayer client.
 
@@ -179,7 +179,8 @@ in the configuration file which means that this client doesn't get displayed.
     mailbox_name<no>=<str>  When type=imap, this variable holds the name of the
                             mailbox to check for new mail. For pop3, this is
                             ignored. For local mailboxes, you have to specify
-                            the full path for the box, e.g. /home/user/mail/inbox.
+                            the full path for the box, e.g.
+                            /home/user/mail/inbox.
                             Default: INBOX
 
     hidden<no>=<bool>       Show only the number of mails in the first line but
@@ -203,8 +204,8 @@ in the configuration file which means that this client doesn't get displayed.
     url<no>=<str>           The URL to the feed.
                             Default: no default
 
-    items<no>=<int>         The number of items to retrieve. This is counted from
-                            new to old, so if e.g. items=10, the 10 latest
+    items<no>=<int>         The number of items to retrieve. This is counted
+                            from new to old, so if e.g. items=10, the 10 latest
                             items are shown.
                             Default: 0
 
@@ -260,7 +261,8 @@ in the configuration file which means that this client doesn't get displayed.
                             Default: no default
 
     source_directory=<str>  The directory where your music is stored. Of course,
-                            the music can be in subdirectories of this directory.
+                            the music can be in subdirectories of this
+                            directory.
                             Default: no default
 
     size=<str>              The amount of music you want to have on your player.
@@ -301,7 +303,8 @@ in the configuration file which means that this client doesn't get displayed.
                             "-playlist" parameter.
                             Examples: 
                             DLF=http://dradio-ogg.t-bn.de/dlf_high.ogg
-                            Bayern2=playlist http://www.br-online.de/streaming/...
+                            Bayern2=playlist ...
+                                    ...http://www.br-online.de/streaming/...
                                     ...bayern2radio/bayern2radio_m20.red.smil
 
 
