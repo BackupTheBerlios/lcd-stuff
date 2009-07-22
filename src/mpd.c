@@ -138,7 +138,7 @@ static GPtrArray *mpd_get_playlists(void)
             data != NULL; data = mpd_data_get_next(data)) {
         switch (data->type) {
             case MPD_DATA_TYPE_PLAYLIST:
-                g_ptr_array_add(array, g_path_get_basename(data->playlist));
+                g_ptr_array_add(array, g_path_get_basename(data->playlist->path));
                 g_free(data->playlist);
                 data->playlist = NULL;
                 break;

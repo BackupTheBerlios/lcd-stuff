@@ -1,3 +1,7 @@
+2008-07-22  Bernhard Walle <bernhard.walle@gmx.de>
+
+	* Fix segmentation fault, patch provided by matt@mozor.net.
+
 2008-06-29  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* remove trailing whitespace from source files (cleanup)
