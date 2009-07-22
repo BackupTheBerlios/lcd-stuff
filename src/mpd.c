@@ -303,7 +303,7 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_error_handler(MpdObj *mpd, int id, char *msg, void *ptr)
+static int mpd_error_handler(MpdObj *mpd, int id, char *msg, void *ptr)
 {
     report(RPT_ERR, "MPD Error: %s", msg);
 }

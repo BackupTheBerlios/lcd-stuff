@@ -1,6 +1,7 @@
 2008-07-22  Bernhard Walle <bernhard.walle@gmx.de>
 
 	* Fix segmentation fault, patch provided by matt@mozor.net.
+	* Fix return type of mpd_error_handler().
 
 2008-06-29  Bernhard Walle <bernhard.walle@gmx.de>
 
