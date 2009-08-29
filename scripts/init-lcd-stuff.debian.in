@@ -9,7 +9,7 @@
 # Description:       lcd-stuff
 ### END INIT INFO
 #
-# Author:	Bernhard Walle <bernhard.walle@gmx.de>
+# Author:	Bernhard Walle <bernhard@bwalle.de>
 #
 set -e
 
@@ -36,7 +36,7 @@ case "$1" in
     ;;
   stop)
 	log_daemon_msg "Stopping LCDd client" "lcd-stuff"
-        start-stop-daemon --stop --quiet --exec $DAEMON --oknodo 
+        start-stop-daemon --stop --quiet --exec $DAEMON --oknodo
 	killproc $DAEMON
 	log_end_msg $?
     ;;

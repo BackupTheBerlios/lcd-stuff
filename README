@@ -65,7 +65,7 @@ and their corresponding features:
 Usage
 -----
 
-Just as every lcdproc client. Type "lcd-stuff -h" for more information. An 
+Just as every lcdproc client. Type "lcd-stuff -h" for more information. An
 example configuration file is supplied with lcd-stuff (lcd-stuff.conf). The
 documentation for all the various parameters is contained below.
 
@@ -228,7 +228,7 @@ in the configuration file which means that this client doesn't get displayed.
                             Default: no default
 
     unit=<str>              Switches between metric units like Celsius
-                            ("metric") and imperial units like Fahrenheit 
+                            ("metric") and imperial units like Fahrenheit
                             ("imperial").
                             Default: metric
 
@@ -276,7 +276,7 @@ in the configuration file which means that this client doesn't get displayed.
     mount_command=<str>     The command that should be executed before accessing
                             target_directory. Can be empty.
                             Default: empty
-    
+
     umount_command=<str>    The command that should be executed after accessing
                             target_directory and before the "you can remove
                             your device" screen is displayed. Can be empty.
@@ -299,9 +299,9 @@ in the configuration file which means that this client doesn't get displayed.
                             If the URL is a play list, then the prefix
                             "playlist " has to be used. This is simply because
                             mplayer cannot determine if it's a playlist
-                            automatically but the starter has to give the 
+                            automatically but the starter has to give the
                             "-playlist" parameter.
-                            Examples: 
+                            Examples:
                             DLF=http://dradio-ogg.t-bn.de/dlf_high.ogg
                             Bayern2=playlist ...
                                     ...http://www.br-online.de/streaming/...
@@ -323,6 +323,6 @@ in the configuration file which means that this client doesn't get displayed.
 License, Author
 ---------------
 
-lcd-stuff was written by Bernhard Walle <bernhard.walle@gmx.de>. It's
+lcd-stuff was written by Bernhard Walle <bernhard@bwalle.de>. It's
 licensed under the terms of the GNU General Public License version 2.
 

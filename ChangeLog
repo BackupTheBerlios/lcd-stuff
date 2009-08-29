@@ -1,106 +1,106 @@
-2008-07-22  Bernhard Walle <bernhard.walle@gmx.de>
+2008-07-22  Bernhard Walle <bernhard@bwalle.de>
 
 	* Fix segmentation fault, patch provided by matt@mozor.net.
 	* Fix return type of mpd_error_handler().
 
-2008-06-29  Bernhard Walle <bernhard.walle@gmx.de>
+2008-06-29  Bernhard Walle <bernhard@bwalle.de>
 
 	* remove trailing whitespace from source files (cleanup)
 	* fix WEATHER_URL (API changes from weather.com)
 	* fix trailing whitespaces in stringbuffer_wrap_spaces()
 
-2008-22-05  Bernhard Walle <bernhard.walle@gmx.de>
+2008-22-05  Bernhard Walle <bernhard@bwalle.de>
 
 	* fix crash in mpd_get_current_song() when
 	  mpd_playlist_get_current_song() returns NULL
 
-2008-03-15  Bernhard Walle <bernhard.walle@gmx.de>
+2008-03-15  Bernhard Walle <bernhard@bwalle.de>
 
 	* mplayer: improve code readability
 
-2007-11-23  Bernhard Walle <bernhard.walle@gmx.de>
+2007-11-23  Bernhard Walle <bernhard@bwalle.de>
 
 	* rss: Implement wrapping on '-'
 
-2007-08-19  Bernhard Walle <bernhard.walle@gmx.de>
+2007-08-19  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: fix crash when mpd_playlist_get_current_song() returns NULL
 	* mpd: fix title/artist for non-ASCII strings
 
-2007-08-13  Bernhard Walle <bernhard.walle@gmx.de>
+2007-08-13  Bernhard Walle <bernhard@bwalle.de>
 
 	* rss: use all available lines of the display, not only 4
 	* rss: implement more intelligent wrap algorithm (wrap at
 	  spaces if possible)
 
-2007-08-09  Bernhard Walle <bernhard.walle@gmx.de>
+2007-08-09  Bernhard Walle <bernhard@bwalle.de>
 
 	* fix build with mrss 0.18.0, thanks to
 	  Robert Buchholz <rbu@gentoo.org> for the patch
 	* mpd: fixed reconnect procedure if the server disconnects
 
-2007-08-01  Bernhard Walle <bernhard.walle@gmx.de>
+2007-08-01  Bernhard Walle <bernhard@bwalle.de>
 
 	* weather: implemented imperial units (new option which defaults to
 	  metric)
 
-2007-07-13  Bernhard Walle <bernhard.walle@gmx.de>
+2007-07-13  Bernhard Walle <bernhard@bwalle.de>
 
 	* fix build warnings
 	* don't start a new mplayer if an old mplayer is already running
 
-2007-07-08  Bernhard Walle <bernhard.walle@gmx.de>
+2007-07-08  Bernhard Walle <bernhard@bwalle.de>
 
 	* servicethread: use g_async_queue_timed_pop() instead of
 	  g_async_queue_try_pop() and sleep()
 	* servicethread: added remote interface
 	* mplayer: implemented remote interface
 
-2007-07-01  Bernhard Walle <bernhard.walle@gmx.de>
+2007-07-01  Bernhard Walle <bernhard@bwalle.de>
 
 	* mplayer: change configuration file syntax
 	* added key handling to documentation
 
-2007-06-26  Bernhard Walle <bernhard.walle@gmx.de>
+2007-06-26  Bernhard Walle <bernhard@bwalle.de>
 
 	* mplayer: add new module to play audio stream with mplayer
 	  (supports more formats than MPD)
 
-2007-06-16  Bernhard Walle <bernhard.walle@gmx.de>
+2007-06-16  Bernhard Walle <bernhard@bwalle.de>
 
 	* mail: fix problem with maildir that the mail is marked as 'old' by
 	  the plugin which prevents parallel running of lcd-stuff with
 	  other mailcheckers like gkrellm
 	* improve coding style by getting rid of global macros
 
-2007-06-08  Bernhard Walle <bernhard.walle@gmx.de>
+2007-06-08  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: improve error handling
 
-2007-05-17  Bernhard Walle <bernhard.walle@gmx.de>
+2007-05-17  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: fixed crash with newer libmpd versions, thanks to
 	  ticho@gentoo.org for the patch
 
-2007-04-12  Bernhard Walle <bernhard.walle@gmx.de>
+2007-04-12  Bernhard Walle <bernhard@bwalle.de>
 
 	* converted tabs to spaces in README because it assumed 4 characters
 	  and that's broken when viewing with less
 	* added version number for libmpd in README
 
-2007-01-21  Bernhard Walle <bernhard.walle@gmx.de>
+2007-01-21  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: fixed wrapping
 	* increased version number to 0.1.3.
 
-2007-01-05  Bernhard Walle <bernhard.walle@gmx.de>
+2007-01-05  Bernhard Walle <bernhard@bwalle.de>
 
 	* removed configfile.c
 	* added hint to README in sample configuration file
 	* use AC_CHECK_LIB instead of AC_TRY_LINK to fix usage of
 	  LDFLAGS=--as-needed.
 
-2007-01-04  Bernhard Walle <bernhard.walle@gmx.de>
+2007-01-04  Bernhard Walle <bernhard@bwalle.de>
 
 	* added configure flags to disable features if the libraries are not
 	  installed
@@ -110,12 +110,12 @@
 	  where you receive mails from various mailing lists)
 	* added local mailboxes (the documentation, it already worked :))
 
-2007-01-02  Bernhard Walle <bernhard.walle@gmx.de>
+2007-01-02  Bernhard Walle <bernhard@bwalle.de>
 
 	* changed coding style
 	* revert r46 and remove the custom snprintf() in shared/ instead
 
-2006-12-29  Bernhard Walle <bernhard.walle@gmx.de>
+2006-12-29  Bernhard Walle <bernhard@bwalle.de>
 
 	* change license to GPL v2 only
 	* allow non-ASCII characters in titles
@@ -123,87 +123,87 @@
 	* adjusted default values
 	* added documentation for the configuration file
 
-2006-12-28  Bernhard Walle <bernhard.walle@gmx.de>
+2006-12-28  Bernhard Walle <bernhard@bwalle.de>
 
 	* mp3load: added file naming according to artist/title
 	  by using taglib
 
-2006-11-01  Bernhard Walle <bernhard.walle@gmx.de>
+2006-11-01  Bernhard Walle <bernhard@bwalle.de>
 
 	* mp3load: added ETA calculation and display of copied/total
 
-2006-10-31  Bernhard Walle <bernhard.walle@gmx.de>
+2006-10-31  Bernhard Walle <bernhard@bwalle.de>
 
 	* added mp3load
 
-2006-10-24  Bernhard Walle <bernhard.walle@gmx.de>
+2006-10-24  Bernhard Walle <bernhard@bwalle.de>
 
 	* utility functions: added filewalk
 
-2006-10-20  Bernhard Walle <bernhard.walle@gmx.de>
+2006-10-20  Bernhard Walle <bernhard@bwalle.de>
 
 	* mail: fixed bug with '}' or '{' contained in Subject
 	  (since this is the delimiter for the MPD command, this lead
 	  to a server error)
 	* servicethread: error message for "huh?" is now correct
 
-2006-10-19  Bernhard Walle <bernhard.walle@gmx.de>
+2006-10-19  Bernhard Walle <bernhard@bwalle.de>
 
 	* switched config file parser to glib parser
 	  (more features)
 	* mpd: adapted to new library version
 
-2006-07-03  Bernhard Walle <bernhard.walle@gmx.de>
+2006-07-03  Bernhard Walle <bernhard@bwalle.de>
 
 	* fixed missing return statement in service thread
 	* mail: fixed wrong message count if connection failed
 
-2006-06-15  Bernhard Walle <bernhard.walle@gmx.de>
+2006-06-15  Bernhard Walle <bernhard@bwalle.de>
 
 	* add support for IMAP (type%d=imap)
 	* show only unseen messages when using IMAP
 
-2006-06-12  Bernhard Walle <bernhard.walle@gmx.de>
+2006-06-12  Bernhard Walle <bernhard@bwalle.de>
 
 	* added sample configuration for all services, not only mail
 
-2006-03-20  Bernhard Walle <bernhard.walle@gmx.de>
+2006-03-20  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: reset standby time to 0 if timeout was reached
 
-2006-03-07  Bernhard Walle <bernhard.walle@gmx.de>
+2006-03-07  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: implemented standby timer
 	* mpd: fix SIGSEGV
 
-2006-03-04  Bernhard Walle <bernhard.walle@gmx.de>
+2006-03-04  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: use polling for songs
 	* email: fix SIGSEGV
 	* fix memleaks (using valgrind)
 	* core: join threads
 
-2006-02-27  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-27  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: added playlist menu
 	* core: added menu handling
 
-2006-02-25  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-25  Bernhard Walle <bernhard@bwalle.de>
 
 	* mail: correct title if both mailboxes are empty
 
-2006-02-23  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-23  Bernhard Walle <bernhard@bwalle.de>
 
 	* mpd: implemented
 
-2006-02-19  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-19  Bernhard Walle <bernhard@bwalle.de>
 
 	* rss: implemented
 	* completely restructured: use one service thread for handling the
 	  lcdproc stuff, use different threads for the clients
 	* weather: implemented
 
-2006-02-18  Bernhard Walle <bernhard.walle@gmx.de>
+2006-02-18  Bernhard Walle <bernhard@bwalle.de>
 
 	* mail: switch mails if screen is not shown so that it re-appears
 	  with a different mail

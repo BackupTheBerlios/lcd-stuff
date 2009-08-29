@@ -89,7 +89,7 @@ static int s_foreground_mode        = -1;
 static int s_refcount_conf          = THREAD_NUMBER + 1; /* + service thread */
 static char g_help_text[] =
      "lcd-stuff - Mail, RSS on a display\n"
-     "Copyright (c) 2006-07 Bernhard Walle <bernhard.walle@gmx.de>\n"
+     "Copyright (c) 2006-07 Bernhard Walle <bernhard@bwalle.de>\n"
      "\n"
      "This file is released under the GNU General Public License. Refer to the\n"
      "COPYING file distributed with this package.\n"

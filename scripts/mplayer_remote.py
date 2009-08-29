@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# (c) 2007, Bernhard Walle <bernhard.walle@gmx.de>
+# (c) 2007, Bernhard Walle <bernhard@bwalle.de>
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 # 02110-1301, USA.
 #
 
@@ -33,7 +33,7 @@ def parse_commandline():
     parser.add_option("-p", "--port", dest="port", metavar="PORT",
                       default="12454",
                       help="Use PORT instead of 12454")
-    
+
     # actions
     parser.add_option("-s", "--show", dest="show", action="store_true",
             help="Shows a list of channels")
@@ -65,7 +65,7 @@ def main():
                         break
                     print "%d: %s" % (i, station)
                     i += 1
-                
+
                 if not quit:
                     response = s.recv(4096)
 
