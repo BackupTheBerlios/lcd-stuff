@@ -1,3 +1,8 @@
+2009-08-29  Bernhard Walle <bernhard@bwalle.de>
+
+	* Change email address to 'bernhard@bwalle.de'
+	* Fix compile warnings
+
 2008-07-22  Bernhard Walle <bernhard@bwalle.de>
 
 	* Fix segmentation fault, patch provided by matt@mozor.net.
