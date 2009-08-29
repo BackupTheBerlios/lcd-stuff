@@ -4,6 +4,8 @@
 	* Fix compile warnings
 	* Handle error when retrieving weather data correctly instad of just
 	  displaying garbage.
+	* Weather.com requires now partner ID and license key. Implement
+	  support for that.
 
 2008-07-22  Bernhard Walle <bernhard@bwalle.de>
 

@@ -22,7 +22,9 @@
 
 #include <shared/report.h>
 
-#define WEATHER_URL "http://xoap.weather.com/weather/local/%s?unit=%c&cc=*"
+#define PARTNER_ID  "1135709469"
+#define LICENSE_KEY "ad4915c997bebd9c"
+#define WEATHER_URL ("http://xoap.weather.com/weather/local/%s?unit=%c&cc=*&par=" PARTNER_ID "&key=" LICENSE_KEY)
 
 /* -------------------------------------------------------------------------- */
 int retrieve_weather_data(const char            *code,
