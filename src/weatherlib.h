@@ -49,7 +49,7 @@ enum unit {
 /**
  * Type of weather data.
  */
-enum type {
+enum weather_type {
     TYPE_TEMPERATURE,
     TYPE_PRESSURE,
     TYPE_WINDSPEED,
@@ -70,7 +70,7 @@ int retrieve_weather_data(const char            *code,
 /**
  * Returns a static (!) char pointer to the unit for a specific type.
  */
-char *get_unit_for_type(enum unit unit, enum type type);
+char *get_unit_for_type(enum unit unit, enum weather_type type);
 
 #endif /* WEATHERLIB_H */
 

@@ -132,7 +132,7 @@ static char *units[UNIT_MAXLEN][TYPE_MAXLEN] = {
 };
 
 /* -------------------------------------------------------------------------- */
-char *get_unit_for_type(enum unit unit, enum type type)
+char *get_unit_for_type(enum unit unit, enum weather_type type)
 {
     return units[unit][type];
 }
