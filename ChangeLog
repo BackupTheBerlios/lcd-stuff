@@ -6,6 +6,8 @@
 	  displaying garbage.
 	* Weather.com requires now partner ID and license key. Implement
 	  support for that.
+	* Rename 'enum type' to 'enum weather_type' to prevent conflict with
+	  some CURL headers (fixes compilation on that systems).
 
 2008-07-22  Bernhard Walle <bernhard@bwalle.de>
 
