@@ -2,6 +2,8 @@
 
 	* Change email address to 'bernhard@bwalle.de'
 	* Fix compile warnings
+	* Handle error when retrieving weather data correctly instad of just
+	  displaying garbage.
 
 2008-07-22  Bernhard Walle <bernhard@bwalle.de>
 

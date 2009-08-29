@@ -20,6 +20,8 @@
 #include <glib.h>
 #include <nxml.h>
 
+#include <shared/report.h>
+
 #define WEATHER_URL "http://xoap.weather.com/weather/local/%s?unit=%c&cc=*"
 
 /* -------------------------------------------------------------------------- */
@@ -111,6 +113,9 @@ int retrieve_weather_data(const char            *code,
                  free(string);
              }
          }
+     } else {
+         report(RPT_ERR, "URL (%s) does not contain valid weather data", url);
+         return -1;
      }
 
      nxml_free(nxml);

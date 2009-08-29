@@ -1,3 +1,8 @@
+0.1.6
+=====
+ - Handle error when retrieving weather data correctly instad of just
+   displaying garbage.
+
 0.1.5
 =====
 - fix problem that weather is not working any more after API changes of
