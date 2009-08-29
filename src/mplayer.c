@@ -313,12 +313,24 @@ static void mplayer_net_handler(char **args, int fd)
 
     if (starts_with(args[0], "streams")) {
         char buffer[1024];
+        size_t to_write;
+        ssize_t written;
 
         for (i = 0; i < s_channel_number; i++) {
             snprintf(buffer, 1024, "%s\n", s_channels[i].name);
-            write(fd, buffer, strlen(buffer));
+
+            to_write = strlen(buffer);
+            written = write(fd, buffer, to_write);
+            if (written != to_write) {
+                report(RPT_ERR, "write() failed: ", strerror(errno));
+            }
         }
-        write(fd, "__END__", strlen("__END__"));
+
+        to_write = strlen("__END__");
+        written = write(fd, "__END__", to_write);
+        if (written != to_write) {
+            report(RPT_ERR, "write() failed: ", strerror(errno));
+        }
     } else if (starts_with(args[0], "play") && args[1]) {
         int no = atoi(args[1]);
 
