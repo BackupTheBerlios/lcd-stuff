@@ -101,7 +101,8 @@ if test x"$ac_cv_enable_libetpan" = xyes; then
            LIBETPAN_CPPFLAGS="`$libetpanconfig --cflags`"
            LIBETPAN_LIBS="`$libetpanconfig --libs`"
            LIBETPAN_VERSION=`$libetpanconfig --version | sed "s/\.//g" | sed "s/-.*$//"`
-           if test "$LIBETPAN_VERSION" -lt "041"; then
+           LIBETPAN_MAJOR_VERSION=`$libetpanconfig --version | cut -d . -f 1`
+           if test "$LIBETPAN_MAJOR_VERSION" -lt 1 && test "$LIBETPAN_VERSION" -lt "041"; then
                 AC_MSG_RESULT([*** lcd-stuff requires libetpan 0.41 or newer. See http://www.etpan.org/])
                 AC_MSG_RESULT([*** You can use --disable-libetpan if you don't need IMAP4 support.])
                 AC_MSG_ERROR([libetpan 0.41 not found])
