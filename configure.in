@@ -7,7 +7,7 @@ dnl | initialize autotools |---------------------------------------------------
 dnl  ----------------------
 
 AC_INIT(configure.in)
-AM_INIT_AUTOMAKE(lcd-stuff, 0.1.7)
+AM_INIT_AUTOMAKE(lcd-stuff, 0.2.0)
 AM_CONFIG_HEADER(config.h)
 AM_MAINTAINER_MODE
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
