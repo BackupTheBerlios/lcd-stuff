@@ -22,7 +22,7 @@
 #include <pthread.h>
 #include <glib.h>
 
-extern char          g_lcdproc_server[1024];
+extern char          g_lcdproc_server[HOST_NAME_MAX];
 extern int           g_lcdproc_port;
 extern volatile bool g_exit;
 extern int           g_socket;

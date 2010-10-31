@@ -35,6 +35,7 @@
 #include "servicethread.h"
 #include "global.h"
 #include "mplayer.h"
+#include "main.h"
 #ifdef HAVE_LCDSTUFF_MAIL
 #  include "mail.h"
 #endif
@@ -52,7 +53,7 @@
 #endif
 
 /* ========================= global variables =============================== */
-char           *g_lcdproc_server       = DEFAULT_SERVER;
+char           g_lcdproc_server[HOST_NAME_MAX]  = DEFAULT_SERVER;
 int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
@@ -146,7 +147,7 @@ int parse_command_line(int argc, char *argv[])
                 strncpy(s_config_file, optarg, PATH_MAX);
                 break;
             case 'a':
-                g_lcdproc_server = g_strdup(optarg);
+                strncpy(g_lcdproc_server, optarg, HOST_NAME_MAX);
                 break;
             case 'p':
                 temp_int = strtol(optarg, &p, 0 );
