@@ -1,3 +1,7 @@
+0.2.0
+=====
+ - Don't display compiler calls when building.
+
 0.1.7
 =====
  - Fix build with libetpan >= 1.0.
