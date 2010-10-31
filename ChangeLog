@@ -1,3 +1,7 @@
+2010-10-31  Bernhard Walle <bernhard@bwalle.de>
+
+	* Minor refactoring.
+
 2010-08-12  Bernhard Walle <bernhard@bwalle.de>
 
 	* Fix build with libetpan 1.0.
