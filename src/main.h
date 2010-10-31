@@ -22,12 +22,16 @@
 #include <pthread.h>
 #include <glib.h>
 
+struct size {
+    int width;
+    int height;
+};
+
 extern char          g_lcdproc_server[HOST_NAME_MAX];
 extern int           g_lcdproc_port;
 extern volatile bool g_exit;
 extern int           g_socket;
-extern int           g_display_width;
-extern int           g_display_height;
+extern struct size   g_display_size;
 extern char          g_valid_chars[256];
 
 void conf_dec_count(void);

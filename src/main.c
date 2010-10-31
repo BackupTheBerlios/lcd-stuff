@@ -57,8 +57,7 @@ char           g_lcdproc_server[HOST_NAME_MAX]  = DEFAULT_SERVER;
 int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
 int            g_socket                = 0;
-int            g_display_width         = 0;
-int            g_display_height        = 0;
+struct size    g_display_size          = { 0, 0 };
 GQuark         g_lcdstuff_quark;
 
 /* ========================= thread functions =============================== */
@@ -256,8 +255,8 @@ static bool communication_init(void)
         report(RPT_ERR, "rss: Error received: %s", buffer);
         return false;
     }
-    g_display_width = min(atoi(argv[7]), MAX_LINE_LEN-1);
-    g_display_height = min(atoi(argv[9]), MAX_DISPLAY_HEIGHT);
+    g_display_size.width = min(atoi(argv[7]), MAX_LINE_LEN-1);
+    g_display_size.height = min(atoi(argv[9]), MAX_DISPLAY_HEIGHT);
 
     /* client */
     send_command(NULL, 0, "client_set -name " PRG_NAME "\n");

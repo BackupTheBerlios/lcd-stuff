@@ -76,7 +76,7 @@ static void update_screen_receiving(const char *title)
 
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
 
-    for (i = 0; i < (g_display_height - 1); i++) {
+    for (i = 0; i < (g_display_size.height - 1); i++) {
         char *text = "";
 
         if (i == 1)
@@ -95,7 +95,7 @@ static void update_screen_text(const char *title, GString *text)
     if (title)
         service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
 
-    for (i = 0; i < (g_display_height - 1); i++) {
+    for (i = 0; i < (g_display_size.height - 1); i++) {
         char *line;
 
         line = stringbuffer_get_line(text, i);
@@ -136,7 +136,7 @@ static void update_screen_news(void)
                     GString *wrapped;
 
                     wrapped = stringbuffer_wrap(newsitem,
-                            g_display_width, g_display_height-1);
+                            g_display_size.width, g_display_size.height-1);
                     if (wrapped) {
                         update_screen_text(item->site, wrapped);
                         g_string_free(wrapped, true);
@@ -259,7 +259,7 @@ static bool rss_init(void)
     service_thread_command("widget_add " MODULE_NAME " title title\n");
 
     /* add lines */
-    for (i = 1; i < g_display_height; i++)
+    for (i = 1; i < g_display_size.height; i++)
         service_thread_command("widget_add %s line%d string\n",
                 MODULE_NAME, i);
 
