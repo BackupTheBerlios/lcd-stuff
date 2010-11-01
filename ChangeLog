@@ -1,6 +1,7 @@
 2010-11-01  Bernhard Walle <bernhard@bwalle.de>
 
 	* Heavily decrease usage of static variables.
+	* Allow lcd-stuff to be built on Mac OS.
 
 2010-10-31  Bernhard Walle <bernhard@bwalle.de>
 

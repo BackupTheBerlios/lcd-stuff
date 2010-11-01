@@ -1,6 +1,7 @@
 0.2.0
 =====
  - Don't display compiler calls when building.
+ - Allow lcd-stuff to be built on Mac OS.
 
 0.1.7
 =====
