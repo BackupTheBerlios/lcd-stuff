@@ -18,6 +18,7 @@
 #include <stdbool.h>
 #define _GNU_SOURCE
 #include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
@@ -215,6 +216,23 @@ GString *stringbuffer_wrap(GString *buffer, int length, int maxlines)
 }
 
 /* -------------------------------------------------------------------------- */
+char *lcd_stuff_strndup(const char *s, size_t n)
+{
+    size_t len = strlen(s);
+    char *ret;
+
+    if (len <= n)
+       return strdup(s);
+
+    ret = malloc(n + 1);
+    strncpy(ret, s, n);
+    ret[n] = '\0';
+
+    return ret;
+}
+
+
+/* -------------------------------------------------------------------------- */
 char *stringbuffer_get_line(GString *buffer, int line)
 {
     char *ret = buffer->str;
@@ -238,7 +256,7 @@ char *stringbuffer_get_line(GString *buffer, int line)
 
     if (line == -1) {
         if (next_line)
-            ret = strndup(ret, next_line - ret - 1);
+            ret = lcd_stuff_strndup(ret, next_line - ret - 1);
         else
             ret = strdup(ret);
 
