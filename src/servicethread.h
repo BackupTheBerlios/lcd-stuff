@@ -20,11 +20,11 @@
 
 #include <glib.h>
 
-typedef void (*key_callback_fun) (const char *);
-typedef void (*listen_callback_fun) (void);
-typedef void (*ignore_callback_fun) (void);
-typedef void (*menu_callback_fun) (const char *, const char *, const char *);
-typedef void (*net_callback_fun) (char **args, int fd);
+typedef void (*key_callback_fun) (const char *, void *);
+typedef void (*listen_callback_fun) (void *);
+typedef void (*ignore_callback_fun) (void *);
+typedef void (*menu_callback_fun) (const char *, const char *, const char *, void *);
+typedef void (*net_callback_fun) (char **args, int fd, void *);
 
 
 /**
@@ -55,7 +55,7 @@ gpointer service_thread_run(gpointer data);
  *
  * @param client the client to register
  */
-void service_thread_register_client(struct client *client);
+void service_thread_register_client(const struct client *client, void *data);
 
 /**
  * Unregisters a client.

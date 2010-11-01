@@ -38,35 +38,24 @@
 #include "keyfile.h"
 #include "util.h"
 
-/* ---------------------- forward declarations ------------------------------ */
-static void mp3load_key_handler(const char *str);
-static void mp3load_menu_handler(const char *event, const char *id, const char *arg);
-
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mp3load"
 
 /* ---------------------- types ---------------------------------------------- */
-
-/* ------------------------variables ----------------------------------------- */
-static volatile int     s_button_pressed = BT_None;
-static GMutex           *s_mutex = NULL;
-static GCond            *s_condition = NULL;
-static char             *s_source_directory = NULL;
-static char             *s_target_directory = NULL;
-static char             **s_extensions = NULL;
-static gsize            s_extension_len = 0;
-static char             *s_mount_command = NULL;
-static char             *s_umount_command = NULL;
-static char             *s_default_subdir = NULL;
-static char             *s_size = NULL;
-static struct client    mpd_client = {
-                           .name            = MODULE_NAME,
-                           .key_callback    = mp3load_key_handler,
-                           .listen_callback = NULL,
-                           .ignore_callback = NULL,
-                           .menu_callback   = mp3load_menu_handler
-                        };
-
+struct lcd_stuff_mp3load {
+    struct lcd_stuff    *lcd;
+    int                 button_pressed;
+    GMutex              *mutex;
+    GCond               *condition;
+    char                *source_directory;
+    char                *target_directory;
+    char                **extensions;
+    gsize               extension_len;
+    char                *mount_command;
+    char                *umount_command;
+    char                *default_subdir;
+    char                *size;
+};
 
 /* -------------------------------------------------------------------------- */
 static void update_screen(const char *line1,
@@ -87,12 +76,14 @@ static void update_screen(const char *line1,
 }
 
 /* -------------------------------------------------------------------------- */
-static void mp3load_key_handler(const char *str)
+static void mp3load_key_handler(const char *str, void *cookie)
 {
+    struct lcd_stuff_mp3load *mp3 = (struct lcd_stuff_mp3load *)cookie;
+
     if (g_ascii_strcasecmp(str, "Up") == 0) {
-        s_button_pressed = BT_Up;
+        mp3->button_pressed = BT_Up;
     } else {
-        s_button_pressed = BT_Down;
+        mp3->button_pressed = BT_Down;
     }
 }
 
@@ -144,24 +135,29 @@ static unsigned long long bytes_to_copy(const char      *path,
     }
 }
 
-/* -------------------------------------------------------------------------- */
-static bool file_collect_function(const char    *filename,
-                                  void          *cookie,
-                                  GError        **gerr)
-{
-    GPtrArray   *array = (GPtrArray *)cookie;
-    bool        extension_ok = false;
-    int         i;
+struct file_collect_arg {
+    struct lcd_stuff_mp3load    *mp3;
+    GPtrArray                   *array;
+};
 
-    for (i = 0; i < s_extension_len; i++) {
-        if (g_str_has_suffix(filename, s_extensions[i])) {
+/* -------------------------------------------------------------------------- */
+static bool file_collect_function(const char                *filename,
+                                  void                      *cookie,
+                                  GError                    **gerr)
+{
+    struct file_collect_arg *arg = (struct file_collect_arg *)cookie;
+    bool extension_ok = false;
+    int i;
+
+    for (i = 0; i < arg->mp3->extension_len; i++) {
+        if (g_str_has_suffix(filename, arg->mp3->extensions[i])) {
             extension_ok = true;
             break;
         }
     }
 
     if (extension_ok) {
-        g_ptr_array_add(array, g_strdup(filename));
+        g_ptr_array_add(arg->array, g_strdup(filename));
     }
 
     return true;
@@ -174,7 +170,8 @@ struct ArtistTitle {
 };
 
 /* -------------------------------------------------------------------------- */
-static struct ArtistTitle get_artist_title(const char *path)
+static struct ArtistTitle get_artist_title(struct lcd_stuff_mp3load     *mp3,
+                                           const char                   *path)
 {
     TagLib_File         *taglib_file = NULL;
     TagLib_Tag          *taglib_tag;
@@ -208,7 +205,7 @@ static struct ArtistTitle get_artist_title(const char *path)
     goto out_noerror;
 
 out_artist:
-    artisttitle.artist = g_strdup(s_default_subdir);
+    artisttitle.artist = g_strdup(mp3->default_subdir);
 out_title:
     artisttitle.title = g_path_get_basename(path);
 
@@ -225,14 +222,15 @@ out_noerror:
 }
 
 /* -------------------------------------------------------------------------- */
-static void mp3load_fill_player(void)
+static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
 {
-    GError              *gerr_result = NULL;
-    bool                ret;
-    long long           bytes = 0, total_bytes = 0;
-    GPtrArray           *files = NULL;
-    GRand               *randomizer = NULL;
-    time_t              start;
+    GError *gerr_result = NULL;
+    bool ret;
+    long long bytes = 0, total_bytes = 0;
+    GPtrArray *files = NULL;
+    GRand *randomizer = NULL;
+    time_t start;
+    struct file_collect_arg file_collect_arg;
 
     /* make screen visible */
     service_thread_command("screen_set " MODULE_NAME " -priority alert\n");
@@ -241,25 +239,25 @@ static void mp3load_fill_player(void)
      * ask the user to press Up if he really wants to continue -----------------
      */
 
-    s_button_pressed = BT_None;
+    mp3->button_pressed = BT_None;
     update_screen("This command will", "destroy data. Cont.?", "[Up=Continue]");
 
     /* wait until a button was pressed */
-    while (s_button_pressed == BT_None && !g_exit) {
+    while (mp3->button_pressed == BT_None && !g_exit) {
         g_usleep(G_USEC_PER_SEC / 10);
     }
 
-    if (g_exit || s_button_pressed == BT_Down) {
+    if (g_exit || mp3->button_pressed == BT_Down) {
         goto end;
     }
 
     /*
      * mount -------------------------------------------------------------------
      */
-    if (s_mount_command && strlen(s_mount_command) > 0) {
+    if (mp3->mount_command && strlen(mp3->mount_command) > 0) {
         int err;
 
-        err = system(s_mount_command);
+        err = system(mp3->mount_command);
         if (err != 0) {
             char buffer[1024];
             update_screen("Mounting the device", "failed, aborting", "");
@@ -275,7 +273,7 @@ static void mp3load_fill_player(void)
      */
 
     /* delete the files on the stick */
-    ret = delete_directory_recursively(s_target_directory, &gerr_result);
+    ret = delete_directory_recursively(mp3->target_directory, &gerr_result);
     if (!ret) {
         update_screen("Error while", "deleting files,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
@@ -285,7 +283,7 @@ static void mp3load_fill_player(void)
     }
 
     /* calculate the size */
-    bytes = bytes_to_copy(s_target_directory, s_size, &gerr_result);
+    bytes = bytes_to_copy(mp3->target_directory, mp3->size, &gerr_result);
     if (bytes == 0) {
         update_screen("Error while", "calculating size,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
@@ -300,7 +298,9 @@ static void mp3load_fill_player(void)
     /* collect the files */
     update_screen("Collecting files", "Please be patient", "");
     files = g_ptr_array_new();
-    if (!filewalk(s_source_directory, file_collect_function, files,
+    file_collect_arg.array = files;
+    file_collect_arg.mp3 = mp3;
+    if (!filewalk(mp3->source_directory, file_collect_function, &file_collect_arg,
                 FWF_NO_FLAGS, &gerr_result))
     {
         update_screen("Error while", "collecting files,", "aborted");
@@ -331,9 +331,9 @@ static void mp3load_fill_player(void)
         file_name = g_ptr_array_index(files, file_number);
 
         /* get out the artist name */
-        artisttitle = get_artist_title(file_name);
+        artisttitle = get_artist_title(mp3, file_name);
 
-        target_directory_with_artist = g_build_filename(s_target_directory,
+        target_directory_with_artist = g_build_filename(mp3->target_directory,
                 artisttitle.artist, NULL);
         g_free(artisttitle.artist);
 
@@ -390,10 +390,10 @@ end_umount:
     /*
      * unmount -----------------------------------------------------------------
      */
-    if (s_umount_command && strlen(s_umount_command) > 0) {
+    if (mp3->umount_command && strlen(mp3->umount_command) > 0) {
         int err;
 
-        err = system(s_umount_command);
+        err = system(mp3->umount_command);
         if (err != 0) {
             char buffer[1024];
             update_screen("Unmounting the device", "failed, aborting", "");
@@ -429,39 +429,50 @@ end:
 
 
 /* -------------------------------------------------------------------------- */
-static void mp3load_menu_handler(const char *event, const char *id, const char *arg)
+static void mp3load_menu_handler(const char     *event,
+                                 const char     *id,
+                                 const char     *arg,
+                                 void           *cookie)
 {
-    if (strlen(id) == 0) {
-        return;
-    }
+    struct lcd_stuff_mp3load *mp3 = (struct lcd_stuff_mp3load *)cookie;
 
-    g_cond_broadcast(s_condition);
+    if (strlen(id) == 0)
+        return;
+
+    g_cond_broadcast(mp3->condition);
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mp3load_init(void)
+static struct client mpd_client = {
+    .name            = MODULE_NAME,
+    .key_callback    = mp3load_key_handler,
+    .menu_callback   = mp3load_menu_handler
+};
+
+/* -------------------------------------------------------------------------- */
+static bool mp3load_init(struct lcd_stuff_mp3load *mp3)
 {
     char *string;
 
     /* register client */
-    service_thread_register_client(&mpd_client);
+    service_thread_register_client(&mpd_client, mp3);
 
     /* get config items */
-    s_source_directory = key_file_get_string(MODULE_NAME, "source_directory");
-    s_target_directory = key_file_get_string(MODULE_NAME, "target_directory");
-    s_extensions = key_file_get_string_list_default(MODULE_NAME, "extensions",
-            ".mp3", &s_extension_len);
-    s_mount_command = key_file_get_string_default(MODULE_NAME,
-            "mount_command", "");
-    s_umount_command = key_file_get_string_default(MODULE_NAME,
-            "umount_command", "");
-    s_default_subdir = key_file_get_string_default(MODULE_NAME,
-            "default_subdir", "misc");
-    s_size = key_file_get_string_default(MODULE_NAME, "size", "90%");
+    mp3->source_directory = key_file_get_string(MODULE_NAME, "source_directory");
+    mp3->target_directory = key_file_get_string(MODULE_NAME, "target_directory");
+    mp3->extensions = key_file_get_string_list_default(MODULE_NAME, "extensions",
+                                                       ".mp3", &mp3->extension_len);
+    mp3->mount_command = key_file_get_string_default(MODULE_NAME,
+                                                     "mount_command", "");
+    mp3->umount_command = key_file_get_string_default(MODULE_NAME,
+                                                      "umount_command", "");
+    mp3->default_subdir = key_file_get_string_default(MODULE_NAME,
+                                                      "default_subdir", "misc");
+    mp3->size = key_file_get_string_default(MODULE_NAME, "size", "90%");
 
     /* check if necessary config items are available */
-    if (!s_source_directory || strlen(s_target_directory) <= 0 ||
-            !s_target_directory || strlen(s_source_directory) <= 0) {
+    if (!mp3->source_directory || strlen(mp3->target_directory) <= 0 ||
+            !mp3->target_directory || strlen(mp3->source_directory) <= 0) {
         report(RPT_ERR, MODULE_NAME ": `source_directory' and "
                 "`target_directory' are necessary configuration variables");
         return false;
@@ -501,6 +512,7 @@ static bool mp3load_init(void)
 void *mp3load_run(void *cookie)
 {
     gboolean    result;
+    struct lcd_stuff_mp3load mp3;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -509,11 +521,14 @@ void *mp3load_run(void *cookie)
         goto out_end;
     }
 
-    /* initialise mutex and condition variable */
-    s_condition = g_cond_new();
-    s_mutex = g_mutex_new();
+    memset(&mp3, 0, sizeof(struct lcd_stuff_mp3load));
+    mp3.lcd = (struct lcd_stuff *)cookie;
 
-    if (!mp3load_init()) {
+    /* initialise mutex and condition variable */
+    mp3.condition = g_cond_new();
+    mp3.mutex = g_mutex_new();
+
+    if (!mp3load_init(&mp3)) {
         goto out;
     }
     conf_dec_count();
@@ -528,35 +543,30 @@ void *mp3load_run(void *cookie)
         g_get_current_time(&next_timeout);
         g_time_val_add(&next_timeout, G_USEC_PER_SEC);
 
-        g_mutex_lock(s_mutex);
-        if (g_cond_timed_wait(s_condition, s_mutex, &next_timeout)) {
+        g_mutex_lock(mp3.mutex);
+        if (g_cond_timed_wait(mp3.condition, mp3.mutex, &next_timeout)) {
             /* condition was signalled, i.e. no timeout occurred */
-            mp3load_fill_player();
+            mp3load_fill_player(&mp3);
         }
-        g_mutex_unlock(s_mutex);
+        g_mutex_unlock(mp3.mutex);
 
     }
 
 out:
     service_thread_unregister_client(MODULE_NAME);
-    if (s_mutex)
-        g_mutex_free(s_mutex);
-    if (s_condition)
-        g_cond_free(s_condition);
-    if (s_source_directory)
-        g_free(s_source_directory);
-    if (s_target_directory)
-        g_free(s_target_directory);
-    if (s_extensions)
-        g_strfreev(s_extensions);
-    if (s_mount_command)
-        g_free(s_mount_command);
-    if (s_umount_command)
-        g_free(s_umount_command);
-    if (s_default_subdir)
-        g_free(s_default_subdir);
-    if (s_size)
-        g_free(s_size);
+    if (mp3.mutex)
+        g_mutex_free(mp3.mutex);
+    if (mp3.condition)
+        g_cond_free(mp3.condition);
+    g_free(mp3.source_directory);
+    g_free(mp3.target_directory);
+    if (mp3.extensions)
+        g_strfreev(mp3.extensions);
+    g_free(mp3.mount_command);
+    g_free(mp3.umount_command);
+    g_free(mp3.default_subdir);
+    g_free(mp3.size);
+
 out_end:
     return NULL;
 }

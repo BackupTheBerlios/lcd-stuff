@@ -1,3 +1,7 @@
+2010-11-01  Bernhard Walle <bernhard@bwalle.de>
+
+	* Heavily decrease usage of static variables.
+
 2010-10-31  Bernhard Walle <bernhard@bwalle.de>
 
 	* Minor refactoring.

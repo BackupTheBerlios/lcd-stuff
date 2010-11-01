@@ -27,12 +27,15 @@ struct size {
     int height;
 };
 
-extern char          g_lcdproc_server[HOST_NAME_MAX];
-extern int           g_lcdproc_port;
+struct lcd_stuff {
+    char        lcdproc_server[HOST_NAME_MAX];
+    int         lcdproc_port;
+    int         socket;
+    struct size display_size;
+    char        valid_chars[256];
+};
+
 extern volatile bool g_exit;
-extern int           g_socket;
-extern struct size   g_display_size;
-extern char          g_valid_chars[256];
 
 void conf_dec_count(void);
 

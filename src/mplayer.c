@@ -40,11 +40,6 @@
 
 #define MAX_ARGS  20
 
-/* ---------------------- forward declarations ------------------------------ */
-static void mplayer_key_handler(const char *str);
-static void mplayer_menu_handler(const char *event, const char *id, const char *arg);
-static void mplayer_net_handler(char **args, int fd);
-
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mplayer"
 
@@ -68,47 +63,41 @@ struct program {
     int             channel_number;
 };
 
-/* ------------------------variables ---------------------------------------- */
-static gsize s_channel_number = 0;
-static struct program s_current_mplayer;
-static struct channel *s_channels;
-
-static struct client mpd_client = {
-    .name            = MODULE_NAME,
-    .key_callback    = mplayer_key_handler,
-    .listen_callback = NULL,
-    .ignore_callback = NULL,
-    .menu_callback   = mplayer_menu_handler,
-    .net_callback    = mplayer_net_handler
+struct lcd_stuff_mplayer {
+    struct lcd_stuff    *lcd;
+    gsize               channel_number;
+    struct program      current;
+    struct channel      *channels;
 };
 
-
 /* -------------------------------------------------------------------------- */
-static void mplayer_key_handler(const char *str)
+static void mplayer_key_handler(const char *str, void *cookie)
 {
-    if (s_current_mplayer.pid <= 0)
+    struct lcd_stuff_mplayer *mplayer = (struct lcd_stuff_mplayer *)cookie;
+
+    if (mplayer->current.pid <= 0)
         return;
 
     if (g_ascii_strcasecmp(str, "Up") == 0)
-        s_current_mplayer.pause_play_request = true;
+        mplayer->current.pause_play_request = true;
     else
-        s_current_mplayer.stop_request = true;
+        mplayer->current.stop_request = true;
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_check_child(void)
+static void mplayer_check_child(struct lcd_stuff_mplayer *mplayer)
 {
     pid_t ret;
     int   status;
 
-    ret = waitpid(s_current_mplayer.pid, &status, WNOHANG);
-    if (ret != s_current_mplayer.pid ||
+    ret = waitpid(mplayer->current.pid, &status, WNOHANG);
+    if (ret != mplayer->current.pid ||
             !(WIFEXITED(status) || WIFSIGNALED(status))) {
         return;
     }
 
     /* process has exited */
-    s_current_mplayer.pid = 0;
+    mplayer->current.pid = 0;
 
     /* clear all */
     service_thread_command("widget_set %s line1 1 2 {}\n", MODULE_NAME);
@@ -118,18 +107,18 @@ static void mplayer_check_child(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_wait_for_playback(void)
+static void mplayer_wait_for_playback(struct lcd_stuff_mplayer *mplayer)
 {
     char buffer[BUFSIZ];
 
-    while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
+    while (fgets(buffer, BUFSIZ, mplayer->current.output_stream)) {
         if (starts_with(buffer, "Starting playback..."))
             break;
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_update_metainfo(void)
+static void mplayer_update_metainfo(struct lcd_stuff_mplayer *mplayer)
 {
     char buffer[BUFSIZ];
     char *artist = NULL, *title = NULL;
@@ -139,16 +128,16 @@ static void mplayer_update_metainfo(void)
      * mplayer_kill() was issued but the child has not been handled
      * by waitpid()
      */
-    if (!s_current_mplayer.input_stream || !s_current_mplayer.output_stream)
+    if (!mplayer->current.input_stream || !mplayer->current.output_stream)
         return;
 
     /*
      * artist
      */
 
-    ret = fprintf(s_current_mplayer.input_stream, "get_meta_artist\n");
+    ret = fprintf(mplayer->current.input_stream, "get_meta_artist\n");
     if (ret >= 0) {
-        while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
+        while (fgets(buffer, BUFSIZ, mplayer->current.output_stream)) {
             if (starts_with(buffer, "ANS_META_ARTIST=")) {
                 artist = g_strdup(buffer + strlen("ANS_META_ARTIST=") + 1);
                 artist[strlen(artist)-2] = 0;
@@ -161,9 +150,9 @@ static void mplayer_update_metainfo(void)
      * title
      */
 
-    fprintf(s_current_mplayer.input_stream, "get_meta_title\n");
+    fprintf(mplayer->current.input_stream, "get_meta_title\n");
     if (ret >= 0) {
-        while (fgets(buffer, BUFSIZ, s_current_mplayer.output_stream)) {
+        while (fgets(buffer, BUFSIZ, mplayer->current.output_stream)) {
             if (starts_with(buffer, "ANS_META_TITLE=")) {
                 title = g_strdup(buffer + strlen("ANS_META_TITLE=") + 1);
                 title[strlen(title)-2] = 0;
@@ -172,10 +161,10 @@ static void mplayer_update_metainfo(void)
         }
     }
 
-    if (s_current_mplayer.channel_number >= 0 &&
-                        s_current_mplayer.channel_number < s_channel_number) {
+    if (mplayer->current.channel_number >= 0 &&
+                        mplayer->current.channel_number < mplayer->channel_number) {
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
-                s_channels[s_current_mplayer.channel_number].name);
+                mplayer->channels[mplayer->current.channel_number].name);
     }
     service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
             artist ? artist : "");
@@ -189,29 +178,29 @@ static void mplayer_update_metainfo(void)
 }
 
 /* -------------------------------------------------------------------------- */
-void mplayer_play_pause(void)
+void mplayer_play_pause(struct lcd_stuff_mplayer *mplayer)
 {
-    fprintf(s_current_mplayer.input_stream, "p\n");
-    s_current_mplayer.paused = !s_current_mplayer.paused;
+    fprintf(mplayer->current.input_stream, "p\n");
+    mplayer->current.paused = !mplayer->current.paused;
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_kill(void)
+static void mplayer_kill(struct lcd_stuff_mplayer *mplayer)
 {
-    if (s_current_mplayer.input_stream) {
-        fclose(s_current_mplayer.input_stream);
-        s_current_mplayer.input_stream = NULL;
+    if (mplayer->current.input_stream) {
+        fclose(mplayer->current.input_stream);
+        mplayer->current.input_stream = NULL;
     }
-    if (s_current_mplayer.output_stream) {
-        fclose(s_current_mplayer.output_stream);
-        s_current_mplayer.output_stream = NULL;
+    if (mplayer->current.output_stream) {
+        fclose(mplayer->current.output_stream);
+        mplayer->current.output_stream = NULL;
     }
 
-    kill(s_current_mplayer.pid, SIGTERM);
+    kill(mplayer->current.pid, SIGTERM);
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_start_program(int no)
+static void mplayer_start_program(struct lcd_stuff_mplayer *mplayer, int no)
 {
     struct channel *channel;
     bool           ret;
@@ -219,14 +208,14 @@ static void mplayer_start_program(int no)
     int            i = 0;
     int            pid;
 
-    if (no >= s_channel_number)
+    if (no >= mplayer->channel_number)
         return;
 
     /* check if mplayer is running -- if so, don't start a new one */
-    if (s_current_mplayer.pid > 0)
+    if (mplayer->current.pid > 0)
         return;
 
-    channel = &s_channels[no];
+    channel = &mplayer->channels[no];
 
     args[i++] = "mplayer";
     args[i++] = "-quiet";
@@ -247,9 +236,9 @@ static void mplayer_start_program(int no)
             NULL,                           /* child_setup */
             NULL,                           /* user_data */
             &pid,                           /* child_pid */
-            &s_current_mplayer.input_fd,    /* standard_input */
-            &s_current_mplayer.output_fd,   /* standard_output */
-            &s_current_mplayer.error_fd,    /* standard_error */
+            &mplayer->current.input_fd,     /* standard_input */
+            &mplayer->current.output_fd,    /* standard_output */
+            &mplayer->current.error_fd,     /* standard_error */
             NULL                            /* error */
     );
     if (!ret) {
@@ -257,36 +246,37 @@ static void mplayer_start_program(int no)
         return;
     }
 
-    s_current_mplayer.input_stream = fdopen(s_current_mplayer.input_fd, "w");
-    if (!s_current_mplayer.input_stream) {
+    mplayer->current.input_stream = fdopen(mplayer->current.input_fd, "w");
+    if (!mplayer->current.input_stream) {
         report(RPT_ERR, "fdopen input stream failed: %s", strerror(errno));
-        mplayer_kill();
+        mplayer_kill(mplayer);
         return;
     }
-    setlinebuf(s_current_mplayer.input_stream);
+    setlinebuf(mplayer->current.input_stream);
 
-    s_current_mplayer.output_stream = fdopen(s_current_mplayer.output_fd, "r");
-    if (!s_current_mplayer.output_stream) {
+    mplayer->current.output_stream = fdopen(mplayer->current.output_fd, "r");
+    if (!mplayer->current.output_stream) {
         report(RPT_ERR, "fdopen output stream failed: %s", strerror(errno));
-        fclose(s_current_mplayer.input_stream);
-        mplayer_kill();
+        fclose(mplayer->current.input_stream);
+        mplayer_kill(mplayer);
         return;
     }
-    setlinebuf(s_current_mplayer.output_stream);
+    setlinebuf(mplayer->current.output_stream);
 
     /* show screen */
     service_thread_command("screen_set " MODULE_NAME " -priority info\n");
 
-    mplayer_wait_for_playback();
+    mplayer_wait_for_playback(mplayer);
 
-    s_current_mplayer.pid = pid;
-    s_current_mplayer.channel_number = no;
+    mplayer->current.pid = pid;
+    mplayer->current.channel_number = no;
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_menu_handler(const char *event, const char *id, const char *arg)
+static void mplayer_menu_handler(const char *event, const char *id, const char *arg, void *cookie)
 {
     char **ids;
+    struct lcd_stuff_mplayer *mplayer = (struct lcd_stuff_mplayer *)cookie;
 
     if (strlen(id) == 0) {
         return;
@@ -297,16 +287,17 @@ static void mplayer_menu_handler(const char *event, const char *id, const char *
     if ((g_ascii_strcasecmp(ids[0], "ch") == 0) && (ids[1] != NULL)) {
         int no = atoi(ids[1]) - 1;
 
-        mplayer_start_program(no);
+        mplayer_start_program(mplayer, no);
     }
 
     g_strfreev(ids);
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_net_handler(char **args, int fd)
+static void mplayer_net_handler(char **args, int fd, void *cookie)
 {
     int i;
+    struct lcd_stuff_mplayer *mplayer = (struct lcd_stuff_mplayer *)cookie;
 
     if (!args[0])
         return;
@@ -316,8 +307,8 @@ static void mplayer_net_handler(char **args, int fd)
         size_t to_write;
         ssize_t written;
 
-        for (i = 0; i < s_channel_number; i++) {
-            snprintf(buffer, 1024, "%s\n", s_channels[i].name);
+        for (i = 0; i < mplayer->channel_number; i++) {
+            snprintf(buffer, 1024, "%s\n", mplayer->channels[i].name);
 
             to_write = strlen(buffer);
             written = write(fd, buffer, to_write);
@@ -334,22 +325,32 @@ static void mplayer_net_handler(char **args, int fd)
     } else if (starts_with(args[0], "play") && args[1]) {
         int no = atoi(args[1]);
 
-        mplayer_start_program(no);
+        mplayer_start_program(mplayer, no);
     } else if (starts_with(args[0], "stop"))
-        s_current_mplayer.stop_request = true;
+        mplayer->current.stop_request = true;
     else if (starts_with(args[0], "pause_play"))
-        s_current_mplayer.pause_play_request = true;
+        mplayer->current.pause_play_request = true;
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mplayer_init(void)
+static const struct client mpd_client = {
+    .name            = MODULE_NAME,
+    .key_callback    = mplayer_key_handler,
+    .listen_callback = NULL,
+    .ignore_callback = NULL,
+    .menu_callback   = mplayer_menu_handler,
+    .net_callback    = mplayer_net_handler
+};
+
+/* -------------------------------------------------------------------------- */
+static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
 {
     char     *string;
     int      i, j;
     char     **channels;
 
     /* register client */
-    service_thread_register_client(&mpd_client);
+    service_thread_register_client(&mpd_client, mplayer);
 
     /* add a invisible screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -373,10 +374,10 @@ static bool mplayer_init(void)
     g_free(string);
 
     /* get number of channels in the file */
-    channels = key_file_get_keys(MODULE_NAME, &s_channel_number);
+    channels = key_file_get_keys(MODULE_NAME, &mplayer->channel_number);
 
-    s_channels = g_new(struct channel, s_channel_number);
-    if (!s_channels) {
+    mplayer->channels = g_new(struct channel, mplayer->channel_number);
+    if (!mplayer->channels) {
         report(RPT_ERR, "g_new failed for s_channels");
         return false;
     }
@@ -388,30 +389,30 @@ static bool mplayer_init(void)
 
         /* keys that are no channels */
         if (strcmp(channels[i], "name") == 0) {
-            s_channel_number--;
+            mplayer->channel_number--;
             j--;
             continue;
         }
 
-        s_channels[j].name = g_strdup(channels[i]);
+        mplayer->channels[j].name = g_strdup(channels[i]);
 
-        value = key_file_get_string(MODULE_NAME, s_channels[j].name);
+        value = key_file_get_string(MODULE_NAME, mplayer->channels[j].name);
         if (!value) {
             report(RPT_ERR, "Value %s missing", value);
             continue;
         }
 
-        s_channels[j].playlist = g_str_has_prefix(value, "playlist");
-        if (s_channels[j].playlist) {
-            s_channels[j].url = g_strdup(value + strlen("playlist"));
+        mplayer->channels[j].playlist = g_str_has_prefix(value, "playlist");
+        if (mplayer->channels[j].playlist) {
+            mplayer->channels[j].url = g_strdup(value + strlen("playlist"));
             g_free(value);
         } else
-            s_channels[j].url = value;
+            mplayer->channels[j].url = value;
 
-        g_strchug(s_channels[j].url);
+        g_strchug(mplayer->channels[j].url);
 
         service_thread_command("menu_add_item mplayer_ch mplayer_ch_%d action {%s}\n",
-                j+1, s_channels[j].name);
+                j+1, mplayer->channels[j].name);
         service_thread_command("menu_set_item mplayer_ch mplayer_ch_%d "
                 "-menu_result quit\n", j+1);
     }
@@ -432,6 +433,10 @@ void *mplayer_run(void *cookie)
 {
     gboolean    result;
     int         ret;
+    struct lcd_stuff_mplayer mplayer;
+
+    memset(&mplayer, 0, sizeof(struct lcd_stuff_mplayer));
+    mplayer.lcd = (struct lcd_stuff *)cookie;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -440,7 +445,7 @@ void *mplayer_run(void *cookie)
         return NULL;
     }
 
-    ret = mplayer_init();
+    ret = mplayer_init(&mplayer);
     conf_dec_count();
 
     if (!ret)
@@ -450,19 +455,19 @@ void *mplayer_run(void *cookie)
     while (!g_exit) {
         g_usleep(1000000);
 
-        if (s_current_mplayer.pid <= 0)
+        if (mplayer.current.pid <= 0)
             continue;
 
-        if (s_current_mplayer.stop_request) {
-            mplayer_kill();
-            s_current_mplayer.stop_request = false;
-        } else if (s_current_mplayer.pause_play_request) {
-            mplayer_play_pause();
-            s_current_mplayer.pause_play_request = false;
-        } else if (!s_current_mplayer.paused)
-            mplayer_update_metainfo();
+        if (mplayer.current.stop_request) {
+            mplayer_kill(&mplayer);
+            mplayer.current.stop_request = false;
+        } else if (mplayer.current.pause_play_request) {
+            mplayer_play_pause(&mplayer);
+            mplayer.current.pause_play_request = false;
+        } else if (!mplayer.current.paused)
+            mplayer_update_metainfo(&mplayer);
 
-        mplayer_check_child();
+        mplayer_check_child(&mplayer);
     }
 
     mplayer_deinit();

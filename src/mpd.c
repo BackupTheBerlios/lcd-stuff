@@ -37,10 +37,6 @@
 #include "servicethread.h"
 #include "keyfile.h"
 
-/* ---------------------- forward declarations ------------------------------ */
-static void mpd_key_handler(const char *str);
-static void mpd_menu_handler(const char *event, const char *id, const char *arg);
-
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mpd"
 #define RETRY_INTERVAL        5
@@ -52,24 +48,18 @@ struct song {
 };
 
 /* ------------------------variables ---------------------------------------- */
-static MpdObj *s_mpd;
-static int s_error = 0;
-static int s_current_state  = 0;
-static bool s_song_displayed = false;
-static struct song *s_current_song;
-static guint s_stop_time = UINT_MAX;
-static GPtrArray *s_current_list = NULL;
-static struct connection *s_connection;
-static int s_timeout;
-
-static struct client mpd_client = {
-    .name            = MODULE_NAME,
-    .key_callback    = mpd_key_handler,
-    .listen_callback = NULL,
-    .ignore_callback = NULL,
-    .menu_callback   = mpd_menu_handler
+struct lcd_stuff_mpd {
+    struct lcd_stuff    *lcd;
+    MpdObj              *mpd;
+    int                 error;
+    int                 current_state;
+    bool                song_displayed;
+    struct song         *current_song;
+    guint               stop_time;
+    GPtrArray           *current_list;
+    struct connection   *connection;
+    int                 timeout;
 };
-
 
 /* -------------------------------------------------------------------------- */
 static void mpd_song_set_title(struct song *song, const char *title)
@@ -127,14 +117,14 @@ static void mpd_free_playlist(GPtrArray *playlist)
 }
 
 /* -------------------------------------------------------------------------- */
-static GPtrArray *mpd_get_playlists(void)
+static GPtrArray *mpd_get_playlists(struct lcd_stuff_mpd *mpd)
 {
     MpdData     *data;
     GPtrArray   *array;
 
     array = g_ptr_array_new();
 
-    for (data = mpd_database_get_directory(s_mpd, "/");
+    for (data = mpd_database_get_directory(mpd->mpd, "/");
             data != NULL; data = mpd_data_get_next(data)) {
         switch (data->type) {
             case MPD_DATA_TYPE_PLAYLIST:
@@ -176,14 +166,14 @@ static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_update_playlist_menu(void)
+static void mpd_update_playlist_menu(struct lcd_stuff_mpd *mpd)
 {
     bool        add = false;
     int         i;
     GPtrArray   *old, *new;
 
-    old = s_current_list;
-    new = mpd_get_playlists();
+    old = mpd->current_list;
+    new = mpd_get_playlists(mpd);
 
     /* if no old playlist, simply add the whole playlist */
     if (!old) {
@@ -204,7 +194,7 @@ static void mpd_update_playlist_menu(void)
         }
     }
 
-    s_current_list = new;
+    mpd->current_list = new;
     if (old)
         mpd_free_playlist(old);
 }
@@ -217,14 +207,14 @@ static bool mpd_song_compare(const struct song *a, const struct song *b)
 }
 
 /* -------------------------------------------------------------------------- */
-static struct song *mpd_get_current_song(void)
+static struct song *mpd_get_current_song(struct lcd_stuff_mpd *mpd)
 {
     mpd_Song        *current;
     gchar           **strings;
     struct song     *ret;
 
-    current = mpd_playlist_get_current_song(s_mpd);
-    if (!current || s_current_state != MPD_PLAYER_PLAY) {
+    current = mpd_playlist_get_current_song(mpd->mpd);
+    if (!current || mpd->current_state != MPD_PLAYER_PLAY) {
         ret = mpd_song_new("", "");
     } else if (!current->title) {
         ret = mpd_song_new("(unknown)", "");
@@ -243,28 +233,31 @@ static struct song *mpd_get_current_song(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_key_handler(const char *str)
+static void mpd_key_handler(const char *str, void *cookie)
 {
+    struct lcd_stuff_mpd *mpd = (struct lcd_stuff_mpd *)cookie;
+
     if (g_ascii_strcasecmp(str, "Up") == 0) {
         /* if playing, next song */
-        if (s_current_state == MPD_PLAYER_PLAY) {
-            mpd_player_next(s_mpd);
+        if (mpd->current_state == MPD_PLAYER_PLAY) {
+            mpd_player_next(mpd->mpd);
         } else {
-            mpd_player_stop(s_mpd);
+            mpd_player_stop(mpd->mpd);
         }
     } else {
-        if (s_current_state == MPD_PLAYER_PLAY) {
-            mpd_player_pause(s_mpd);
+        if (mpd->current_state == MPD_PLAYER_PLAY) {
+            mpd_player_pause(mpd->mpd);
         } else {
-            mpd_player_play(s_mpd);
+            mpd_player_play(mpd->mpd);
         }
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_menu_handler(const char *event, const char *id, const char *arg)
+static void mpd_menu_handler(const char *event, const char *id, const char *arg, void *cookie)
 {
     char **ids;
+    struct lcd_stuff_mpd *mpd = (struct lcd_stuff_mpd *)cookie;
 
     if (strlen(id) == 0) {
         return;
@@ -276,16 +269,16 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
         int no = atoi(ids[1]) - 1;
 
         if (no == -1) {
-            mpd_playlist_clear(s_mpd);
-            mpd_playlist_queue_commit(s_mpd);
-        } else if (s_current_list && (no < s_current_list->len)) {
+            mpd_playlist_clear(mpd->mpd);
+            mpd_playlist_queue_commit(mpd->mpd);
+        } else if (mpd->current_list && (no < mpd->current_list->len)) {
             char *list;
-            list = g_strconcat( s_current_list->pdata[no], NULL);
-            mpd_playlist_queue_load(s_mpd, list);
-            mpd_playlist_queue_commit(s_mpd);
+            list = g_strconcat(mpd->current_list->pdata[no], NULL);
+            mpd_playlist_queue_load(mpd->mpd, list);
+            mpd_playlist_queue_commit(mpd->mpd);
 
-            if (s_current_state != MPD_PLAYER_PLAY) {
-                mpd_player_play(s_mpd);
+            if (mpd->current_state != MPD_PLAYER_PLAY) {
+                mpd_player_play(mpd->mpd);
             }
 
             g_free(list);
@@ -293,9 +286,9 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg)
     } else if ((g_ascii_strcasecmp(ids[0], "standby") == 0)) {
         int min = atoi(arg) * 15;
         if (min == 0) {
-            s_stop_time = INT_MAX;
+            mpd->stop_time = INT_MAX;
         } else {
-            s_stop_time = time(NULL) + 60 * min;
+            mpd->stop_time = time(NULL) + 60 * min;
         }
     }
 
@@ -310,41 +303,41 @@ static int mpd_error_handler(MpdObj *mpd, int id, char *msg, void *ptr)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_update_status_time(void)
+static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
 {
     int             elapsed, total;
     char            *line3;
     struct song     *cur_song;
 
-    if (s_current_state != MPD_PLAYER_PLAY) {
+    if (mpd->current_state != MPD_PLAYER_PLAY) {
         return;
     }
 
     /* song ? */
-    cur_song = mpd_get_current_song();
-    if (!mpd_song_compare(cur_song, s_current_song) || !s_song_displayed) {
-        mpd_song_delete(s_current_song);
-        s_current_song = cur_song;
+    cur_song = mpd_get_current_song(mpd);
+    if (!mpd_song_compare(cur_song, mpd->current_song) || !mpd->song_displayed) {
+        mpd_song_delete(mpd->current_song);
+        mpd->current_song = cur_song;
 
         service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
                 cur_song->artist);
         service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
                 cur_song->title);
 
-        s_song_displayed = true;
+        mpd->song_displayed = true;
     } else {
-        mpd_song_delete(s_current_song);
-        s_current_song = NULL;
+        mpd_song_delete(mpd->current_song);
+        mpd->current_song = NULL;
     }
 
-    elapsed = mpd_status_get_elapsed_song_time(s_mpd);
-    total = mpd_status_get_total_song_time(s_mpd);
+    elapsed = mpd_status_get_elapsed_song_time(mpd->mpd);
+    total = mpd_status_get_total_song_time(mpd->mpd);
 
     line3 = g_strdup_printf("%d:%2.2d/%d:%2.2d     %s%s",
                             elapsed / 60, elapsed % 60,
                             total / 60,   total   % 60,
-                            mpd_player_get_repeat(s_mpd) ? "R" : "_",
-                            mpd_player_get_random(s_mpd) ? "S" : "_");
+                            mpd_player_get_repeat(mpd->mpd) ? "R" : "_",
+                            mpd_player_get_random(mpd->mpd) ? "S" : "_");
 
     service_thread_command("widget_set %s line3 1 4 {%10s}\n",
             MODULE_NAME, line3);
@@ -354,13 +347,14 @@ static void mpd_update_status_time(void)
 /* -------------------------------------------------------------------------- */
 static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *userdata)
 {
+    struct lcd_stuff_mpd *mpd = (struct lcd_stuff_mpd *)userdata;
     char *str;
-    s_current_state = mpd_player_get_state(s_mpd);
-    report(RPT_DEBUG, "State changed, %d\n", s_current_state);
+    mpd->current_state = mpd_player_get_state(mpd->mpd);
+    report(RPT_DEBUG, "State changed, %d\n", mpd->current_state);
 
-    s_song_displayed = false;
+    mpd->song_displayed = false;
 
-    switch (s_current_state) {
+    switch (mpd->current_state) {
         case MPD_PLAYER_PAUSE:
             str = "paused";
             break;
@@ -385,16 +379,18 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
 /* -------------------------------------------------------------------------- */
 static void mpd_connection_changed_handler(MpdObj *mi, int connect, void *userdata)
 {
+    struct lcd_stuff_mpd *mpd = (struct lcd_stuff_mpd *)userdata;
+
     if (connect) {
         report(RPT_DEBUG, "Connected");
     } else {
-        s_error = true;
+        mpd->error = true;
         report(RPT_ERR, "Disconnected");
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mpd_init_connection(void)
+static bool mpd_init_connection(struct lcd_stuff_mpd *mpd)
 {
     char    *server = NULL, *password = NULL;
     int     port;
@@ -403,51 +399,51 @@ static bool mpd_init_connection(void)
     server = key_file_get_string_default(MODULE_NAME, "server", "localhost");
     password = key_file_get_string_default(MODULE_NAME, "password", "");
     port = key_file_get_integer_default(MODULE_NAME, "port", 6600);
-    s_timeout = key_file_get_integer_default(MODULE_NAME, "timeout", 10);
+    mpd->timeout = key_file_get_integer_default(MODULE_NAME, "timeout", 10);
 
     /* set the global connection */
-    s_connection = connection_new(server, password, port);
+    mpd->connection = connection_new(server, password, port);
     g_free(server);
     g_free(password);
-    if (!s_connection)
+    if (!mpd->connection)
         return false;
 
     return true;
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mpd_start_connection(void)
+static bool mpd_start_connection(struct lcd_stuff_mpd *mpd)
 {
     int     err;
 
-    s_error = false;
+    mpd->error = false;
 
     /* create the current song */
-    mpd_song_delete(s_current_song);
-    s_current_song = mpd_song_new("", "");
+    mpd_song_delete(mpd->current_song);
+    mpd->current_song = mpd_song_new("", "");
 
     /* create the object */
-    if (s_mpd) {
-        mpd_free(s_mpd);
-        s_mpd = NULL;
+    if (mpd->mpd) {
+        mpd_free(mpd->mpd);
+        mpd->mpd = NULL;
     }
-    s_mpd = mpd_new(s_connection->host, s_connection->port, s_connection->password);
+    mpd->mpd = mpd_new(mpd->connection->host, mpd->connection->port, mpd->connection->password);
 
     /* connect signal handlers */
-    mpd_signal_connect_error(s_mpd, mpd_error_handler, NULL);
-    mpd_signal_connect_status_changed(s_mpd, mpd_state_changed_handler, NULL);
-    mpd_signal_connect_connection_changed(s_mpd, mpd_connection_changed_handler, NULL);
+    mpd_signal_connect_error(mpd->mpd, mpd_error_handler, mpd);
+    mpd_signal_connect_status_changed(mpd->mpd, mpd_state_changed_handler, mpd);
+    mpd_signal_connect_connection_changed(mpd->mpd, mpd_connection_changed_handler, mpd);
 
     /* set timeout */
-    mpd_set_connection_timeout(s_mpd, s_timeout);
-    if (s_error) {
-        mpd_disconnect(s_mpd);
+    mpd_set_connection_timeout(mpd->mpd, mpd->timeout);
+    if (mpd->error) {
+        mpd_disconnect(mpd->mpd);
         return false;
     }
 
     /* connect */
-    err = mpd_connect(s_mpd);
-    if (err != MPD_OK || s_error) {
+    err = mpd_connect(mpd->mpd);
+    if (err != MPD_OK || mpd->error) {
         report(RPT_ERR, "Failed to connect: %d", err);
         return false;
     }
@@ -456,12 +452,19 @@ static bool mpd_start_connection(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static bool mpd_init(void)
+static struct client mpd_client = {
+    .name            = MODULE_NAME,
+    .key_callback    = mpd_key_handler,
+    .menu_callback   = mpd_menu_handler
+};
+
+/* -------------------------------------------------------------------------- */
+static bool mpd_init(struct lcd_stuff_mpd *mpd)
 {
     char     *string;
 
     /* register client */
-    service_thread_register_client(&mpd_client);
+    service_thread_register_client(&mpd_client, mpd);
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -499,9 +502,22 @@ static void mpd_deinit(void)
 /* -------------------------------------------------------------------------- */
 void *mpd_run(void *cookie)
 {
-    time_t      next_update, current;
-    gboolean    result;
-    int         retry_count = RETRY_INTERVAL;
+    time_t next_update, current;
+    gboolean result;
+    int retry_count = RETRY_INTERVAL;
+    struct lcd_stuff_mpd mpd;
+
+    /* default values */
+    mpd.lcd = (struct lcd_stuff *)cookie;
+    mpd.mpd = NULL;
+    mpd.error = 0;
+    mpd.current_state = 0;
+    mpd.song_displayed = false;
+    mpd.current_song = NULL;
+    mpd.stop_time = UINT_MAX;
+    mpd.current_list = NULL;
+    mpd.connection = NULL;
+    mpd.timeout = 0;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -510,12 +526,12 @@ void *mpd_run(void *cookie)
         return NULL;
     }
 
-    if (!mpd_init())
+    if (!mpd_init(&mpd))
         goto out;
 
-    if (!mpd_init_connection())
+    if (!mpd_init_connection(&mpd))
         goto out_screen;
-    if (!mpd_start_connection())
+    if (!mpd_start_connection(&mpd))
         goto out_screen;
 
     /* do first update instantly */
@@ -527,16 +543,16 @@ void *mpd_run(void *cookie)
     while (!g_exit) {
 
         /* if we are in error state, try to retrieve a connection first */
-        if (s_error) {
+        if (mpd.error) {
             if (retry_count-- <= 0) { /* each minute */
-                if (mpd_start_connection()) {
-                    s_error = false;
+                if (mpd_start_connection(&mpd)) {
+                    mpd.error = false;
                 } else {
                     retry_count = RETRY_INTERVAL;
                 }
             }
 
-            if (s_error) {
+            if (mpd.error) {
                 g_usleep(1000000);
                 continue;
             }
@@ -545,17 +561,17 @@ void *mpd_run(void *cookie)
         current = time(NULL);
 
         g_usleep(1000000);
-        mpd_status_queue_update(s_mpd);
-        mpd_status_check(s_mpd);
-        mpd_update_status_time();
+        mpd_status_queue_update(mpd.mpd);
+        mpd_status_check(mpd.mpd);
+        mpd_update_status_time(&mpd);
 
         /* check playlists ? */
         if (current > next_update) {
-            mpd_update_playlist_menu();
+            mpd_update_playlist_menu(&mpd);
             next_update = time(NULL) + 60;
-        } if (current > s_stop_time) {
-            mpd_player_stop(s_mpd);
-            s_stop_time = UINT_MAX;
+        } if (current > mpd.stop_time) {
+            mpd_player_stop(mpd.mpd);
+            mpd.stop_time = UINT_MAX;
             service_thread_command("menu_set_item \"\" mpd_standby -value 0\n");
         }
     }
@@ -564,13 +580,13 @@ out_screen:
     mpd_deinit();
 
 out:
-    if (s_mpd)
-        mpd_free(s_mpd);
-    if (s_current_list)
-        mpd_free_playlist(s_current_list);
+    if (mpd.mpd)
+        mpd_free(mpd.mpd);
+    if (mpd.current_list)
+        mpd_free_playlist(mpd.current_list);
     service_thread_unregister_client(MODULE_NAME);
-    mpd_song_delete(s_current_song);
-    connection_delete(s_connection);
+    mpd_song_delete(mpd.current_song);
+    connection_delete(mpd.connection);
 
     return NULL;
 }

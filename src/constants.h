@@ -18,7 +18,7 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-#define DEFAULT_SERVER      "localhost";
+#define DEFAULT_SERVER      "localhost"
 #define DEFAULT_PORT        13666
 #define DEFAULT_CONFIG_FILE "/etc/lcd-stuff.conf"
 

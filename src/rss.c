@@ -38,10 +38,6 @@
 #include "keyfile.h"
 #include "util.h"
 
-/* ---------------------- forward declarations ------------------------------ */
-static void rss_ignore_handler(void);
-static void rss_key_handler(const char *str);
-
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "rss"
 
@@ -57,26 +53,22 @@ struct newsitem {
     char *headline;
 };
 
-/* ------------------------variables ---------------------------------------- */
-static int              s_interval;
-static GPtrArray        *s_feeds;
-static GList            *s_news          = NULL;
-static int              s_current_screen = 0;
-static struct client    rss_client = {
-                           .name            = MODULE_NAME,
-                           .key_callback    = rss_key_handler,
-                           .listen_callback = NULL,
-                           .ignore_callback = rss_ignore_handler
-                        };
+struct lcd_stuff_rss {
+    struct lcd_stuff    *lcd;
+    int                 interval;
+    GPtrArray           *feeds;
+    GList               *news;
+    int                 current_screen;
+};
 
 /* -------------------------------------------------------------------------- */
-static void update_screen_receiving(const char *title)
+static void update_screen_receiving(struct lcd_stuff_rss *rss, const char *title)
 {
     int i;
 
     service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
 
-    for (i = 0; i < (g_display_size.height - 1); i++) {
+    for (i = 0; i < (rss->lcd->display_size.height - 1); i++) {
         char *text = "";
 
         if (i == 1)
@@ -88,14 +80,14 @@ static void update_screen_receiving(const char *title)
 }
 
 /* -------------------------------------------------------------------------- */
-static void update_screen_text(const char *title, GString *text)
+static void update_screen_text(struct lcd_stuff_rss *rss, const char *title, GString *text)
 {
     int i;
 
     if (title)
         service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
 
-    for (i = 0; i < (g_display_size.height - 1); i++) {
+    for (i = 0; i < (rss->lcd->display_size.height - 1); i++) {
         char *line;
 
         line = stringbuffer_get_line(text, i);
@@ -108,19 +100,19 @@ static void update_screen_text(const char *title, GString *text)
 }
 
 /* -------------------------------------------------------------------------- */
-static void update_screen_news(void)
+static void update_screen_news(struct lcd_stuff_rss *rss)
 {
     int     i;
-    int     tot = g_list_length(s_news);
+    int     tot = g_list_length(rss->news);
 
-    if (s_current_screen < 0) {
-        s_current_screen = tot - 1;
-    } else if (s_current_screen >= tot) {
-        s_current_screen = 0;
+    if (rss->current_screen < 0) {
+        rss->current_screen = tot - 1;
+    } else if (rss->current_screen >= tot) {
+        rss->current_screen = 0;
     }
 
     if (tot != 0) {
-        GList *cur = g_list_first(s_news);
+        GList *cur = g_list_first(rss->news);
         i = 0;
 
         while (cur) {
@@ -128,7 +120,7 @@ static void update_screen_news(void)
             if (!item)
                 break;
 
-            if (i++ == s_current_screen) {
+            if (i++ == rss->current_screen) {
                 GString *newsitem;
 
                 newsitem = g_string_new(item->headline);
@@ -136,9 +128,10 @@ static void update_screen_news(void)
                     GString *wrapped;
 
                     wrapped = stringbuffer_wrap(newsitem,
-                            g_display_size.width, g_display_size.height-1);
+                                                rss->lcd->display_size.width,
+                                                rss->lcd->display_size.height-1);
                     if (wrapped) {
-                        update_screen_text(item->site, wrapped);
+                        update_screen_text(rss, item->site, wrapped);
                         g_string_free(wrapped, true);
                     }
                     g_string_free(newsitem, true);
@@ -153,31 +146,31 @@ static void update_screen_news(void)
 }
 
 /* -------------------------------------------------------------------------- */
-void free_news(void)
+void free_news(struct lcd_stuff_rss *rss)
 {
-    GList *cur = g_list_first(s_news);
+    GList *cur = g_list_first(rss->news);
     while (cur) {
         struct newsitem *item = (struct newsitem *)cur->data;
         free(item->headline);
         free(cur->data);
         cur = cur->next;
     }
-    g_list_free(s_news);
-    s_news = NULL;
+    g_list_free(rss->news);
+    rss->news = NULL;
 }
 
 /* -------------------------------------------------------------------------- */
-static void rss_check(void)
+static void rss_check(struct lcd_stuff_rss *rss)
 {
     int nf;
 
-    s_current_screen = 0;
+    rss->current_screen = 0;
 
     /* free old mail */
-    free_news();
+    free_news(rss);
 
-    for (nf = 0; nf < s_feeds->len; nf++) {
-        struct rss_feed           *feed       = g_ptr_array_index(s_feeds, nf);
+    for (nf = 0; nf < rss->feeds->len; nf++) {
+        struct rss_feed           *feed       = g_ptr_array_index(rss->feeds, nf);
         mrss_error_t              err_read;
         mrss_t                    *data_cur = NULL;
         mrss_item_t               *item_cur = NULL;
@@ -187,7 +180,7 @@ static void rss_check(void)
             break;
         }
 
-        update_screen_receiving(feed->name);
+        update_screen_receiving(rss, feed->name);
 
         err_read = mrss_parse_url(feed->url, &data_cur);
 		if (err_read != MRSS_OK) {
@@ -214,7 +207,7 @@ static void rss_check(void)
 
             newsitem->site = feed->name;
 
-            s_news = g_list_append(s_news, newsitem);
+            rss->news = g_list_append(rss->news, newsitem);
             item_cur = item_cur->next;
         }
 
@@ -225,32 +218,43 @@ end_loop:
 }
 
 /* -------------------------------------------------------------------------- */
-static void rss_key_handler(const char *str)
+static void rss_key_handler(const char *str, void *cookie)
 {
+    struct lcd_stuff_rss *rss = (struct lcd_stuff_rss *)cookie;
+
     if (strcmp(str, "Up") == 0) {
-        s_current_screen++;
+        rss->current_screen++;
     } else {
-        s_current_screen--;
+        rss->current_screen--;
     }
-    update_screen_news();
+    update_screen_news(rss);
 }
 
 /* -------------------------------------------------------------------------- */
-static void rss_ignore_handler(void)
+static void rss_ignore_handler(void *cookie)
 {
-    s_current_screen++;
-    update_screen_news();
+    struct lcd_stuff_rss *rss = (struct lcd_stuff_rss *)cookie;
+
+    rss->current_screen++;
+    update_screen_news(rss);
 }
 
 /* -------------------------------------------------------------------------- */
-static bool rss_init(void)
+static struct client rss_client = {
+    .name            = MODULE_NAME,
+    .key_callback    = rss_key_handler,
+    .ignore_callback = rss_ignore_handler
+};
+
+/* -------------------------------------------------------------------------- */
+static bool rss_init(struct lcd_stuff_rss *rss)
 {
     int      i;
     int      number_of_feeds;
     char     *tmp;
 
     /* register client */
-    service_thread_register_client(&rss_client);
+    service_thread_register_client(&rss_client, rss);
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -259,7 +263,7 @@ static bool rss_init(void)
     service_thread_command("widget_add " MODULE_NAME " title title\n");
 
     /* add lines */
-    for (i = 1; i < g_display_size.height; i++)
+    for (i = 1; i < rss->lcd->display_size.height; i++)
         service_thread_command("widget_add %s line%d string\n",
                 MODULE_NAME, i);
 
@@ -268,7 +272,7 @@ static bool rss_init(void)
     service_thread_command("client_add_key Down\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 1800);
+    rss->interval = key_file_get_integer_default(MODULE_NAME, "interval", 1800);
 
     number_of_feeds = key_file_get_integer_default(MODULE_NAME, "number_of_feeds", 0);
     if (number_of_feeds == 0) {
@@ -277,7 +281,7 @@ static bool rss_init(void)
     }
 
     /* create the linked list of mailboxes */
-    s_feeds = g_ptr_array_sized_new(number_of_feeds);
+    rss->feeds = g_ptr_array_sized_new(number_of_feeds);
 
     /* process the mailboxes */
     for (i = 1; i <= number_of_feeds; i++) {
@@ -299,7 +303,7 @@ static bool rss_init(void)
         cur->items = key_file_get_integer_default(MODULE_NAME, tmp, 0);
         g_free(tmp);
 
-        g_ptr_array_add(s_feeds, cur);
+        g_ptr_array_add(rss->feeds, cur);
     }
 
     return true;
@@ -311,6 +315,13 @@ void *rss_run(void *cookie)
     int     i;
     time_t  next_check;
     int     result;
+    struct lcd_stuff_rss rss;
+
+    rss.lcd = (struct lcd_stuff *)cookie;
+    rss.interval = 0;
+    rss.feeds = NULL;
+    rss.news = NULL;
+    rss.current_screen = 0;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -319,7 +330,7 @@ void *rss_run(void *cookie)
         return NULL;
     }
 
-    if (!rss_init()) {
+    if (!rss_init(&rss)) {
         report(RPT_ERR, "rss_init failed");
         return NULL;
     }
@@ -334,23 +345,23 @@ void *rss_run(void *cookie)
 
         /* check emails? */
         if (time(NULL) > next_check) {
-            rss_check();
-            update_screen_news();
-            next_check = time(NULL) + s_interval;
+            rss_check(&rss);
+            update_screen_news(&rss);
+            next_check = time(NULL) + rss.interval;
         }
     }
 
     service_thread_unregister_client(MODULE_NAME);
 
-    for (i = 0; i < s_feeds->len; i++) {
-        struct rss_feed *cur = (struct rss_feed *)g_ptr_array_index(s_feeds, i);
+    for (i = 0; i < rss.feeds->len; i++) {
+        struct rss_feed *cur = (struct rss_feed *)g_ptr_array_index(rss.feeds, i);
         g_free(cur->url);
         g_free(cur->name);
         free(cur);
     }
-    g_ptr_array_free(s_feeds, true);
+    g_ptr_array_free(rss.feeds, true);
 
-    free_news();
+    free_news(&rss);
 
     return NULL;
 }

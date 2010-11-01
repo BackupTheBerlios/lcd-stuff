@@ -53,11 +53,7 @@
 #endif
 
 /* ========================= global variables =============================== */
-char           g_lcdproc_server[HOST_NAME_MAX]  = DEFAULT_SERVER;
-int            g_lcdproc_port          = DEFAULT_PORT;
 volatile bool  g_exit                  = false;
-int            g_socket                = 0;
-struct size    g_display_size          = { 0, 0 };
 GQuark         g_lcdstuff_quark;
 
 /* ========================= thread functions =============================== */
@@ -130,7 +126,7 @@ void sig_handler(int signal)
 }
 
 /* -------------------------------------------------------------------------- */
-int parse_command_line(int argc, char *argv[])
+int parse_command_line(struct lcd_stuff *lcd, int argc, char *argv[])
 {
     int c;
     int temp_int;
@@ -146,12 +142,12 @@ int parse_command_line(int argc, char *argv[])
                 strncpy(s_config_file, optarg, PATH_MAX);
                 break;
             case 'a':
-                strncpy(g_lcdproc_server, optarg, HOST_NAME_MAX);
+                strncpy(lcd->lcdproc_server, optarg, HOST_NAME_MAX);
                 break;
             case 'p':
                 temp_int = strtol(optarg, &p, 0 );
                 if (*optarg != 0 && *p == 0) {
-                    g_lcdproc_port = temp_int;
+                    lcd->lcdproc_port = temp_int;
                 } else {
                     report(RPT_ERR, "Could not interpret value for -%c", c );
                     error = -1;
@@ -208,13 +204,13 @@ void conf_dec_count(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static int send_command(char *result, int size, char *command)
+static int send_command(struct lcd_stuff *lcd, char *result, int size, char *command)
 {
     char        buffer[BUFSIZ];
     int         err;
     int         num_bytes        = 0;
 
-    err = sock_send_string(g_socket, command);
+    err = sock_send_string(lcd->socket, command);
     if (err < 0) {
         report(RPT_ERR, "Could not send '%s': %d", buffer, err);
         return err;
@@ -222,7 +218,7 @@ static int send_command(char *result, int size, char *command)
 
     if (result) {
         while (num_bytes == 0) {
-            num_bytes = sock_recv_string(g_socket, result, size - 1);
+            num_bytes = sock_recv_string(lcd->socket, result, size - 1);
             if (num_bytes < 0) {
                 report(RPT_ERR, "Could not receive string: %s", strerror(errno));
                 return err;
@@ -234,32 +230,32 @@ static int send_command(char *result, int size, char *command)
 }
 
 /* -------------------------------------------------------------------------- */
-static bool communication_init(void)
+static bool communication_init(struct lcd_stuff *lcd)
 {
 	char     *argv[10];
 	int      argc;
     char     buffer[BUFSIZ];
 
     /* create the connection that will be used in the service thread */
-    g_socket = sock_connect(g_lcdproc_server, g_lcdproc_port);
-    if (g_socket <= 0) {
+    lcd->socket = sock_connect(lcd->lcdproc_server, lcd->lcdproc_port);
+    if (lcd->socket <= 0) {
         report(RPT_ERR, "Could not create socket: %s", strerror(errno));
         return false;
     }
 
     /* handshake */
-    send_command(buffer, BUFSIZ, "hello\n");
+    send_command(lcd, buffer, BUFSIZ, "hello\n");
 
     argc = get_args(argv, buffer, 10);
     if (argc < 8) {
         report(RPT_ERR, "rss: Error received: %s", buffer);
         return false;
     }
-    g_display_size.width = min(atoi(argv[7]), MAX_LINE_LEN-1);
-    g_display_size.height = min(atoi(argv[9]), MAX_DISPLAY_HEIGHT);
+    lcd->display_size.width = min(atoi(argv[7]), MAX_LINE_LEN-1);
+    lcd->display_size.height = min(atoi(argv[9]), MAX_DISPLAY_HEIGHT);
 
     /* client */
-    send_command(NULL, 0, "client_set -name " PRG_NAME "\n");
+    send_command(lcd, NULL, 0, "client_set -name " PRG_NAME "\n");
 
     return true;
 }
@@ -270,6 +266,12 @@ int main(int argc, char *argv[])
     int     err;
     int     i;
     GThread *threads[THREAD_NUMBER];
+    struct lcd_stuff lcd_stuff = {
+        .lcdproc_server = DEFAULT_SERVER,
+        .lcdproc_port   = DEFAULT_PORT,
+        .socket         = 0,
+        .display_size   = {0, 0}
+    };
 
     g_lcdstuff_quark = g_quark_from_static_string("lcd-stuff");
 	set_reporting(PRG_NAME, RPT_ERR, RPT_DEST_STDERR);
@@ -281,7 +283,7 @@ int main(int argc, char *argv[])
     }
 
     /* parse command line */
-    err = parse_command_line(argc, argv);
+    err = parse_command_line(&lcd_stuff, argc, argv);
     if (err != 0) {
         return -1;
     }
@@ -311,7 +313,7 @@ int main(int argc, char *argv[])
     }
 
     /* open socket */
-    if (!communication_init()) {
+    if (!communication_init(&lcd_stuff)) {
         report(RPT_ERR, "Error: communication init");
         return 1;
     }
@@ -328,19 +330,19 @@ int main(int argc, char *argv[])
 
     /* create the threads */
     for (i = 0; i < THREAD_NUMBER; i++) {
-        threads[i] = g_thread_create(s_thread_funcs[i], NULL, true, NULL);
+        threads[i] = g_thread_create(s_thread_funcs[i], &lcd_stuff, true, NULL);
         if (!threads[i]) {
             report(RPT_ERR, "Thread creation (%d) failed", i);
         }
     }
 
-    service_thread_run(NULL);
+    service_thread_run(&lcd_stuff);
 
     for (i = 0; i < THREAD_NUMBER; i++) {
         g_thread_join(threads[i]);
     }
 
-    sock_close(g_socket);
+    sock_close(lcd_stuff.socket);
 
     return 0;
 }

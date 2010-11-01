@@ -36,16 +36,13 @@
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "weather"
 
-/* ------------------------variables ---------------------------------------- */
-static int              s_interval;
-static char             s_city[MAX_CITYCODE_LEN];
-static struct client    weather_client = {
-                            .name            = MODULE_NAME,
-                            .key_callback    = NULL,
-                            .listen_callback = NULL,
-                            .ignore_callback = NULL
-                        };
-static enum unit        s_unit = UNIT_METRIC;
+/* ---------------------- types --------------------------------------------- */
+struct lcd_stuff_weather {
+    struct lcd_stuff    *lcd;
+    int                 interval;
+    char                city[MAX_CITYCODE_LEN];
+    enum unit           unit;
+};
 
 /* -------------------------------------------------------------------------- */
 static void update_screen(const char    *line1,
@@ -61,20 +58,20 @@ static void update_screen(const char    *line1,
 }
 
 /* -------------------------------------------------------------------------- */
-static void weather_update(void)
+static void weather_update(struct lcd_stuff_weather *weather)
 {
     char *line1, *line2, *line3;
     struct weather_data data;
 
-    if (retrieve_weather_data(s_city, &data, s_unit) == 0) {
+    if (retrieve_weather_data(weather->city, &data, weather->unit) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
         line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s",
-                data.temp_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
-                data.temp_fl_c, get_unit_for_type(s_unit, TYPE_TEMPERATURE),
-                data.pressure_hPa, get_unit_for_type(s_unit, TYPE_PRESSURE));
+                data.temp_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
+                data.temp_fl_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
+                data.pressure_hPa, get_unit_for_type(weather->unit, TYPE_PRESSURE));
         line3 = g_strdup_printf("%d%s  %d%s %s",
-                data.humid, get_unit_for_type(s_unit, TYPE_HUMIDITY),
-                data.wind_speed, get_unit_for_type(s_unit, TYPE_WINDSPEED),
+                data.humid, get_unit_for_type(weather->unit, TYPE_HUMIDITY),
+                data.wind_speed, get_unit_for_type(weather->unit, TYPE_WINDSPEED),
                 data.wind_dir);
         update_screen(line1, line2, line3);
         g_free(line1);
@@ -84,12 +81,17 @@ static void weather_update(void)
 }
 
 /* -------------------------------------------------------------------------- */
-static bool weather_init(void)
+static struct client weather_client = {
+    .name            = MODULE_NAME
+};
+
+/* -------------------------------------------------------------------------- */
+static bool weather_init(struct lcd_stuff_weather *weather)
 {
     char *tmp;
 
     /* register client */
-    service_thread_register_client(&weather_client);
+    service_thread_register_client(&weather_client, weather);
 
     /* add a screen */
     service_thread_command("screen_add " MODULE_NAME "\n");
@@ -109,16 +111,16 @@ static bool weather_init(void)
     service_thread_command("widget_add " MODULE_NAME " line3 string\n");
 
     /* get config items */
-    s_interval = key_file_get_integer_default(MODULE_NAME, "interval", 3600);
+    weather->interval = key_file_get_integer_default(MODULE_NAME, "interval", 3600);
     tmp = key_file_get_string_default(MODULE_NAME, "citycode", "");
-    strncpy(s_city, tmp, MAX_CITYCODE_LEN);
+    strncpy(weather->city, tmp, MAX_CITYCODE_LEN);
     g_free(tmp);
-    s_city[MAX_CITYCODE_LEN-1] = 0;
+    weather->city[MAX_CITYCODE_LEN-1] = 0;
 
     /* unit -- metric vs. imperial */
     tmp = key_file_get_string_default(MODULE_NAME, "units", "metric");
     if (strcmp(tmp, "imperial") == 0)
-        s_unit = UNIT_IMPERIAL;
+        weather->unit = UNIT_IMPERIAL;
     g_free(tmp);
 
     return true;
@@ -127,8 +129,15 @@ static bool weather_init(void)
 /* -------------------------------------------------------------------------- */
 void *weather_run(void *cookie)
 {
-    time_t  next_check;
-    int     result;
+    time_t next_check;
+    int result;
+    struct lcd_stuff_weather weather;
+
+    /* default values */
+    weather.lcd = (struct lcd_stuff *)cookie;
+    weather.interval = 0;
+    weather.city[0] = '\0';
+    weather.unit = UNIT_METRIC;
 
     result = key_file_has_group(MODULE_NAME);
     if (!result) {
@@ -137,7 +146,7 @@ void *weather_run(void *cookie)
         return NULL;
     }
 
-    if (!weather_init()) {
+    if (!weather_init(&weather)) {
         return NULL;
     }
     conf_dec_count();
@@ -151,8 +160,8 @@ void *weather_run(void *cookie)
 
         /* check emails? */
         if (time(NULL) > next_check) {
-            weather_update();
-            next_check = time(NULL) + s_interval;
+            weather_update(&weather);
+            next_check = time(NULL) + weather.interval;
         }
     }
 
