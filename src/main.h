@@ -30,7 +30,7 @@ struct size {
 struct service_thread;
 
 struct lcd_stuff {
-    char                    lcdproc_server[HOST_NAME_MAX];
+    char                    lcdproc_server[_POSIX_HOST_NAME_MAX];
     int                     lcdproc_port;
     int                     socket;
     struct size             display_size;

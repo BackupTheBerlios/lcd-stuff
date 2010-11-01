@@ -142,7 +142,7 @@ int parse_command_line(struct lcd_stuff *lcd, int argc, char *argv[])
                 strncpy(s_config_file, optarg, PATH_MAX);
                 break;
             case 'a':
-                strncpy(lcd->lcdproc_server, optarg, HOST_NAME_MAX);
+                strncpy(lcd->lcdproc_server, optarg, _POSIX_HOST_NAME_MAX);
                 break;
             case 'p':
                 temp_int = strtol(optarg, &p, 0 );
