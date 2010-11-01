@@ -27,12 +27,15 @@ struct size {
     int height;
 };
 
+struct service_thread;
+
 struct lcd_stuff {
-    char        lcdproc_server[HOST_NAME_MAX];
-    int         lcdproc_port;
-    int         socket;
-    struct size display_size;
-    char        valid_chars[256];
+    char                    lcdproc_server[HOST_NAME_MAX];
+    int                     lcdproc_port;
+    int                     socket;
+    struct size             display_size;
+    char                    valid_chars[256];
+    struct service_thread   *service_thread;
 };
 
 extern volatile bool g_exit;

@@ -179,18 +179,21 @@ static void mpd_update_playlist_menu(struct lcd_stuff_mpd *mpd)
     if (!old) {
         add = true;
     } else if (!mpd_playlists_equals(old, new)) {
-        service_thread_command("menu_del_item \"\" mpd_pl\n");
+        service_thread_command(mpd->lcd->service_thread, "menu_del_item \"\" mpd_pl\n");
         add = true;
     }
 
     if (add) {
-        service_thread_command("menu_add_item \"\" mpd_pl menu {Playlists}\n");
-        service_thread_command("menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
-                "== Clear ==");
+        service_thread_command(mpd->lcd->service_thread,
+                               "menu_add_item \"\" mpd_pl menu {Playlists}\n");
+        service_thread_command(mpd->lcd->service_thread,
+                               "menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
+                               "== Clear ==");
 
         for (i = 0; i < new->len; i++) {
-            service_thread_command("menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
-                    i + 1, (char *)new->pdata[i]);
+            service_thread_command(mpd->lcd->service_thread,
+                                   "menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
+                                   i + 1, (char *)new->pdata[i]);
         }
     }
 
@@ -319,10 +322,12 @@ static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
         mpd_song_delete(mpd->current_song);
         mpd->current_song = cur_song;
 
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
-                cur_song->artist);
-        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
-                cur_song->title);
+        service_thread_command(mpd->lcd->service_thread,
+                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
+                               cur_song->artist);
+        service_thread_command(mpd->lcd->service_thread,
+                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
+                               cur_song->title);
 
         mpd->song_displayed = true;
     } else {
@@ -339,8 +344,9 @@ static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
                             mpd_player_get_repeat(mpd->mpd) ? "R" : "_",
                             mpd_player_get_random(mpd->mpd) ? "S" : "_");
 
-    service_thread_command("widget_set %s line3 1 4 {%10s}\n",
-            MODULE_NAME, line3);
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_set %s line3 1 4 {%10s}\n",
+                           MODULE_NAME, line3);
     g_free(line3);
 }
 
@@ -371,9 +377,12 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
             break;
     }
 
-    service_thread_command("widget_set %s line1 1 2 {}\n", MODULE_NAME);
-    service_thread_command("widget_set %s line2 1 3 {}\n", MODULE_NAME);
-    service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, str);
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_set %s line1 1 2 {}\n", MODULE_NAME);
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_set %s line2 1 3 {}\n", MODULE_NAME);
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, str);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -464,39 +473,49 @@ static bool mpd_init(struct lcd_stuff_mpd *mpd)
     char     *string;
 
     /* register client */
-    service_thread_register_client(&mpd_client, mpd);
+    service_thread_register_client(mpd->lcd->service_thread, &mpd_client, mpd);
 
     /* add a screen */
-    service_thread_command("screen_add " MODULE_NAME "\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "screen_add " MODULE_NAME "\n");
 
     /* add the title */
-    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_add " MODULE_NAME " title title\n");
 
     /* add three lines */
-    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line1 string\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line2 string\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
-    service_thread_command("client_add_key Up\n");
-    service_thread_command("client_add_key Down\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "client_add_key Up\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "client_add_key Down\n");
 
     /* add standby menu */
-    service_thread_command("menu_add_item \"\" mpd_standby ring \"Standby\" "
-            "-strings \"0\t15\t30\t45\t60\t75\t90\t115\t130\t145\t160\"\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "menu_add_item \"\" mpd_standby ring \"Standby\" "
+                           "-strings \"0\t15\t30\t45\t60\t75\t90\t115\t130\t145\t160\"\n");
 
     /* set the title */
     string = key_file_get_string_default_l1(MODULE_NAME, "name", "Music Player");
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
+    service_thread_command(mpd->lcd->service_thread,
+                           "widget_set %s title {%s}\n", MODULE_NAME, string);
     g_free(string);
 
     return true;
 }
 
 /* -------------------------------------------------------------------------- */
-static void mpd_deinit(void)
+static void mpd_deinit(struct lcd_stuff_mpd *mpd)
 {
-    service_thread_command("screen_del " MODULE_NAME "\n");
+    service_thread_command(mpd->lcd->service_thread,
+                           "screen_del " MODULE_NAME "\n");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -572,19 +591,20 @@ void *mpd_run(void *cookie)
         } if (current > mpd.stop_time) {
             mpd_player_stop(mpd.mpd);
             mpd.stop_time = UINT_MAX;
-            service_thread_command("menu_set_item \"\" mpd_standby -value 0\n");
+            service_thread_command(mpd.lcd->service_thread,
+                                   "menu_set_item \"\" mpd_standby -value 0\n");
         }
     }
 
 out_screen:
-    mpd_deinit();
+    mpd_deinit(&mpd);
 
 out:
     if (mpd.mpd)
         mpd_free(mpd.mpd);
     if (mpd.current_list)
         mpd_free_playlist(mpd.current_list);
-    service_thread_unregister_client(MODULE_NAME);
+    service_thread_unregister_client(mpd.lcd->service_thread, MODULE_NAME);
     mpd_song_delete(mpd.current_song);
     connection_delete(mpd.connection);
 

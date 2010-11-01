@@ -78,25 +78,27 @@ static void update_screen(struct lcd_stuff_mail *mail,
 {
     if (title) {
         if (strlen(title) > 0) {
-            service_thread_command("widget_set %s title {%s: %s}\n", MODULE_NAME,
-                    mail->title_prefix, title);
+            service_thread_command(mail->lcd->service_thread,
+                                   "widget_set %s title {%s: %s}\n", MODULE_NAME,
+                                   mail->title_prefix, title);
         } else {
-            service_thread_command("widget_set %s title {%s}\n", MODULE_NAME,
-                    mail->title_prefix);
+            service_thread_command(mail->lcd->service_thread,
+                                   "widget_set %s title {%s}\n", MODULE_NAME,
+                                   mail->title_prefix);
         }
     }
 
-    if (line1) {
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-    }
+    if (line1)
+        service_thread_command(mail->lcd->service_thread,
+                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
 
-    if (line2) {
-        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-    }
+    if (line2)
+        service_thread_command(mail->lcd->service_thread,
+                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
 
-    if (line3) {
-        service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
-    }
+    if (line3)
+        service_thread_command(mail->lcd->service_thread,
+                               "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -363,28 +365,33 @@ static bool mail_init(struct lcd_stuff_mail *mail)
     char       *tmp;
 
     /* register client */
-    service_thread_register_client(&mail_client, mail);
+    service_thread_register_client(mail->lcd->service_thread, &mail_client, mail);
 
     /* add a screen */
-    service_thread_command("screen_add " MODULE_NAME "\n");
+    service_thread_command(mail->lcd->service_thread, "screen_add " MODULE_NAME "\n");
 
     /* set the name */
     tmp = key_file_get_string_default(MODULE_NAME, "name", "Mail");
-    service_thread_command("screen_set %s -name %s\n", MODULE_NAME, tmp);
+    service_thread_command(mail->lcd->service_thread, "screen_set %s -name %s\n", MODULE_NAME, tmp);
     g_free(tmp);
 
     /* add the title */
-    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command(mail->lcd->service_thread, "widget_add " MODULE_NAME " title title\n");
     mail->title_prefix = key_file_get_string_default_l1(MODULE_NAME, "name", "Mail");
 
     /* add three lines */
-    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
+    service_thread_command(mail->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line1 string\n");
+    service_thread_command(mail->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line2 string\n");
+    service_thread_command(mail->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
-    service_thread_command("client_add_key Up\n");
-    service_thread_command("client_add_key Down\n");
+    service_thread_command(mail->lcd->service_thread,
+                           "client_add_key Up\n");
+    service_thread_command(mail->lcd->service_thread,
+                           "client_add_key Down\n");
 
     /* get config items */
     mail->interval = key_file_get_integer_default(MODULE_NAME, "interval", 300);
@@ -479,7 +486,7 @@ void *mail_run(void *cookie)
         }
     }
 
-    service_thread_unregister_client(MODULE_NAME);
+    service_thread_unregister_client(mail.lcd->service_thread, MODULE_NAME);
     free_emails(&mail);
 
     for (i = 0; i < mail.mailboxes->len; i++) {

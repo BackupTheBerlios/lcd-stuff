@@ -36,88 +36,96 @@
 #include "keyfile.h"
 #include "main.h"
 
-static GAsyncQueue   *s_command_queue = NULL;
-static GHashTable    *s_clients       = NULL;
-static GHashTable    *s_client_data   = NULL;
-static struct client *s_current       = NULL;
-static GStaticMutex  s_mutex          = G_STATIC_MUTEX_INIT;
-static int           s_client_number  = 0;
-static int           s_listen_fd      = 0;
-static int           s_current_socket = 0;
+struct service_thread {
+    GAsyncQueue   *command_queue;
+    GHashTable    *clients;
+    GHashTable    *client_data;
+    struct client *current;
+    GMutex        *mutex;
+    int           client_number;
+    int           listen_fd;
+    int           current_socket;
+};
 
 /* -------------------------------------------------------------------------- */
-void service_thread_register_client(const struct client *client, void *cookie)
+void service_thread_register_client(struct service_thread   *service_thread,
+                                    const struct client     *client,
+                                    void                    *cookie)
 {
-    if (g_exit) {
+    if (g_exit)
         return;
-    }
 
-    g_static_mutex_lock(&s_mutex);
-    g_hash_table_insert(s_clients, client->name, (struct client *)client);
-    g_hash_table_insert(s_client_data, client->name, cookie);
-    g_static_mutex_unlock(&s_mutex);
+    g_mutex_lock(service_thread->mutex);
+    g_hash_table_insert(service_thread->clients, client->name, (struct client *)client);
+    g_hash_table_insert(service_thread->client_data, client->name, cookie);
+    g_mutex_unlock(service_thread->mutex);
 
-    g_atomic_int_inc(&s_client_number);
+    g_atomic_int_inc(&service_thread->client_number);
 }
 
 /* -------------------------------------------------------------------------- */
-void service_thread_unregister_client(const char *name)
+void service_thread_unregister_client(struct service_thread     *service_thread,
+                                      const char                *name)
 {
-    if (g_exit) {
+    if (g_exit)
         return;
-    }
 
-    g_static_mutex_lock(&s_mutex);
-    g_hash_table_remove(s_clients, name);
-    g_hash_table_remove(s_client_data, name);
-    g_static_mutex_unlock(&s_mutex);
+    g_mutex_lock(service_thread->mutex);
+    g_hash_table_remove(service_thread->clients, name);
+    g_hash_table_remove(service_thread->client_data, name);
+    g_mutex_unlock(service_thread->mutex);
 
-    if (g_atomic_int_dec_and_test(&s_client_number)) {
+    if (g_atomic_int_dec_and_test(&service_thread->client_number))
         g_exit = true;
-    }
 }
 
 /* -------------------------------------------------------------------------- */
-static void key_handler(const char *key)
+static void key_handler(struct service_thread   *service_thread,
+                        const char              *key)
 {
     report(RPT_DEBUG, "Key received, %s", key);
 
-    if (s_current && s_current->key_callback) {
-        void *data = g_hash_table_lookup(s_client_data, s_current->name);
-        s_current->key_callback(key, data);
+    if (service_thread->current && service_thread->current->key_callback) {
+        void *data = g_hash_table_lookup(service_thread->client_data,
+                                         service_thread->current->name);
+        service_thread->current->key_callback(key, data);
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static void ignore_handler(const char *screen)
+static void ignore_handler(struct service_thread    *service_thread,
+                           const char               *screen)
 {
     report(RPT_DEBUG, "Ignore received for screen", screen);
 
-    if (s_current && s_current->ignore_callback) {
-        void *data = g_hash_table_lookup(s_client_data, s_current->name);
-        s_current->ignore_callback(data);
+    if (service_thread->current && service_thread->current->ignore_callback) {
+        void *data = g_hash_table_lookup(service_thread->client_data,
+                                         service_thread->current->name);
+        service_thread->current->ignore_callback(data);
     }
 }
 
 /* -------------------------------------------------------------------------- */
-static void listen_handler(const char *screen)
+static void listen_handler(struct service_thread    *service_thread,
+                           const char               *screen)
 {
     report(RPT_DEBUG, "Listen received for screen", screen);
 
     /* make the new current */
-    g_static_mutex_lock(&s_mutex);
-    s_current = g_hash_table_lookup(s_clients, screen);
-    g_static_mutex_unlock(&s_mutex);
+    g_mutex_lock(service_thread->mutex);
+    service_thread->current = g_hash_table_lookup(service_thread->clients, screen);
+    g_mutex_unlock(service_thread->mutex);
 
 
-    if (s_current && s_current->listen_callback) {
-        void *data = g_hash_table_lookup(s_client_data, screen);
-        s_current->listen_callback(data);
+    if (service_thread->current && service_thread->current->listen_callback) {
+        void *data = g_hash_table_lookup(service_thread->client_data, screen);
+        service_thread->current->listen_callback(data);
     }
 }
 
 /* -------------------------------------------------------------------------- */
-void service_thread_command(const char *string, ...)
+void service_thread_command(struct service_thread   *service_thread,
+                            const char              *string, ...)
 {
     gchar   *result;
     va_list ap;
@@ -130,7 +138,7 @@ void service_thread_command(const char *string, ...)
     result = g_strdup_vprintf(string, ap);
     va_end(ap);
 
-    g_async_queue_push(s_command_queue, result);
+    g_async_queue_push(service_thread->command_queue, result);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -142,7 +150,8 @@ enum ProcessResponse {
     PR_INVALID
 };
 
-static enum ProcessResponse lcd_process_response(char *string)
+static enum ProcessResponse lcd_process_response(struct service_thread  *service_thread,
+                                                 char                   *string)
 {
 	char        *argv[10];
 	int         argc;
@@ -154,13 +163,13 @@ static enum ProcessResponse lcd_process_response(char *string)
     }
 
     if (strcmp(argv[0], "key") == 0) {
-        key_handler(argv[1]);
+        key_handler(service_thread, argv[1]);
         return PR_CALLBACK;
     } else if (strcmp(argv[0], "listen") == 0) {
-        listen_handler(argv[1]);
+        listen_handler(service_thread, argv[1]);
         return PR_CALLBACK;
     } else if (strcmp(argv[0], "ignore") == 0) {
-        ignore_handler(argv[1]);
+        ignore_handler(service_thread, argv[1]);
         return PR_CALLBACK;
     } else if (strcmp(argv[0], "success") == 0) {
         return PR_SUCCESS;
@@ -185,14 +194,14 @@ static enum ProcessResponse lcd_process_response(char *string)
 
         id = g_strsplit(argv[2], "_", 2);
 
-        g_static_mutex_lock(&s_mutex);
-        found = g_hash_table_lookup_extended(s_clients, id[0], NULL, &param);
-        g_static_mutex_unlock(&s_mutex);
+        g_mutex_lock(service_thread->mutex);
+        found = g_hash_table_lookup_extended(service_thread->clients, id[0], NULL, &param);
+        g_mutex_unlock(service_thread->mutex);
         client = (struct client *)param;
 
         if (found) {
             if (client->menu_callback) {
-                void *data = g_hash_table_lookup(s_client_data, client);
+                void *data = g_hash_table_lookup(service_thread->client_data, client);
                 client->menu_callback(argv[1],
                                       id[1],
                                       argc == 4 ? argv[3] : "",
@@ -211,11 +220,12 @@ static enum ProcessResponse lcd_process_response(char *string)
 /* -------------------------------------------------------------------------- */
 static int send_command_succ(struct lcd_stuff *lcd, gchar *command)
 {
-    enum ProcessResponse    process_err;
-    int                     err;
-    int                     num_bytes = 0;
-    int                     loopcount;
-    char                    buffer[BUFSIZ];
+    enum ProcessResponse process_err;
+    int err;
+    int num_bytes = 0;
+    int loopcount;
+    char buffer[BUFSIZ];
+    struct service_thread *service_thread = lcd->service_thread;
 
     err = sock_send_string(lcd->socket, command);
     if (err < 0) {
@@ -230,7 +240,7 @@ static int send_command_succ(struct lcd_stuff *lcd, gchar *command)
             return err;
         } else if (num_bytes > 0) {
 
-            process_err = lcd_process_response(buffer);
+            process_err = lcd_process_response(service_thread, buffer);
             switch (process_err)
             {
                 case PR_SUCCESS:
@@ -265,7 +275,7 @@ static int check_for_input(struct lcd_stuff *lcd)
         num_bytes = sock_recv_string(lcd->socket, buffer, BUFSIZ - 1);
 
         if (num_bytes > 0) {
-            err = lcd_process_response(buffer);
+            err = lcd_process_response(lcd->service_thread, buffer);
             switch (err) {
                 case PR_SUCCESS:
                     return 0;
@@ -312,15 +322,20 @@ static bool set_nonblocking(int fd)
 }
 
 /* -------------------------------------------------------------------------- */
-void service_thread_init(void)
+void service_thread_init(struct service_thread **p_service_thread)
 {
-    int                 result;
-    struct sockaddr_in  addr;
-    int                 port;
+    int result;
+    struct sockaddr_in addr;
+    int port;
+    struct service_thread *service_thread;
 
-    s_command_queue = g_async_queue_new();
-    s_clients       = g_hash_table_new(g_str_hash, g_str_equal);
-    s_client_data   = g_hash_table_new(g_str_hash, g_str_equal);
+    *p_service_thread = calloc(1, sizeof(struct service_thread));
+    service_thread = *p_service_thread;
+
+    service_thread->command_queue = g_async_queue_new();
+    service_thread->clients       = g_hash_table_new(g_str_hash, g_str_equal);
+    service_thread->client_data   = g_hash_table_new(g_str_hash, g_str_equal);
+    service_thread->mutex         = g_mutex_new();
 
     /*
      * init network connection
@@ -334,8 +349,8 @@ void service_thread_init(void)
     port = key_file_get_integer_default("network", "port", 12454);
     conf_dec_count();
 
-    s_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (s_listen_fd < 0) {
+    service_thread->listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (service_thread->listen_fd < 0) {
         report(RPT_ERR, "socket() failed");
         return;
     }
@@ -346,29 +361,29 @@ void service_thread_init(void)
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
 
-    result = bind(s_listen_fd, (struct sockaddr*)&addr, sizeof(addr));
+    result = bind(service_thread->listen_fd, (struct sockaddr*)&addr, sizeof(addr));
     if (result < 0) {
         report(RPT_ERR, "bind() failed");
         return;
     }
 
     /* set into listening state */
-    result = listen(s_listen_fd, 5);
+    result = listen(service_thread->listen_fd, 5);
     if (result < 0)
         report(RPT_ERR, "listen() failed");
 
-    set_nonblocking(s_listen_fd);
+    set_nonblocking(service_thread->listen_fd);
 }
 
 /* -------------------------------------------------------------------------- */
-int check_for_net_input(int fd)
+static int check_for_net_input(struct service_thread *service_thread)
 {
     char          **input;
     char          buffer[1025];
     int           ret;
     struct client *client;
 
-    ret = read(fd, buffer, 1024);
+    ret = read(service_thread->current_socket, buffer, 1024);
     if (ret < 0)
         return errno;
     else if (ret == 0)
@@ -379,13 +394,13 @@ int check_for_net_input(int fd)
     if (!input[0])
         return 0;
 
-    g_static_mutex_lock(&s_mutex);
-    client = g_hash_table_lookup(s_clients, input[0]);
-    g_static_mutex_unlock(&s_mutex);
+    g_mutex_lock(service_thread->mutex);
+    client = g_hash_table_lookup(service_thread->clients, input[0]);
+    g_mutex_unlock(service_thread->mutex);
 
     if (client && client->net_callback) {
-        void *data = g_hash_table_lookup(s_client_data, client->name);
-        client->net_callback(input + 1, fd, data);
+        void *data = g_hash_table_lookup(service_thread->client_data, client->name);
+        client->net_callback(input + 1, service_thread->current_socket, data);
     }
 
     g_strfreev(input);
@@ -400,13 +415,14 @@ gpointer service_thread_run(gpointer data)
     int ret;
     GTimeVal timeout;
     struct lcd_stuff *lcd = (struct lcd_stuff *)data;
+    struct service_thread *service_thread = lcd->service_thread;
 
     while (!g_exit) {
         gchar *command;
         g_get_current_time(&timeout);
         g_time_val_add(&timeout, 100000);
 
-        command = g_async_queue_timed_pop(s_command_queue, &timeout);
+        command = g_async_queue_timed_pop(service_thread->command_queue, &timeout);
         if (command) {
             send_command_succ(lcd, command);
             g_free(command);
@@ -427,27 +443,28 @@ gpointer service_thread_run(gpointer data)
         }
 
         /* check for incoming network connections */
-        if (s_listen_fd > 0) {
-            if (s_current_socket <= 0) {
-                s_current_socket = accept(s_listen_fd, NULL, 0);
-                if (s_current_socket > 0)
-                    set_nonblocking(s_current_socket);
+        if (service_thread->listen_fd > 0) {
+            if (service_thread->current_socket <= 0) {
+                service_thread->current_socket = accept(service_thread->listen_fd, NULL, 0);
+                if (service_thread->current_socket > 0)
+                    set_nonblocking(service_thread->current_socket);
             } else {
-                ret = check_for_net_input(s_current_socket);
+                ret = check_for_net_input(service_thread);
                 if (ret < 0 && ret != EAGAIN) {
-                    close(s_current_socket);
-                    s_current_socket = 0;
+                    close(service_thread->current_socket);
+                    service_thread->current_socket = 0;
                 }
             }
         }
     }
 
-    if (s_current_socket > 0)
-        close(s_current_socket);
-    if (s_listen_fd > 0)
-        close(s_listen_fd);
-    g_async_queue_unref(s_command_queue);
-    g_hash_table_destroy(s_clients);
+    if (service_thread->current_socket > 0)
+        close(service_thread->current_socket);
+    if (service_thread->listen_fd > 0)
+        close(service_thread->listen_fd);
+    g_async_queue_unref(service_thread->command_queue);
+    g_hash_table_destroy(service_thread->clients);
+    g_mutex_free(service_thread->mutex);
 
     return NULL;
 }

@@ -326,7 +326,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    service_thread_init();
+    service_thread_init(&lcd_stuff.service_thread);
 
     /* create the threads */
     for (i = 0; i < THREAD_NUMBER; i++) {

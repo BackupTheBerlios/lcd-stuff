@@ -66,7 +66,8 @@ static void update_screen_receiving(struct lcd_stuff_rss *rss, const char *title
 {
     int i;
 
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
+    service_thread_command(rss->lcd->service_thread,
+                           "widget_set %s title {%s}\n", MODULE_NAME, title);
 
     for (i = 0; i < (rss->lcd->display_size.height - 1); i++) {
         char *text = "";
@@ -74,8 +75,9 @@ static void update_screen_receiving(struct lcd_stuff_rss *rss, const char *title
         if (i == 1)
             text = "  Receiving ...";
 
-        service_thread_command("widget_set %s line%d 1 %d {%s}\n",
-                MODULE_NAME, i+1, i+2, text);
+        service_thread_command(rss->lcd->service_thread,
+                               "widget_set %s line%d 1 %d {%s}\n",
+                               MODULE_NAME, i+1, i+2, text);
     }
 }
 
@@ -85,7 +87,8 @@ static void update_screen_text(struct lcd_stuff_rss *rss, const char *title, GSt
     int i;
 
     if (title)
-        service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, title);
+        service_thread_command(rss->lcd->service_thread,
+                               "widget_set %s title {%s}\n", MODULE_NAME, title);
 
     for (i = 0; i < (rss->lcd->display_size.height - 1); i++) {
         char *line;
@@ -94,8 +97,9 @@ static void update_screen_text(struct lcd_stuff_rss *rss, const char *title, GSt
         if (!line)
             line = "";
 
-        service_thread_command("widget_set %s line%d 1 %d {%s}\n",
-                MODULE_NAME, i+1, i+2, line);
+        service_thread_command(rss->lcd->service_thread,
+                               "widget_set %s line%d 1 %d {%s}\n",
+                               MODULE_NAME, i+1, i+2, line);
     }
 }
 
@@ -254,22 +258,25 @@ static bool rss_init(struct lcd_stuff_rss *rss)
     char     *tmp;
 
     /* register client */
-    service_thread_register_client(&rss_client, rss);
+    service_thread_register_client(rss->lcd->service_thread, &rss_client, rss);
 
     /* add a screen */
-    service_thread_command("screen_add " MODULE_NAME "\n");
+    service_thread_command(rss->lcd->service_thread,
+                           "screen_add " MODULE_NAME "\n");
 
     /* add the title */
-    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command(rss->lcd->service_thread,
+                           "widget_add " MODULE_NAME " title title\n");
 
     /* add lines */
     for (i = 1; i < rss->lcd->display_size.height; i++)
-        service_thread_command("widget_add %s line%d string\n",
-                MODULE_NAME, i);
+        service_thread_command(rss->lcd->service_thread,
+                               "widget_add %s line%d string\n",
+                               MODULE_NAME, i);
 
     /* register keys */
-    service_thread_command("client_add_key Up\n");
-    service_thread_command("client_add_key Down\n");
+    service_thread_command(rss->lcd->service_thread, "client_add_key Up\n");
+    service_thread_command(rss->lcd->service_thread, "client_add_key Down\n");
 
     /* get config items */
     rss->interval = key_file_get_integer_default(MODULE_NAME, "interval", 1800);
@@ -351,7 +358,7 @@ void *rss_run(void *cookie)
         }
     }
 
-    service_thread_unregister_client(MODULE_NAME);
+    service_thread_unregister_client(rss.lcd->service_thread, MODULE_NAME);
 
     for (i = 0; i < rss.feeds->len; i++) {
         struct rss_feed *cur = (struct rss_feed *)g_ptr_array_index(rss.feeds, i);

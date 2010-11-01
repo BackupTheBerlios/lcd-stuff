@@ -20,11 +20,15 @@
 
 #include <glib.h>
 
+#include "main.h"
+
 typedef void (*key_callback_fun) (const char *, void *);
 typedef void (*listen_callback_fun) (void *);
 typedef void (*ignore_callback_fun) (void *);
 typedef void (*menu_callback_fun) (const char *, const char *, const char *, void *);
 typedef void (*net_callback_fun) (char **args, int fd, void *);
+
+struct service_thread;
 
 
 /**
@@ -55,27 +59,30 @@ gpointer service_thread_run(gpointer data);
  *
  * @param client the client to register
  */
-void service_thread_register_client(const struct client *client, void *data);
+void service_thread_register_client(struct service_thread   *service_thread,
+                                    const struct client     *client,
+                                    void                    *cookie);
 
 /**
  * Unregisters a client.
  *
  * @param name the name of the client
  */
-void service_thread_unregister_client(const char *name);
+void service_thread_unregister_client(struct service_thread     *service_thread,
+                                      const char                *name);
 
 /**
  * Sends a command
  *
  * @param string the command to send
  */
-void service_thread_command(const char *string, ...);
+void service_thread_command(struct service_thread   *service_thread,
+                            const char              *string, ...);
 
 /**
  * Initialzies the service thread.
  */
-void service_thread_init(void);
-
+void service_thread_init(struct service_thread **p_service_thread);
 
 #endif /* SERVICETHREAD_H */
 

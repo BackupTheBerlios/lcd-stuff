@@ -58,21 +58,22 @@ struct lcd_stuff_mp3load {
 };
 
 /* -------------------------------------------------------------------------- */
-static void update_screen(const char *line1,
-                          const char *line2,
-                          const char *line3)
+static void update_screen(struct lcd_stuff_mp3load  *mp3,
+                          const char                *line1,
+                          const char                *line2,
+                          const char                *line3)
 {
-    if (line1) {
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-    }
+    if (line1)
+        service_thread_command(mp3->lcd->service_thread,
+                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
 
-    if (line2) {
-        service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-    }
+    if (line2)
+        service_thread_command(mp3->lcd->service_thread,
+                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
 
-    if (line3) {
-        service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
-    }
+    if (line3)
+        service_thread_command(mp3->lcd->service_thread,
+                               "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -233,14 +234,15 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
     struct file_collect_arg file_collect_arg;
 
     /* make screen visible */
-    service_thread_command("screen_set " MODULE_NAME " -priority alert\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority alert\n");
 
     /*
      * ask the user to press Up if he really wants to continue -----------------
      */
 
     mp3->button_pressed = BT_None;
-    update_screen("This command will", "destroy data. Cont.?", "[Up=Continue]");
+    update_screen(mp3, "This command will", "destroy data. Cont.?", "[Up=Continue]");
 
     /* wait until a button was pressed */
     while (mp3->button_pressed == BT_None && !g_exit) {
@@ -260,7 +262,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
         err = system(mp3->mount_command);
         if (err != 0) {
             char buffer[1024];
-            update_screen("Mounting the device", "failed, aborting", "");
+            update_screen(mp3, "Mounting the device", "failed, aborting", "");
             strerror_r(errno, buffer, 1024);
             report(RPT_ERR, "mount failed: %s",buffer);
             g_usleep(2 * G_USEC_PER_SEC);
@@ -275,7 +277,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
     /* delete the files on the stick */
     ret = delete_directory_recursively(mp3->target_directory, &gerr_result);
     if (!ret) {
-        update_screen("Error while", "deleting files,", "aborted");
+        update_screen(mp3, "Error while", "deleting files,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
         g_error_free(gerr_result);
         g_usleep(2 * G_USEC_PER_SEC);
@@ -285,7 +287,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
     /* calculate the size */
     bytes = bytes_to_copy(mp3->target_directory, mp3->size, &gerr_result);
     if (bytes == 0) {
-        update_screen("Error while", "calculating size,", "aborted");
+        update_screen(mp3, "Error while", "calculating size,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
         g_error_free(gerr_result);
         g_usleep(2 * G_USEC_PER_SEC);
@@ -296,14 +298,14 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
     report(RPT_DEBUG, "bytes to copy: %llu\n", bytes);
 
     /* collect the files */
-    update_screen("Collecting files", "Please be patient", "");
+    update_screen(mp3, "Collecting files", "Please be patient", "");
     files = g_ptr_array_new();
     file_collect_arg.array = files;
     file_collect_arg.mp3 = mp3;
     if (!filewalk(mp3->source_directory, file_collect_function, &file_collect_arg,
                 FWF_NO_FLAGS, &gerr_result))
     {
-        update_screen("Error while", "collecting files,", "aborted");
+        update_screen(mp3, "Error while", "collecting files,", "aborted");
         report(RPT_ERR, "%s", gerr_result->message);
         g_error_free(gerr_result);
         g_usleep(2 * G_USEC_PER_SEC);
@@ -340,7 +342,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
         err = g_mkdir_with_parents(target_directory_with_artist, S_IRWXU|S_IRWXG|S_IRWXO);
         if (err != 0) {
             report(RPT_ERR, "%s", errno);
-            update_screen("Error while", "creating dir", "aborting");
+            update_screen(mp3, "Error while", "creating dir", "aborting");
             g_usleep(2 * G_USEC_PER_SEC);
             goto end_umount;
         }
@@ -355,7 +357,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
                 dest_file, &gerr_result);
         g_free(dest_file);
         if (bytes_copied < 0) {
-            update_screen("Error while", "copying file,", "aboring");
+            update_screen(mp3, "Error while", "copying file,", "aboring");
             report(RPT_ERR, "%s", gerr_result->message);
             g_error_free(gerr_result);
             g_usleep(2 * G_USEC_PER_SEC);
@@ -377,7 +379,7 @@ static void mp3load_fill_player(struct lcd_stuff_mp3load *mp3)
             snprintf(buffer2, 30, "ETA: %s", eta_str);
             g_free(eta_str);
         }
-        update_screen("Copying files ...", buffer, buffer2);
+        update_screen(mp3, "Copying files ...", buffer, buffer2);
 
         bytes -= bytes_copied;
 
@@ -396,7 +398,7 @@ end_umount:
         err = system(mp3->umount_command);
         if (err != 0) {
             char buffer[1024];
-            update_screen("Unmounting the device", "failed, aborting", "");
+            update_screen(mp3, "Unmounting the device", "failed, aborting", "");
             strerror_r(errno, buffer, 1024);
             report(RPT_ERR, "unmount failed: %s",buffer);
             g_usleep(2 * G_USEC_PER_SEC);
@@ -404,7 +406,7 @@ end_umount:
         }
     }
 
-    update_screen("You can remove", "the device", "");
+    update_screen(mp3, "You can remove", "the device", "");
     g_usleep(2 * G_USEC_PER_SEC);
 
     /*
@@ -423,8 +425,9 @@ end:
     g_rand_free(randomizer);
 
     /* make screen invisible again */
-    update_screen("", "", "");
-    service_thread_command("screen_set " MODULE_NAME " -priority hidden\n");
+    update_screen(mp3, "", "", "");
+    service_thread_command(mp3->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority hidden\n");
 }
 
 
@@ -455,7 +458,7 @@ static bool mp3load_init(struct lcd_stuff_mp3load *mp3)
     char *string;
 
     /* register client */
-    service_thread_register_client(&mpd_client, mp3);
+    service_thread_register_client(mp3->lcd->service_thread, &mpd_client, mp3);
 
     /* get config items */
     mp3->source_directory = key_file_get_string(MODULE_NAME, "source_directory");
@@ -479,30 +482,40 @@ static bool mp3load_init(struct lcd_stuff_mp3load *mp3)
     }
 
     /* add a screen */
-    service_thread_command("screen_add " MODULE_NAME "\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "screen_add " MODULE_NAME "\n");
 
     /* set the priority of the screen to hidden */
-    service_thread_command("screen_set " MODULE_NAME " -priority hidden\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority hidden\n");
 
     /* add the title */
-    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "widget_add " MODULE_NAME " title title\n");
 
     /* add three lines */
-    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line1 string\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line2 string\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
-    service_thread_command("client_add_key Up\n");
-    service_thread_command("client_add_key Down\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "client_add_key Up\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "client_add_key Down\n");
 
     /* add menu item */
-    service_thread_command("menu_add_item \"\" mp3load_fill action "
-            "\"Fill MP3 player\" -next \"_quit_\"\n");
+    service_thread_command(mp3->lcd->service_thread,
+                           "menu_add_item \"\" mp3load_fill action "
+                           "\"Fill MP3 player\" -next \"_quit_\"\n");
 
     /* set the title */
     string = key_file_get_string_default(MODULE_NAME, "name", "MP3 Load");
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
+    service_thread_command(mp3->lcd->service_thread,
+                           "widget_set %s title {%s}\n", MODULE_NAME, string);
     g_free(string);
 
     return true;
@@ -553,7 +566,7 @@ void *mp3load_run(void *cookie)
     }
 
 out:
-    service_thread_unregister_client(MODULE_NAME);
+    service_thread_unregister_client(mp3.lcd->service_thread, MODULE_NAME);
     if (mp3.mutex)
         g_mutex_free(mp3.mutex);
     if (mp3.condition)

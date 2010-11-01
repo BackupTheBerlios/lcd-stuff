@@ -100,10 +100,14 @@ static void mplayer_check_child(struct lcd_stuff_mplayer *mplayer)
     mplayer->current.pid = 0;
 
     /* clear all */
-    service_thread_command("widget_set %s line1 1 2 {}\n", MODULE_NAME);
-    service_thread_command("widget_set %s line2 1 3 {}\n", MODULE_NAME);
-    service_thread_command("widget_set %s line3 1 4 {}\n", MODULE_NAME);
-    service_thread_command("screen_set " MODULE_NAME " -priority hidden\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s line1 1 2 {}\n", MODULE_NAME);
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s line2 1 3 {}\n", MODULE_NAME);
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s line3 1 4 {}\n", MODULE_NAME);
+    service_thread_command(mplayer->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority hidden\n");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -163,13 +167,16 @@ static void mplayer_update_metainfo(struct lcd_stuff_mplayer *mplayer)
 
     if (mplayer->current.channel_number >= 0 &&
                         mplayer->current.channel_number < mplayer->channel_number) {
-        service_thread_command("widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
-                mplayer->channels[mplayer->current.channel_number].name);
+        service_thread_command(mplayer->lcd->service_thread,
+                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
+                               mplayer->channels[mplayer->current.channel_number].name);
     }
-    service_thread_command("widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
-            artist ? artist : "");
-    service_thread_command("widget_set %s line3 1 4 {%s}\n", MODULE_NAME,
-            title ? title : "");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
+                           artist ? artist : "");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s line3 1 4 {%s}\n", MODULE_NAME,
+                           title ? title : "");
 
     if (artist)
         g_free(artist);
@@ -264,7 +271,8 @@ static void mplayer_start_program(struct lcd_stuff_mplayer *mplayer, int no)
     setlinebuf(mplayer->current.output_stream);
 
     /* show screen */
-    service_thread_command("screen_set " MODULE_NAME " -priority info\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority info\n");
 
     mplayer_wait_for_playback(mplayer);
 
@@ -350,27 +358,36 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
     char     **channels;
 
     /* register client */
-    service_thread_register_client(&mpd_client, mplayer);
+    service_thread_register_client(mplayer->lcd->service_thread, &mpd_client, mplayer);
 
     /* add a invisible screen */
-    service_thread_command("screen_add " MODULE_NAME "\n");
-    service_thread_command("screen_set " MODULE_NAME " -priority hidden\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "screen_add " MODULE_NAME "\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "screen_set " MODULE_NAME " -priority hidden\n");
 
     /* add the title */
-    service_thread_command("widget_add " MODULE_NAME " title title\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_add " MODULE_NAME " title title\n");
 
     /* add three lines */
-    service_thread_command("widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command("widget_add " MODULE_NAME " line3 string\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line1 string\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line2 string\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
-    service_thread_command("client_add_key Up\n");
-    service_thread_command("client_add_key Down\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "client_add_key Up\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "client_add_key Down\n");
 
     /* set the title */
     string = key_file_get_string_default_l1(MODULE_NAME, "name", "Webradio");
-    service_thread_command("widget_set %s title {%s}\n", MODULE_NAME, string);
+    service_thread_command(mplayer->lcd->service_thread,
+                           "widget_set %s title {%s}\n", MODULE_NAME, string);
     g_free(string);
 
     /* get number of channels in the file */
@@ -382,7 +399,8 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
         return false;
     }
 
-    service_thread_command("menu_add_item \"\" mplayer_ch menu {Web-Channels}\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "menu_add_item \"\" mplayer_ch menu {Web-Channels}\n");
 
     for (i = 0, j = 0; channels[i]; i++, j++) {
         char *value;
@@ -411,10 +429,12 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
 
         g_strchug(mplayer->channels[j].url);
 
-        service_thread_command("menu_add_item mplayer_ch mplayer_ch_%d action {%s}\n",
-                j+1, mplayer->channels[j].name);
-        service_thread_command("menu_set_item mplayer_ch mplayer_ch_%d "
-                "-menu_result quit\n", j+1);
+        service_thread_command(mplayer->lcd->service_thread,
+                               "menu_add_item mplayer_ch mplayer_ch_%d action {%s}\n",
+                               j+1, mplayer->channels[j].name);
+        service_thread_command(mplayer->lcd->service_thread,
+                               "menu_set_item mplayer_ch mplayer_ch_%d "
+                               "-menu_result quit\n", j+1);
     }
 
     g_strfreev(channels);
@@ -423,9 +443,10 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
 }
 
 /* -------------------------------------------------------------------------- */
-static void mplayer_deinit(void)
+static void mplayer_deinit(struct lcd_stuff_mplayer *mplayer)
 {
-    service_thread_command("screen_del " MODULE_NAME "\n");
+    service_thread_command(mplayer->lcd->service_thread,
+                           "screen_del " MODULE_NAME "\n");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -470,10 +491,10 @@ void *mplayer_run(void *cookie)
         mplayer_check_child(&mplayer);
     }
 
-    mplayer_deinit();
+    mplayer_deinit(&mplayer);
 
 out:
-    service_thread_unregister_client(MODULE_NAME);
+    service_thread_unregister_client(mplayer.lcd->service_thread, MODULE_NAME);
 
     return NULL;
 }
