@@ -15,6 +15,10 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  *
  */
+#ifdef HAVE_CONFIG_H
+#  include "config.h"
+#endif
+
 #include <stdbool.h>
 #define _GNU_SOURCE
 #include <stdio.h>
@@ -22,7 +26,15 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/vfs.h>
+#ifdef HAVE_SYS_VFS_H
+#  include <sys/vfs.h>
+#endif
+#ifdef HAVE_SYS_MOUNT_H
+#  include <sys/mount.h>
+#endif
+#ifdef HAVE_SYS_PARAM_H
+#  include <sys/param.h>
+#endif
 #include <sys/types.h>
 #include <fcntl.h>
 
