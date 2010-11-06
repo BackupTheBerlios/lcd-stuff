@@ -48,9 +48,6 @@
 #ifdef HAVE_LCDSTUFF_RSS
 #  include "rss.h"
 #endif
-#ifdef HAVE_LCDSTUFF_MP3LOAD
-#  include "mp3load.h"
-#endif
 
 /* ========================= global variables =============================== */
 volatile bool  g_exit                  = false;
@@ -70,9 +67,6 @@ static GThreadFunc s_thread_funcs[] = {
 #endif
 #ifdef HAVE_LCDSTUFF_MPD
     mpd_run,
-#endif
-#ifdef HAVE_LCDSTUFF_MP3LOAD
-    mp3load_run
 #endif
 };
 #define THREAD_NUMBER (sizeof(s_thread_funcs)/sizeof(GThreadFunc))
@@ -102,9 +96,6 @@ static char g_help_text[] =
      "Compiled-in features:\n  "
 #ifdef HAVE_LCDSTUFF_MAIL
      "mail "
-#endif
-#ifdef HAVE_LCDSTUFF_MP3LOAD
-     "mp3load "
 #endif
 #ifdef HAVE_LCDSTUFF_MPD
      "mpd "

@@ -1,3 +1,7 @@
+2010-11-06  Bernhard Walle <bernhard@bwalle.de>
+
+	* Remove mp3load module.
+
 2010-11-01  Bernhard Walle <bernhard@bwalle.de>
 
 	* Heavily decrease usage of static variables.

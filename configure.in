@@ -136,40 +136,6 @@ if test "x$libetpan_result" = "xyes" ; then
     AC_DEFINE([HAVE_LCDSTUFF_MAIL], [1], [Define 1 if mail support is built])
 fi
 
-dnl ***********************************
-dnl *** Check for taglib_c          ***
-dnl ***********************************
-TAGLIBC_LIBS=""
-TAGLIBC_CFLAGS=""
-AC_ARG_ENABLE(taglib_c,
-        [  --disable-taglib_c           Do not compile mp3load support with taglib_c],
-        [ac_cv_enable_taglib_c=$enableval], [ac_cv_enable_taglib_c=yes])
-if test x"$ac_cv_enable_taglib_c" = xyes; then
-        taglib_c_result=no
-        AC_CHECK_LIB([tag_c], [taglib_file_new],
-        [
-          AC_CHECK_HEADER([taglib/tag_c.h],
-          [
-            TAGLIBC_LIBS="-ltag_c"
-            taglib_c_result=yes
-            AC_DEFINE([HAVE_TAGLIBC], [1], [Define to 1 if tag_c is found])
-          ])
-        ])
-        AC_SUBST([TAGLIBC_CFLAGS])
-        AC_SUBST([TAGLIBC_LIBS])
-        if test "x$taglib_c_result" != "xyes" ; then
-           AC_MSG_RESULT([*** lcd-stuff requires taglib_c ])
-           AC_MSG_RESULT([*** You can use --disable-taglib_c if you don't need mp3load.])
-           AC_MSG_ERROR([taglib_c not found])
-        fi
-fi
-
-dnl building mp3load?
-AM_CONDITIONAL(LCDSTUFF_MP3LOAD, test "x$taglib_c_result" = "xyes")
-if test "x$taglib_c_result" = "xyes" ; then
-    AC_DEFINE([HAVE_LCDSTUFF_MP3LOAD], [1], [Define 1 if mp3load support is enabled])
-fi
-
 PKG_PROG_PKG_CONFIG()
 
 MRSS_LIBS=""

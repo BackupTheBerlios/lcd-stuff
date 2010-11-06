@@ -15,7 +15,6 @@ Features
     * MPD control
     * display of news items using RSS
     * display of the weather from weather.com
-    * fill your USB-Storage based MP3 player with music
     * play web radio with MPlayer
       (because it has support for almost every format, especially
       RealAudio, which MPD hasn't)
@@ -33,8 +32,6 @@ Requirements
     * weather
       - nxml
       - curl (required by nxml)
-    * mp3load
-      - taglib_c
     * mpd
       - libmpd (>= 0.12.0)
     * rss
@@ -58,7 +55,6 @@ and their corresponding features:
    --disable-nxml               disables rss and weather
    --disable-mrss               disables rss
    --disable-libetpan           disables mail
-   --disable-taglib_c           disables mp3load
    --disable-libmpd             disables mpd
 
 
@@ -245,47 +241,6 @@ in the configuration file which means that this client doesn't get displayed.
 
     timeout=<int>           Timeout for MPD connections in seconds.
                             Default: 10
-
-    [mp3load]
-
-    name=<str>              The title for the mp3load screen that is displayed
-                            if you select "Fill MP3 Player" from the lcdproc
-                            menu.
-                            Default: MP3 Load
-
-    target_directory=<str>  The directory where the music files gets stored.
-                            The contents of this directory is completely
-                            deleted before new MP3s are filled, so please make
-                            sure that this directory is right. Spaces are
-                            okay.
-                            Default: no default
-
-    source_directory=<str>  The directory where your music is stored. Of course,
-                            the music can be in subdirectories of this
-                            directory.
-                            Default: no default
-
-    size=<str>              The amount of music you want to have on your player.
-                            Following are legal size specifications:
-                                 - 30m      => 30 megabytes
-                                 - 10k      => 10 kilobytes
-                                 - 80%      => 80 percent of the storage of
-                                               the volume that contains
-                                               target_directory
-
-    mount_command=<str>     The command that should be executed before accessing
-                            target_directory. Can be empty.
-                            Default: empty
-
-    umount_command=<str>    The command that should be executed after accessing
-                            target_directory and before the "you can remove
-                            your device" screen is displayed. Can be empty.
-                            Default: empty
-
-    extensions=<str>        File extensions that are treated as music file.
-                            Depends on your player hardware which files you
-                            want here.
-                            Default: .mp3
 
     [mplayer]
 

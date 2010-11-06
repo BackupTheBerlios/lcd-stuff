@@ -2,6 +2,7 @@
 =====
  - Don't display compiler calls when building.
  - Allow lcd-stuff to be built on Mac OS.
+ - Remove mp3load module.
 
 0.1.7
 =====

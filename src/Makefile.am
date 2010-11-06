@@ -29,10 +29,6 @@ if LCDSTUFF_MAIL
 lcd_stuff_SOURCES += mail.c mail.h maillib.c maillib.h
 endif
 
-if LCDSTUFF_MP3LOAD
-lcd_stuff_SOURCES += mp3load.c mp3load.h
-endif
-
 if LCDSTUFF_MPD
 lcd_stuff_SOURCES += mpd.c mpd.h
 endif
