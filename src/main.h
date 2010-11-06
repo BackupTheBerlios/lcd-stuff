@@ -34,6 +34,7 @@ struct lcd_stuff {
     int                     lcdproc_port;
     int                     socket;
     struct size             display_size;
+    bool                    no_title;
     char                    valid_chars[256];
     struct service_thread   *service_thread;
 };

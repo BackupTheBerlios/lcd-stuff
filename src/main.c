@@ -261,7 +261,8 @@ int main(int argc, char *argv[])
         .lcdproc_server = DEFAULT_SERVER,
         .lcdproc_port   = DEFAULT_PORT,
         .socket         = 0,
-        .display_size   = {0, 0}
+        .display_size   = {0, 0},
+        .no_title       = false
     };
 
     g_lcdstuff_quark = g_quark_from_static_string("lcd-stuff");
@@ -308,6 +309,15 @@ int main(int argc, char *argv[])
         report(RPT_ERR, "Error: communication init");
         return 1;
     }
+
+    /* check if the display is supported */
+    if (lcd_stuff.display_size.height != 2 && lcd_stuff.display_size.height != 4) {
+        report(RPT_ERR, "Error: Only displays of height 2 or 4 are supported.");
+        return 1;
+    }
+
+    /* don't waste a line for the title if we have only two of them */
+    lcd_stuff.no_title = lcd_stuff.display_size.height == 2;
 
     /* daemonize */
     if (!s_foreground_mode) {
