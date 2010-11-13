@@ -42,17 +42,6 @@ if test "x$GCC" = "xyes"; then
 	esac
 fi
 
-dnl statfs can be various header files
-AC_CHECK_HEADER([sys/vfs.h],
-                [AC_DEFINE([HAVE_SYS_VFS_H], [1],
-                           [Define to 1 if you have <sys/vfs.h>.])], [])
-AC_CHECK_HEADER([sys/param.h],
-                [AC_DEFINE([HAVE_SYS_PARAM_H], [1],
-                           [Define to 1 if you have <sys/param.h>.])], [])
-AC_CHECK_HEADER([sys/mount.h],
-                [AC_DEFINE([HAVE_SYS_MOUNT_H], [1],
-                           [Define to 1 if you have <sys/mount.h>.])], [])
-
 dnl Many people on non-GNU/Linux systems don't have getopt
 AC_CONFIG_LIBOBJ_DIR(shared)
 AC_CHECK_FUNC(getopt_long,

@@ -26,15 +26,6 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#ifdef HAVE_SYS_VFS_H
-#  include <sys/vfs.h>
-#endif
-#ifdef HAVE_SYS_MOUNT_H
-#  include <sys/mount.h>
-#endif
-#ifdef HAVE_SYS_PARAM_H
-#  include <sys/param.h>
-#endif
 #include <sys/types.h>
 #include <fcntl.h>
 
@@ -503,22 +494,6 @@ end_copy:
     }
 
     return retval;
-}
-
-/* -------------------------------------------------------------------------- */
-unsigned long long get_free_bytes(const char *path, GError **gerr)
-{
-    struct statfs   my_statfs;
-    int             err;
-
-    err = statfs(path, &my_statfs);
-    if (err < 0) {
-        char buffer[1024];
-        strerror_r(errno, buffer, 1024);
-        g_set_error(gerr, g_lcdstuff_quark, errno, "statfs failed: %s", buffer);
-        return 0;
-    }
-    return (unsigned long long)my_statfs.f_bavail * my_statfs.f_bsize;
 }
 
 /* vim: set ts=4 sw=4 et: */

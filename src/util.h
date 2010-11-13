@@ -68,12 +68,6 @@ long copy_file(const char       *src_name,
                const char       *dest_name,
                GError           **gerr);
 
-/*
- * disk functions --------------------------------------------------------------
- */
-
-unsigned long long get_free_bytes(const char *path, GError **err);
-
 #endif /* UTIL_H */
 
 /* vim: set ts=4 sw=4 et: */

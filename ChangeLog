@@ -3,6 +3,7 @@
 	* Add generic screen interface to share more code between modules and
 	  to handle different display sizes.
 	* Convert mpd to the new interface.
+	* Remove obsolete get_free_bytes() and unneeded autoconf magic.
 
 2010-11-06  Bernhard Walle <bernhard@bwalle.de>
 
