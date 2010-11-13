@@ -14,6 +14,8 @@ lcd_stuff_SOURCES       =                               \
     main.h                                              \
     mplayer.c						\
     mplayer.h						\
+    screen.c						\
+    screen.h						\
     constants.h						\
     global.h
 

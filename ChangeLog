@@ -1,3 +1,8 @@
+2010-11-13  Bernhard Walle <bernhard@bwalle.de>
+
+	* Add generic screen interface to share more code between modules and
+	  to handle different display sizes.
+
 2010-11-06  Bernhard Walle <bernhard@bwalle.de>
 
 	* Remove mp3load module.
