@@ -36,6 +36,7 @@
 #include "global.h"
 #include "servicethread.h"
 #include "keyfile.h"
+#include "screen.h"
 
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mpd"
@@ -58,6 +59,7 @@ struct lcd_stuff_mpd {
     guint               stop_time;
     GPtrArray           *current_list;
     struct connection   *connection;
+    struct screen       screen;
     int                 timeout;
 };
 
@@ -312,9 +314,8 @@ static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
     char            *line3;
     struct song     *cur_song;
 
-    if (mpd->current_state != MPD_PLAYER_PLAY) {
+    if (mpd->current_state != MPD_PLAYER_PLAY)
         return;
-    }
 
     /* song ? */
     cur_song = mpd_get_current_song(mpd);
@@ -322,12 +323,8 @@ static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
         mpd_song_delete(mpd->current_song);
         mpd->current_song = cur_song;
 
-        service_thread_command(mpd->lcd->service_thread,
-                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
-                               cur_song->artist);
-        service_thread_command(mpd->lcd->service_thread,
-                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
-                               cur_song->title);
+        screen_show_text(&mpd->screen, 0, cur_song->artist);
+        screen_show_text(&mpd->screen, 1, cur_song->title);
 
         mpd->song_displayed = true;
     } else {
@@ -343,10 +340,7 @@ static void mpd_update_status_time(struct lcd_stuff_mpd *mpd)
                             total / 60,   total   % 60,
                             mpd_player_get_repeat(mpd->mpd) ? "R" : "_",
                             mpd_player_get_random(mpd->mpd) ? "S" : "_");
-
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_set %s line3 1 4 {%10s}\n",
-                           MODULE_NAME, line3);
+    screen_show_text(&mpd->screen, 2, line3);
     g_free(line3);
 }
 
@@ -377,12 +371,7 @@ static void mpd_state_changed_handler(MpdObj *mi, ChangedStatusType what, void *
             break;
     }
 
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_set %s line1 1 2 {}\n", MODULE_NAME);
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_set %s line2 1 3 {}\n", MODULE_NAME);
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, str);
+    screen_clear(&mpd->screen);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -475,21 +464,7 @@ static bool mpd_init(struct lcd_stuff_mpd *mpd)
     /* register client */
     service_thread_register_client(mpd->lcd->service_thread, &mpd_client, mpd);
 
-    /* add a screen */
-    service_thread_command(mpd->lcd->service_thread,
-                           "screen_add " MODULE_NAME "\n");
-
-    /* add the title */
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_add " MODULE_NAME " title title\n");
-
-    /* add three lines */
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line3 string\n");
+    screen_create(&mpd->screen, mpd->lcd, MODULE_NAME);
 
     /* register keys */
     service_thread_command(mpd->lcd->service_thread,
@@ -504,8 +479,7 @@ static bool mpd_init(struct lcd_stuff_mpd *mpd)
 
     /* set the title */
     string = key_file_get_string_default_l1(MODULE_NAME, "name", "Music Player");
-    service_thread_command(mpd->lcd->service_thread,
-                           "widget_set %s title {%s}\n", MODULE_NAME, string);
+    screen_set_title(&mpd->screen, string);
     g_free(string);
 
     return true;
@@ -514,8 +488,7 @@ static bool mpd_init(struct lcd_stuff_mpd *mpd)
 /* -------------------------------------------------------------------------- */
 static void mpd_deinit(struct lcd_stuff_mpd *mpd)
 {
-    service_thread_command(mpd->lcd->service_thread,
-                           "screen_del " MODULE_NAME "\n");
+    screen_destroy(&mpd->screen);
 }
 
 /* -------------------------------------------------------------------------- */
