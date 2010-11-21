@@ -1,3 +1,7 @@
+2010-11-21  Bernhard Walle <bernhard@bwalle.de>
+
+	* Remove unused Win32 compatibility code in shared/sockets.c.
+
 2010-11-13  Bernhard Walle <bernhard@bwalle.de>
 
 	* Add generic screen interface to share more code between modules and
