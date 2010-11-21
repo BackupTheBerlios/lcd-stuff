@@ -36,6 +36,8 @@
 #include "keyfile.h"
 #include "main.h"
 
+#define DEBUG_COMMANDS 0
+
 struct service_thread {
     GAsyncQueue   *command_queue;
     GHashTable    *clients;
@@ -130,13 +132,16 @@ void service_thread_command(struct service_thread   *service_thread,
     gchar   *result;
     va_list ap;
 
-    if (g_exit) {
+    if (g_exit)
         return;
-    }
 
     va_start(ap, string);
     result = g_strdup_vprintf(string, ap);
     va_end(ap);
+
+#if DEBUG_COMMANDS
+    fprintf(stderr, "service_thread_command(): %s", result);
+#endif
 
     g_async_queue_push(service_thread->command_queue, result);
 }
