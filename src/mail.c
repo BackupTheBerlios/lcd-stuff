@@ -35,6 +35,7 @@
 #include "servicethread.h"
 #include "keyfile.h"
 #include "util.h"
+#include "screen.h"
 
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "mail"
@@ -67,6 +68,7 @@ struct lcd_stuff_mail {
     GList               *email;
     int                 current_screen;
     char                *title_prefix;
+    struct screen       screen;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -77,28 +79,15 @@ static void update_screen(struct lcd_stuff_mail *mail,
                           char                  *line3)
 {
     if (title) {
-        if (strlen(title) > 0) {
-            service_thread_command(mail->lcd->service_thread,
-                                   "widget_set %s title {%s: %s}\n", MODULE_NAME,
-                                   mail->title_prefix, title);
-        } else {
-            service_thread_command(mail->lcd->service_thread,
-                                   "widget_set %s title {%s}\n", MODULE_NAME,
-                                   mail->title_prefix);
-        }
+        if (strlen(title) > 0)
+            screen_set_title_format(&mail->screen, "%s: %s", mail->title_prefix, title);
+        else
+            screen_set_title(&mail->screen, mail->title_prefix);
     }
 
-    if (line1)
-        service_thread_command(mail->lcd->service_thread,
-                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-
-    if (line2)
-        service_thread_command(mail->lcd->service_thread,
-                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-
-    if (line3)
-        service_thread_command(mail->lcd->service_thread,
-                               "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
+    screen_show_text(&mail->screen, 0, line1);
+    screen_show_text(&mail->screen, 1, line2);
+    screen_show_text(&mail->screen, 2, line3);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -368,24 +357,15 @@ static bool mail_init(struct lcd_stuff_mail *mail)
     service_thread_register_client(mail->lcd->service_thread, &mail_client, mail);
 
     /* add a screen */
-    service_thread_command(mail->lcd->service_thread, "screen_add " MODULE_NAME "\n");
+    screen_create(&mail->screen, mail->lcd, MODULE_NAME);
 
     /* set the name */
     tmp = key_file_get_string_default(MODULE_NAME, "name", "Mail");
-    service_thread_command(mail->lcd->service_thread, "screen_set %s -name %s\n", MODULE_NAME, tmp);
+    screen_set_name(&mail->screen, tmp);
     g_free(tmp);
 
     /* add the title */
-    service_thread_command(mail->lcd->service_thread, "widget_add " MODULE_NAME " title title\n");
     mail->title_prefix = key_file_get_string_default_l1(MODULE_NAME, "name", "Mail");
-
-    /* add three lines */
-    service_thread_command(mail->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command(mail->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command(mail->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* register keys */
     service_thread_command(mail->lcd->service_thread,
@@ -466,9 +446,8 @@ void *mail_run(void *cookie)
         return NULL;
     }
 
-    if (!mail_init(&mail)) {
+    if (!mail_init(&mail))
         return NULL;
-    }
     conf_dec_count();
 
     /* check mails instantly */
@@ -501,6 +480,7 @@ void *mail_run(void *cookie)
     }
     g_ptr_array_free(mail.mailboxes, true);
     g_free(mail.title_prefix);
+    screen_destroy(&mail.screen);
 
     return NULL;
 }
