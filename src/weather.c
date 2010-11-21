@@ -32,6 +32,7 @@
 #include "servicethread.h"
 #include "weatherlib.h"
 #include "keyfile.h"
+#include "screen.h"
 
 /* ---------------------- constants ----------------------------------------- */
 #define MODULE_NAME           "weather"
@@ -42,42 +43,36 @@ struct lcd_stuff_weather {
     int                 interval;
     char                city[MAX_CITYCODE_LEN];
     enum unit           unit;
+    struct screen       screen;
 };
-
-/* -------------------------------------------------------------------------- */
-static void update_screen(struct lcd_stuff_weather  *weather,
-                          const char                *line1,
-                          const char                *line2,
-                          const char                *line3)
-{
-    if (line1)
-        service_thread_command(weather->lcd->service_thread,
-                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME, line1);
-    if (line2)
-        service_thread_command(weather->lcd->service_thread,
-                               "widget_set %s line2 1 3 {%s}\n", MODULE_NAME, line2);
-    if (line3)
-        service_thread_command(weather->lcd->service_thread,
-                               "widget_set %s line3 1 4 {%s}\n", MODULE_NAME, line3);
-}
 
 /* -------------------------------------------------------------------------- */
 static void weather_update(struct lcd_stuff_weather *weather)
 {
-    char *line1, *line2, *line3;
+    char *line1 = NULL, *line2 = NULL, *line3 = NULL;
     struct weather_data data;
 
     if (retrieve_weather_data(weather->city, &data, weather->unit) == 0) {
         line1 = g_strdup_printf("%s", data.weather);
-        line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s",
-                                data.temp_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
-                                data.temp_fl_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
-                                data.pressure_hPa, get_unit_for_type(weather->unit, TYPE_PRESSURE));
-        line3 = g_strdup_printf("%d%s  %d%s %s",
-                                data.humid, get_unit_for_type(weather->unit, TYPE_HUMIDITY),
-                                data.wind_speed, get_unit_for_type(weather->unit, TYPE_WINDSPEED),
-                                data.wind_dir);
-        update_screen(weather, line1, line2, line3);
+        if (weather->lcd->display_size.height >= 3) {
+            line2 = g_strdup_printf("%d%s (%d%s)  %.1f%s",
+                                    data.temp_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
+                                    data.temp_fl_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
+                                    data.pressure_hPa, get_unit_for_type(weather->unit, TYPE_PRESSURE));
+            line3 = g_strdup_printf("%d%s  %d%s %s",
+                                    data.humid, get_unit_for_type(weather->unit, TYPE_HUMIDITY),
+                                    data.wind_speed, get_unit_for_type(weather->unit, TYPE_WINDSPEED),
+                                    data.wind_dir);
+        } else {
+            line2 = g_strdup_printf("%d%s %d%s  %d%s %s",
+                                    data.temp_c, get_unit_for_type(weather->unit, TYPE_TEMPERATURE),
+                                    data.humid, get_unit_for_type(weather->unit, TYPE_HUMIDITY),
+                                    data.wind_speed, get_unit_for_type(weather->unit, TYPE_WINDSPEED),
+                                    data.wind_dir);
+        }
+        screen_show_text(&weather->screen, 0, line1);
+        screen_show_text(&weather->screen, 1, line2);
+        screen_show_text(&weather->screen, 2, line3);
         g_free(line1);
         g_free(line2);
         g_free(line3);
@@ -99,28 +94,18 @@ static bool weather_init(struct lcd_stuff_weather *weather)
                                    &weather_client, weather);
 
     /* add a screen */
-    service_thread_command(weather->lcd->service_thread,
-                           "screen_add " MODULE_NAME "\n");
+    screen_create(&weather->screen, weather->lcd, MODULE_NAME);
+
     tmp = key_file_get_string_default(MODULE_NAME, "name", "Mail");
-    service_thread_command(weather->lcd->service_thread,
-                           "screen_set %s -name %s\n", MODULE_NAME, tmp);
+    screen_set_name(&weather->screen, tmp);
     g_free(tmp);
 
     /* add the title */
     service_thread_command(weather->lcd->service_thread,
                            "widget_add " MODULE_NAME " title title\n");
     tmp = key_file_get_string_default_l1(MODULE_NAME, "name", "Weather");
-    service_thread_command(weather->lcd->service_thread,
-                           "widget_set %s title %s\n", MODULE_NAME, tmp);
+    screen_set_title(&weather->screen, tmp);
     g_free(tmp);
-
-    /* add three lines */
-    service_thread_command(weather->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command(weather->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command(weather->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line3 string\n");
 
     /* get config items */
     weather->interval = key_file_get_integer_default(MODULE_NAME, "interval", 3600);
@@ -178,6 +163,7 @@ void *weather_run(void *cookie)
     }
 
     service_thread_unregister_client(weather.lcd->service_thread, MODULE_NAME);
+    screen_destroy(&weather.screen);
 
     return NULL;
 }
