@@ -275,6 +275,7 @@ int main(int argc, char *argv[])
         g_thread_init(NULL);
     }
 
+
     /* parse command line */
     err = parse_command_line(&lcd_stuff, argc, argv);
     if (err != 0) {
@@ -312,13 +313,13 @@ int main(int argc, char *argv[])
     }
 
     /* check if the display is supported */
-    if (lcd_stuff.display_size.height != 2 && lcd_stuff.display_size.height != 4) {
-        report(RPT_ERR, "Error: Only displays of height 2 or 4 are supported.");
+    if (lcd_stuff.display_size.height < 2) {
+        report(RPT_ERR, "Error: The display must have a height of at least one line.");
         return 1;
     }
 
     /* don't waste a line for the title if we have only two of them */
-    lcd_stuff.no_title = lcd_stuff.display_size.height == 2;
+    lcd_stuff.no_title = lcd_stuff.display_size.height <= 3;
 
     /* daemonize */
     if (!s_foreground_mode) {

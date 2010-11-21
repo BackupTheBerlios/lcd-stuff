@@ -4,6 +4,7 @@
  - Allow lcd-stuff to be built on Mac OS.
  - Remove mp3load module.
  - Switch to CMake as build system.
+ - Remove the artificial limit of displays with 2 or 4 lines.
 
 0.1.7
 =====
