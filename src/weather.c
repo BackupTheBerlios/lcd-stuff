@@ -101,8 +101,6 @@ static bool weather_init(struct lcd_stuff_weather *weather)
     g_free(tmp);
 
     /* add the title */
-    service_thread_command(weather->lcd->service_thread,
-                           "widget_add " MODULE_NAME " title title\n");
     tmp = key_file_get_string_default_l1(MODULE_NAME, "name", "Weather");
     screen_set_title(&weather->screen, tmp);
     g_free(tmp);
