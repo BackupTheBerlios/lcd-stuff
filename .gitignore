@@ -18,3 +18,5 @@ depcomp
 install-sh
 scripts/init-lcd-stuff.debian
 build
+CMakeLists.txt.user
+qtcreator-build
