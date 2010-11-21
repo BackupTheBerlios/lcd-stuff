@@ -4,6 +4,7 @@
 	* Remove unused getopt.c code.
 	* Switch to CMake as build system.
 	* Remove the artificial limit of displays with 2 or 4 lines.
+	* Convert all remaining modules to the new screen interface.
 
 2010-11-13  Bernhard Walle <bernhard@bwalle.de>
 

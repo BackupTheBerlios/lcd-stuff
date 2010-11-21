@@ -5,6 +5,7 @@
  - Remove mp3load module.
  - Switch to CMake as build system.
  - Remove the artificial limit of displays with 2 or 4 lines.
+ - Introduce a title-less mode for displays with less than 4 lines.
 
 0.1.7
 =====
