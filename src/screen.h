@@ -74,7 +74,8 @@ void screen_set_title(struct screen *screen, const char *title);
  *            show any text. However, this doesn't result in a return value
  *            0 @c false. Only real errors result in a return value of @c
  *            false.
- * @param[in] text the text that should be shown.
+ * @param[in] text the text that should be shown. If @p text is NULL then
+ *            the function does nothing.
  */
 void screen_show_text(struct screen *screen, int line, const char *text);
 

@@ -81,6 +81,8 @@ void screen_show_text(struct screen *screen, int line, const char *text)
 
     if (line >= screen_calculate_lines(screen))
         return;
+    if (!text)
+        return;
 
     title_line = screen->lcd->no_title ? 0 : 1;
 
