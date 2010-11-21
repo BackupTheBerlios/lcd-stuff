@@ -16,6 +16,7 @@
  *
  */
 #include <stdlib.h>
+#include <stdarg.h>
 
 #include "screen.h"
 #include "main.h"
@@ -73,6 +74,19 @@ void screen_set_title(struct screen *screen, const char *title)
                            screen->module_name, title);
 }
 
+/* ------------------------------------------------------------------------- */
+void screen_set_title_format(struct screen  *screen,
+                             const char     *title_format, ...)
+{
+    va_list ap;
+    char *title;
+
+    va_start(ap, title_format);
+    title = g_strdup_vprintf(title_format, ap);
+    va_end(ap);
+
+    screen_set_title(screen, title);
+}
 
 /* ------------------------------------------------------------------------- */
 void screen_show_text(struct screen *screen, int line, const char *text)

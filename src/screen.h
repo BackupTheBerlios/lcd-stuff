@@ -62,8 +62,21 @@ void screen_create(struct screen    *screen,
  *
  * @param[in] screen the screen object
  * @param[in] title the title that should be shown on top of the screen.
+ * @see screen_set_title_format()
  */
 void screen_set_title(struct screen *screen, const char *title);
+
+/**
+  * @brief Sets the specified title on the current screen
+  *
+  * This function does the same as screen_set_title() but takes a printf()-style
+  * format string and executes g_strdup_printf() on that format string and its
+  * arguments.
+  *
+  * @param[in] screen the screen object
+  * @param[in] title_format the printf()-style format specifier
+  */
+void screen_set_title_format(struct screen *screen, const char *title_format, ...);
 
 /**
  * @brief Shows the specified text on the screen
