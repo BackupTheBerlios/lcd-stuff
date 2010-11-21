@@ -68,6 +68,8 @@ void screen_set_title(struct screen *screen, const char *title)
 {
     if (screen->lcd->no_title)
         return;
+    if (!title)
+        return;
 
     service_thread_command(screen->lcd->service_thread,
                            "widget_set %s title {%s}\n",
@@ -80,6 +82,9 @@ void screen_set_title_format(struct screen  *screen,
 {
     va_list ap;
     char *title;
+
+    if (!title_format)
+        return;
 
     va_start(ap, title_format);
     title = g_strdup_vprintf(title_format, ap);

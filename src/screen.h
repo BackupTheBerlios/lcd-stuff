@@ -62,6 +62,8 @@ void screen_create(struct screen    *screen,
  *
  * @param[in] screen the screen object
  * @param[in] title the title that should be shown on top of the screen.
+ *            If @p title is NULL then the function does nothing.
+
  * @see screen_set_title_format()
  */
 void screen_set_title(struct screen *screen, const char *title);
@@ -75,6 +77,7 @@ void screen_set_title(struct screen *screen, const char *title);
   *
   * @param[in] screen the screen object
   * @param[in] title_format the printf()-style format specifier
+  *            If @p title_format is NULL then the function does nothing.
   */
 void screen_set_title_format(struct screen *screen, const char *title_format, ...);
 
