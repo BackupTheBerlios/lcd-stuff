@@ -113,6 +113,18 @@ void screen_set_priority(struct screen *screen, const char *priority);
 void screen_show_text(struct screen *screen, int line, const char *text);
 
 /**
+ * @brief Shows the specified text on the screen
+ *
+ * @param[in] screen the screen object
+ * @param[in] line (see screen_show_text())
+ * @param[in] format a printf()-style format string for the text that
+ *            should be displayed.
+ */
+void screen_show_text_format(struct screen *screen,
+                             int           line,
+                             const char    *format, ...);
+
+/**
  * @brief Deletes the text on any line except the title
  *
  * @param[in] screen the screen object

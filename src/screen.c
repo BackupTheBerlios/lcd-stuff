@@ -129,6 +129,25 @@ void screen_show_text(struct screen *screen, int line, const char *text)
 }
 
 /* ------------------------------------------------------------------------- */
+void screen_show_text_format(struct screen *screen,
+                             int           line,
+                             const char    *format, ...)
+{
+    va_list ap;
+    char *text;
+
+    if (!format)
+        return;
+
+    va_start(ap, format);
+    text = g_strdup_vprintf(format, ap);
+    va_end(ap);
+
+    screen_show_text(screen, line, text);
+    g_free(text);
+}
+
+/* ------------------------------------------------------------------------- */
 void screen_clear(struct screen *screen)
 {
     int height, line;
