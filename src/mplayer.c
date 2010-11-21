@@ -37,6 +37,7 @@
 #include "servicethread.h"
 #include "keyfile.h"
 #include "util.h"
+#include "screen.h"
 
 #define MAX_ARGS  20
 
@@ -68,6 +69,7 @@ struct lcd_stuff_mplayer {
     gsize               channel_number;
     struct program      current;
     struct channel      *channels;
+    struct screen       screen;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -100,14 +102,8 @@ static void mplayer_check_child(struct lcd_stuff_mplayer *mplayer)
     mplayer->current.pid = 0;
 
     /* clear all */
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s line1 1 2 {}\n", MODULE_NAME);
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s line2 1 3 {}\n", MODULE_NAME);
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s line3 1 4 {}\n", MODULE_NAME);
-    service_thread_command(mplayer->lcd->service_thread,
-                           "screen_set " MODULE_NAME " -priority hidden\n");
+    screen_clear(&mplayer->screen);
+    screen_set_priority(&mplayer->screen, "hidden");
 }
 
 /* -------------------------------------------------------------------------- */
@@ -165,23 +161,13 @@ static void mplayer_update_metainfo(struct lcd_stuff_mplayer *mplayer)
         }
     }
 
-    if (mplayer->current.channel_number >= 0 &&
-                        mplayer->current.channel_number < mplayer->channel_number) {
-        service_thread_command(mplayer->lcd->service_thread,
-                               "widget_set %s line1 1 2 {%s}\n", MODULE_NAME,
-                               mplayer->channels[mplayer->current.channel_number].name);
-    }
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s line2 1 3 {%s}\n", MODULE_NAME,
-                           artist ? artist : "");
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s line3 1 4 {%s}\n", MODULE_NAME,
-                           title ? title : "");
+    if (mplayer->current.channel_number >= 0 && mplayer->current.channel_number < mplayer->channel_number)
+        screen_show_text(&mplayer->screen, 0, mplayer->channels[mplayer->current.channel_number].name);
+    screen_show_text(&mplayer->screen, 1, artist ? artist : "");
+    screen_show_text(&mplayer->screen, 2, title ? title : "");
 
-    if (artist)
-        g_free(artist);
-    if (title)
-        g_free(title);
+    g_free(artist);
+    g_free(title);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -271,8 +257,7 @@ static void mplayer_start_program(struct lcd_stuff_mplayer *mplayer, int no)
     setlinebuf(mplayer->current.output_stream);
 
     /* show screen */
-    service_thread_command(mplayer->lcd->service_thread,
-                           "screen_set " MODULE_NAME " -priority info\n");
+    screen_set_priority(&mplayer->screen, "info");
 
     mplayer_wait_for_playback(mplayer);
 
@@ -361,22 +346,8 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
     service_thread_register_client(mplayer->lcd->service_thread, &mpd_client, mplayer);
 
     /* add a invisible screen */
-    service_thread_command(mplayer->lcd->service_thread,
-                           "screen_add " MODULE_NAME "\n");
-    service_thread_command(mplayer->lcd->service_thread,
-                           "screen_set " MODULE_NAME " -priority hidden\n");
-
-    /* add the title */
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_add " MODULE_NAME " title title\n");
-
-    /* add three lines */
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line1 string\n");
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line2 string\n");
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_add " MODULE_NAME " line3 string\n");
+    screen_create(&mplayer->screen, mplayer->lcd, MODULE_NAME);
+    screen_set_priority(&mplayer->screen, "hidden");
 
     /* register keys */
     service_thread_command(mplayer->lcd->service_thread,
@@ -386,8 +357,7 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
 
     /* set the title */
     string = key_file_get_string_default_l1(MODULE_NAME, "name", "Webradio");
-    service_thread_command(mplayer->lcd->service_thread,
-                           "widget_set %s title {%s}\n", MODULE_NAME, string);
+    screen_set_title(&mplayer->screen, string);
     g_free(string);
 
     /* get number of channels in the file */
@@ -445,8 +415,7 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
 /* -------------------------------------------------------------------------- */
 static void mplayer_deinit(struct lcd_stuff_mplayer *mplayer)
 {
-    service_thread_command(mplayer->lcd->service_thread,
-                           "screen_del " MODULE_NAME "\n");
+    screen_destroy(&mplayer->screen);
 }
 
 /* -------------------------------------------------------------------------- */
