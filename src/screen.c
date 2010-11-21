@@ -92,7 +92,7 @@ void screen_set_title_format(struct screen  *screen,
 void screen_set_name(struct screen *screen, const char *name)
 {
     service_thread_command(screen->lcd->service_thread,
-                           "screen_set %s -name {%s}",
+                           "screen_set %s -name %s\n",
                            screen->module_name, name);
 }
 
