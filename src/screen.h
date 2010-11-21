@@ -79,6 +79,14 @@ void screen_set_title(struct screen *screen, const char *title);
 void screen_set_title_format(struct screen *screen, const char *title_format, ...);
 
 /**
+  * @brief Sets the name of a screen
+  *
+  * @param[in] screen the screen object
+  * @param[in] name the name of the screen that should be set
+  */
+void screen_set_name(struct screen *screen, const char *name);
+
+/**
  * @brief Shows the specified text on the screen
  *
  * @param[in] screen the screen object

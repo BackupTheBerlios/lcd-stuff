@@ -89,6 +89,14 @@ void screen_set_title_format(struct screen  *screen,
 }
 
 /* ------------------------------------------------------------------------- */
+void screen_set_name(struct screen *screen, const char *name)
+{
+    service_thread_command(screen->lcd->service_thread,
+                           "screen_set %s -name {%s}",
+                           screen->module_name, name);
+}
+
+/* ------------------------------------------------------------------------- */
 void screen_show_text(struct screen *screen, int line, const char *text)
 {
     int title_line;
