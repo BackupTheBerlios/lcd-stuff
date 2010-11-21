@@ -2,6 +2,7 @@
 
 	* Remove unused Win32 compatibility code in shared/sockets.c.
 	* Remove unused getopt.c code.
+	* Switch to CMake as build system.
 
 2010-11-13  Bernhard Walle <bernhard@bwalle.de>
 

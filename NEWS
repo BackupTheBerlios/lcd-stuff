@@ -3,6 +3,7 @@
  - Don't display compiler calls when building.
  - Allow lcd-stuff to be built on Mac OS.
  - Remove mp3load module.
+ - Switch to CMake as build system.
 
 0.1.7
 =====

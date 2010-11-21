@@ -36,16 +36,17 @@
 #include "global.h"
 #include "mplayer.h"
 #include "main.h"
-#ifdef HAVE_LCDSTUFF_MAIL
+#include "config.h"
+#if HAVE_LCDSTUFF_MAIL
 #  include "mail.h"
 #endif
-#ifdef HAVE_LCDSTUFF_WEATHER
+#if HAVE_LCDSTUFF_WEATHER
 #  include "weather.h"
 #endif
-#ifdef HAVE_LCDSTUFF_MPD
+#if HAVE_LCDSTUFF_MPD
 #  include "mpd.h"
 #endif
-#ifdef HAVE_LCDSTUFF_RSS
+#if HAVE_LCDSTUFF_RSS
 #  include "rss.h"
 #endif
 
@@ -56,16 +57,16 @@ GQuark         g_lcdstuff_quark;
 /* ========================= thread functions =============================== */
 static GThreadFunc s_thread_funcs[] = {
     mplayer_run,        /* no library dependencies */
-#ifdef HAVE_LCDSTUFF_RSS
+#if HAVE_LCDSTUFF_RSS
     rss_run,
 #endif
-#ifdef HAVE_LCDSTUFF_MAIL
+#if HAVE_LCDSTUFF_MAIL
     mail_run,
 #endif
-#ifdef HAVE_LCDSTUFF_WEATHER
+#if HAVE_LCDSTUFF_WEATHER
     weather_run,
 #endif
-#ifdef HAVE_LCDSTUFF_MPD
+#if HAVE_LCDSTUFF_MPD
     mpd_run,
 #endif
 };
@@ -94,16 +95,16 @@ static char g_help_text[] =
      "  -h\t\tShow this help\n"
      "\n"
      "Compiled-in features:\n  "
-#ifdef HAVE_LCDSTUFF_MAIL
+#if HAVE_LCDSTUFF_MAIL
      "mail "
 #endif
-#ifdef HAVE_LCDSTUFF_MPD
+#if HAVE_LCDSTUFF_MPD
      "mpd "
 #endif
-#ifdef HAVE_LCDSTUFF_WEATHER
+#if HAVE_LCDSTUFF_WEATHER
      "weather "
 #endif
-#ifdef HAVE_LCDSTUFF_RSS
+#if HAVE_LCDSTUFF_RSS
      "rss "
 #endif
      "\n"

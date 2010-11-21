@@ -4,6 +4,7 @@ tags
 stamp-h1
 src/lcd-stuff
 *.in
+!config.h.in
 Makefile
 *.a
 missing
@@ -16,3 +17,4 @@ config.status
 depcomp
 install-sh
 scripts/init-lcd-stuff.debian
+build

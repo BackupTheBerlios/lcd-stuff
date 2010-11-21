@@ -25,6 +25,7 @@ Requirements
 
     * 20×4 display
     * lcdproc, of course
+    * CMake
     * C compiler
     * glib
     * mail
@@ -44,18 +45,20 @@ Requirements
 Installation
 ------------
 
-    * ./configure
+    * mkdir build
+    * cd build
+    * cmake ..
     * make
     * make install
 
 If you don't have all libraries installed and you don't need the features, you
-can use following parameters for the configure script to disable the libraries
-and their corresponding features:
+can use following parameters for the cmake run to disable the libraries and
+their corresponding features:
 
-   --disable-nxml               disables rss and weather
-   --disable-mrss               disables rss
-   --disable-libetpan           disables mail
-   --disable-libmpd             disables mpd
+   -DBUILD_RSS=OFF              disables rss
+   -DBUILD_WEATHER=OFF          disables weather
+   -DBUILD_MAIL=OFF             disables mail
+   -DBUILD_MPD=OFF              disables mpd
 
 
 Usage
