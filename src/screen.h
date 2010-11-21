@@ -90,6 +90,15 @@ void screen_set_title_format(struct screen *screen, const char *title_format, ..
 void screen_set_name(struct screen *screen, const char *name);
 
 /**
+ * @brief Sets the priority of a screen
+ *
+ * @param[in] screen the screen object
+ * @param[in] the string representation of the priority. See LCDproc documentation
+ *            to find out which priorities are supported.
+ */
+void screen_set_priority(struct screen *screen, const char *priority);
+
+/**
  * @brief Shows the specified text on the screen
  *
  * @param[in] screen the screen object

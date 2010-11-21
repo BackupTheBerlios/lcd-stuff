@@ -103,6 +103,14 @@ void screen_set_name(struct screen *screen, const char *name)
 }
 
 /* ------------------------------------------------------------------------- */
+void screen_set_priority(struct screen *screen, const char *priority)
+{
+    service_thread_command(screen->lcd->service_thread,
+                           "screen_set %s -priority %s\n",
+                           screen->module_name, priority);
+}
+
+/* ------------------------------------------------------------------------- */
 void screen_show_text(struct screen *screen, int line, const char *text)
 {
     int title_line;
