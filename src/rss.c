@@ -94,11 +94,10 @@ static void update_screen_news(struct lcd_stuff_rss *rss)
     int     i;
     int     tot = g_list_length(rss->news);
 
-    if (rss->current_screen < 0) {
+    if (rss->current_screen < 0)
         rss->current_screen = tot - 1;
-    } else if (rss->current_screen >= tot) {
+    else if (rss->current_screen >= tot)
         rss->current_screen = 0;
-    }
 
     if (tot != 0) {
         GList *cur = g_list_first(rss->news);
@@ -211,11 +210,10 @@ static void rss_key_handler(const char *str, void *cookie)
 {
     struct lcd_stuff_rss *rss = (struct lcd_stuff_rss *)cookie;
 
-    if (strcmp(str, "Up") == 0) {
+    if (strcmp(str, "Up") == 0)
         rss->current_screen++;
-    } else {
+    else
         rss->current_screen--;
-    }
     update_screen_news(rss);
 }
 
