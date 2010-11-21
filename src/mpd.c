@@ -172,15 +172,15 @@ static void mpd_update_playlist_menu(struct lcd_stuff_mpd *mpd)
 {
     bool        add = false;
     int         i;
-    GPtrArray   *old, *new;
+    GPtrArray   *old_list, *new_list;
 
-    old = mpd->current_list;
-    new = mpd_get_playlists(mpd);
+    old_list = mpd->current_list;
+    new_list = mpd_get_playlists(mpd);
 
     /* if no old playlist, simply add the whole playlist */
-    if (!old) {
+    if (!old_list) {
         add = true;
-    } else if (!mpd_playlists_equals(old, new)) {
+    } else if (!mpd_playlists_equals(old_list, new_list)) {
         service_thread_command(mpd->lcd->service_thread, "menu_del_item \"\" mpd_pl\n");
         add = true;
     }
@@ -192,16 +192,16 @@ static void mpd_update_playlist_menu(struct lcd_stuff_mpd *mpd)
                                "menu_add_item mpd_pl mpd_pl_0 action {%s}\n",
                                "== Clear ==");
 
-        for (i = 0; i < new->len; i++) {
+        for (i = 0; i < new_list->len; i++) {
             service_thread_command(mpd->lcd->service_thread,
                                    "menu_add_item mpd_pl mpd_pl_%d action {%s}\n",
-                                   i + 1, (char *)new->pdata[i]);
+                                   i + 1, (char *)new_list->pdata[i]);
         }
     }
 
-    mpd->current_list = new;
-    if (old)
-        mpd_free_playlist(old);
+    mpd->current_list = new_list;
+    if (old_list)
+        mpd_free_playlist(old_list);
 }
 
 /* -------------------------------------------------------------------------- */
