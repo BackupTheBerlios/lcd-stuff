@@ -1,6 +1,7 @@
 2010-11-21  Bernhard Walle <bernhard@bwalle.de>
 
 	* Remove unused Win32 compatibility code in shared/sockets.c.
+	* Remove unused getopt.c code.
 
 2010-11-13  Bernhard Walle <bernhard@bwalle.de>
 
