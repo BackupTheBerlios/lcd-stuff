@@ -91,6 +91,7 @@ void screen_set_title_format(struct screen  *screen,
     va_end(ap);
 
     screen_set_title(screen, title);
+    g_free(title);
 }
 
 /* ------------------------------------------------------------------------- */
