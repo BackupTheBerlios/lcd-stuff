@@ -109,11 +109,10 @@ static void mpd_song_delete(struct song *song)
 /* -------------------------------------------------------------------------- */
 static void mpd_free_playlist(GPtrArray *playlist)
 {
-    int i;
+    unsigned int i;
 
-    for (i = 0; i < playlist->len; i++) {
+    for (i = 0; i < playlist->len; i++)
         g_free(playlist->pdata[i]);
-    }
 
     g_ptr_array_free(playlist, true);
 }
@@ -152,7 +151,7 @@ static GPtrArray *mpd_get_playlists(struct lcd_stuff_mpd *mpd)
 /* -------------------------------------------------------------------------- */
 static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 {
-    int i;
+    unsigned int i;
 
     if (a->len != b->len) {
         return false;
@@ -170,9 +169,9 @@ static bool mpd_playlists_equals(GPtrArray *a, GPtrArray *b)
 /* -------------------------------------------------------------------------- */
 static void mpd_update_playlist_menu(struct lcd_stuff_mpd *mpd)
 {
-    bool        add = false;
-    int         i;
-    GPtrArray   *old_list, *new_list;
+    bool         add = false;
+    unsigned int i;
+    GPtrArray    *old_list, *new_list;
 
     old_list = mpd->current_list;
     new_list = mpd_get_playlists(mpd);
@@ -264,9 +263,8 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg,
     char **ids;
     struct lcd_stuff_mpd *mpd = (struct lcd_stuff_mpd *)cookie;
 
-    if (strlen(id) == 0) {
+    if (strlen(id) == 0)
         return;
-    }
 
     ids = g_strsplit(id, "_", 2);
 
@@ -276,15 +274,14 @@ static void mpd_menu_handler(const char *event, const char *id, const char *arg,
         if (no == -1) {
             mpd_playlist_clear(mpd->mpd);
             mpd_playlist_queue_commit(mpd->mpd);
-        } else if (mpd->current_list && (no < mpd->current_list->len)) {
+        } else if (mpd->current_list && (no < (int)mpd->current_list->len)) {
             char *list;
             list = g_strconcat(mpd->current_list->pdata[no], NULL);
             mpd_playlist_queue_load(mpd->mpd, list);
             mpd_playlist_queue_commit(mpd->mpd);
 
-            if (mpd->current_state != MPD_PLAYER_PLAY) {
+            if (mpd->current_state != MPD_PLAYER_PLAY)
                 mpd_player_play(mpd->mpd);
-            }
 
             g_free(list);
         }

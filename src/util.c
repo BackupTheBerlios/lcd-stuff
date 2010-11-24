@@ -90,8 +90,8 @@ static GString *stringbuffer_wrap_simple(GString     *buffer,
                                         int         maxlines)
 {
     GString *new_str;
-    char    *remainder;
-    int     cur_line = 0;
+    char *remainder;
+    int cur_line = 0;
 
     if (!buffer)
         return NULL;
@@ -102,7 +102,7 @@ static GString *stringbuffer_wrap_simple(GString     *buffer,
 
     remainder = new_str->str;
 
-    while (strlen(remainder) > length) {
+    while (strlen(remainder) > (size_t)length) {
         int pos = length * (cur_line+1) + cur_line;
         g_string_insert_c(new_str, pos, '\n');
         remainder += length + 1;
@@ -134,9 +134,9 @@ static inline char *strchr2(const char *string, char a, char b)
 }
 
 /* -------------------------------------------------------------------------- */
-GString *stringbuffer_wrap_spaces(GString     *buffer,
-                                  int         length,
-                                  int         maxlines)
+static GString *stringbuffer_wrap_spaces(GString     *buffer,
+                                         size_t      length,
+                                         int         maxlines)
 {
     GString *new_str;
     char    *remainder;
@@ -154,7 +154,7 @@ GString *stringbuffer_wrap_spaces(GString     *buffer,
     while (strlen(remainder) > length) {
         char *new = remainder, *old = remainder;
 
-        while (new && (new - remainder <= length)) {
+        while (new && (new - remainder <= (int)length)) {
             old = new;
             new = strchr2(new + 1, ' ', '-');
             if (new && *new == '-')
@@ -186,15 +186,15 @@ GString *stringbuffer_wrap_spaces(GString     *buffer,
 /* -------------------------------------------------------------------------- */
 GString *stringbuffer_wrap(GString *buffer, int length, int maxlines)
 {
-    if (length * maxlines < buffer->len)
+    if (length * maxlines < (int)buffer->len)
         return stringbuffer_wrap_simple(buffer, length, maxlines);
     else {
         GString *try = NULL;
 
         try = stringbuffer_wrap_spaces(buffer, length, maxlines);
-        if (stringbuffer_get_lines(try) <= maxlines) {
+        if (stringbuffer_get_lines(try) <= maxlines)
             return try;
-        } else {
+        else {
             g_string_free(try, true);
             return stringbuffer_wrap_simple(buffer, length, maxlines);
         }

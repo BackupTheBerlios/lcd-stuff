@@ -110,7 +110,7 @@ sock_printf(int fd, const char *format, .../*args*/ )
 		report(RPT_ERR, "sock_printf: vsnprintf failed");
 		return -1;
 	}
-	if (size > sizeof(buf))
+	if (size > (int)sizeof(buf))
 		report(RPT_WARNING, "sock_printf: vsnprintf truncated message");
 	
 	return sock_send_string(fd, buf);
@@ -156,7 +156,7 @@ sock_recv_string (int fd, char *dest, size_t maxlen)
 		recvBytes++;
 
 		// stop at max. bytes allowed, at NUL or at LF
-		if (recvBytes == maxlen || *ptr == '\0' || *ptr == '\n') {
+		if (recvBytes == (int)maxlen || *ptr == '\0' || *ptr == '\n') {
 			*ptr = '\0';
 			break;
 		}
@@ -167,7 +167,7 @@ sock_recv_string (int fd, char *dest, size_t maxlen)
 	if (recvBytes == 1 && dest[0] == '\0')
 		return 0;
 
-	if (recvBytes < maxlen - 1)
+	if (recvBytes < (int)maxlen - 1)
 		dest[recvBytes] = '\0';
 
 	return recvBytes;
@@ -177,7 +177,7 @@ sock_recv_string (int fd, char *dest, size_t maxlen)
 int
 sock_send (int fd, void *src, size_t size)
 {
-	int offset = 0;
+	unsigned int offset = 0;
 
 	if (!src)
 		return -1;
@@ -268,11 +268,11 @@ sock_printf_error(int fd, const char *format, .../*args*/ )
 		report(RPT_ERR, "sock_printf_error: vsnprintf failed");
 		return -1;
 	}
-	if (size > sizeof(buf))
+	if (size > (int)sizeof(buf))
 		report(RPT_WARNING, "sock_printf_error: vsnprintf truncated message");
 
 	/* prepend the "huh? " */
-	if (size > sizeof(buf) - huhsize)
+	if (size > (int)sizeof(buf) - huhsize)
 		size = sizeof(buf) - huhsize;
 
 	memmove(p, buf, size);

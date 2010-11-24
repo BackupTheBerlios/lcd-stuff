@@ -66,7 +66,7 @@ struct program {
 
 struct lcd_stuff_mplayer {
     struct lcd_stuff    *lcd;
-    gsize               channel_number;
+    int                 channel_number;
     struct program      current;
     struct channel      *channels;
     struct screen       screen;
@@ -297,7 +297,7 @@ static void mplayer_net_handler(char **args, int fd, void *cookie)
 
     if (starts_with(args[0], "streams")) {
         char buffer[1024];
-        size_t to_write;
+        ssize_t to_write;
         ssize_t written;
 
         for (i = 0; i < mplayer->channel_number; i++) {
@@ -305,9 +305,8 @@ static void mplayer_net_handler(char **args, int fd, void *cookie)
 
             to_write = strlen(buffer);
             written = write(fd, buffer, to_write);
-            if (written != to_write) {
+            if (written != to_write)
                 report(RPT_ERR, "write() failed: ", strerror(errno));
-            }
         }
 
         to_write = strlen("__END__");
@@ -361,7 +360,7 @@ static bool mplayer_init(struct lcd_stuff_mplayer *mplayer)
     g_free(string);
 
     /* get number of channels in the file */
-    channels = key_file_get_keys(MODULE_NAME, &mplayer->channel_number);
+    channels = key_file_get_keys(MODULE_NAME, (size_t *)&mplayer->channel_number);
 
     mplayer->channels = g_new(struct channel, mplayer->channel_number);
     if (!mplayer->channels) {

@@ -66,8 +66,6 @@ struct lcd_stuff_rss {
 /* -------------------------------------------------------------------------- */
 static void update_screen_receiving(struct lcd_stuff_rss *rss, const char *title)
 {
-    int i;
-
     screen_set_title(&rss->screen, title);
     screen_clear(&rss->screen);
     screen_show_text(&rss->screen, 0, "  Receiving ...");
@@ -150,7 +148,7 @@ void free_news(struct lcd_stuff_rss *rss)
 /* -------------------------------------------------------------------------- */
 static void rss_check(struct lcd_stuff_rss *rss)
 {
-    int nf;
+    unsigned int nf;
 
     rss->current_screen = 0;
 
@@ -291,9 +289,9 @@ static bool rss_init(struct lcd_stuff_rss *rss)
 /* -------------------------------------------------------------------------- */
 void *rss_run(void *cookie)
 {
-    int     i;
-    time_t  next_check;
-    int     result;
+    unsigned int i;
+    time_t next_check;
+    int result;
     struct lcd_stuff_rss rss;
 
     rss.lcd = (struct lcd_stuff *)cookie;

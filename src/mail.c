@@ -93,16 +93,16 @@ static void update_screen(struct lcd_stuff_mail *mail,
 /* -------------------------------------------------------------------------- */
 static void show_screen(struct lcd_stuff_mail *mail)
 {
-    int     tot             = g_list_length(mail->email);
-    char    *line1          = NULL;
-    char    *line1_old      = NULL;
-    char    *line2          = NULL;
-    char    *line3          = NULL;
-    char    *title          = NULL;
-    int     i;
+    int tot = g_list_length(mail->email);
+    char *line1 = NULL;
+    char *line1_old = NULL;
+    char *line2 = NULL;
+    char *line3 = NULL;
+    char *title = NULL;
+    int i;
 
     /* build the first line */
-    for (i = 0; i < mail->mailboxes->len; i++) {
+    for (i = 0; i < (int)mail->mailboxes->len; i++) {
         struct mailbox *box = g_ptr_array_index(mail->mailboxes, i);
 
         line1_old = line1 ? line1 : g_strdup("");
@@ -165,7 +165,7 @@ void free_emails(struct lcd_stuff_mail *mail)
 /* -------------------------------------------------------------------------- */
 static void mail_check(struct lcd_stuff_mail *mail)
 {
-    int mb;
+    unsigned int mb;
 
     mail->current_screen = 0;
 
@@ -173,17 +173,16 @@ static void mail_check(struct lcd_stuff_mail *mail)
     free_emails(mail);
 
     for (mb = 0; mb < mail->mailboxes->len; mb++) {
-        struct mailbox           *box       = g_ptr_array_index(mail->mailboxes, mb);
-        struct mailfolder        *folder    = NULL;
-        struct mailmessage_list  *messages  = NULL;
-        struct mailmessage       *message   = NULL;
-        struct mailstorage       *storage   = NULL;
-        int                      r, i;
-        int                      message_number = 1;
+        struct mailbox *box = g_ptr_array_index(mail->mailboxes, mb);
+        struct mailfolder *folder = NULL;
+        struct mailmessage_list *messages  = NULL;
+        struct mailmessage *message = NULL;
+        struct mailstorage *storage = NULL;
+        unsigned int r, i;
+        int message_number = 1;
 
-        if (!box) {
+        if (!box)
             break;
-        }
 
         if (!is_local(box->type)) {
             update_screen(mail, box->name, "", "  Receiving ...", "");
@@ -432,7 +431,7 @@ static bool mail_init(struct lcd_stuff_mail *mail)
 /* -------------------------------------------------------------------------- */
 void *mail_run(void *cookie)
 {
-    int i;
+    unsigned int i;
     time_t next_check;
     int result;
     struct lcd_stuff_mail mail;

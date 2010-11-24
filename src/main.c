@@ -255,8 +255,8 @@ static bool communication_init(struct lcd_stuff *lcd)
 /* -------------------------------------------------------------------------- */
 int main(int argc, char *argv[])
 {
-    int     err;
-    int     i;
+    int err;
+    unsigned int i;
     GThread *threads[THREAD_NUMBER];
     struct lcd_stuff lcd_stuff = {
         .lcdproc_server = DEFAULT_SERVER,

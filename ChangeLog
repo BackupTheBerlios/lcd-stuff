@@ -1,6 +1,7 @@
 2010-11-24  Bernhard Walle <bernhard@bwalle.de>
 
 	* Remove unneeded file system functions.
+	* Fix compile warnings.
 
 2010-11-21  Bernhard Walle <bernhard@bwalle.de>
 
