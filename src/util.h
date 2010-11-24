@@ -28,45 +28,11 @@
 void string_canon_init(void);
 char *string_canon(char *string);
 char *format_time(unsigned long seconds);
-char *format_bytes(unsigned long long bytes);
 void string_replace(char *string, char from, char to);
 GString *stringbuffer_wrap(GString *buffer, int length, int maxlines);
 char *stringbuffer_get_line(GString *buffer, int line);
 int stringbuffer_get_lines(GString *buffer);
 bool starts_with(const char *string, const char *start);
-
-/*
- * file walking functions, replacement for ftw ---------------------------------
- */
-
-typedef enum {
-    FWF_NO_FLAGS            = 0,
-    FWF_INCLUDE_DIRS        = 1 << 0,
-    FWF_NO_RECURSION        = 1 << 1,
-    FWF_INCLUDE_DEAD_LINK   = 1 << 2,
-    FWF_NO_SYMLINK_FOLLOW   = 1 << 3
-} FilewalkFlags;
-
-typedef bool (*filewalk_function)(const char    *filename,
-                                  void          *cookie,
-                                  GError        **err);
-
-bool filewalk(const char            *basedir,
-              filewalk_function     fn,
-              void                  *cookie,
-              FilewalkFlags         flags,
-              GError                **err);
-
-bool delete_directory_recursively(const char *directory, GError **err);
-
-/*
- * Other file functions --------------------------------------------------------
- */
-
-long copy_file(const char       *src_name,
-               const char       *dest_dir,
-               const char       *dest_name,
-               GError           **gerr);
 
 #endif /* UTIL_H */
 

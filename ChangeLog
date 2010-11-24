@@ -1,3 +1,7 @@
+2010-11-24  Bernhard Walle <bernhard@bwalle.de>
+
+	* Remove unneeded file system functions.
+
 2010-11-21  Bernhard Walle <bernhard@bwalle.de>
 
 	* Remove unused Win32 compatibility code in shared/sockets.c.
